@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#d9e9b8",
+                    "outline": "#76786d",
+                    "inverse-primary": "#bccd9c",
+                    "error": "#ba1a1a",
+                    "tertiary": "#51613c",
+                    "surface-container-low": "#ecf8df",
+                    "secondary": "#55633d",
+                    "primary-fixed": "#d8e9b6",
+                    "on-secondary-fixed": "#141f02",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#55633b",
+                    "inverse-on-surface": "#e9f5dd",
+                    "primary": "#536139",
+                    "on-secondary-fixed-variant": "#3e4b27",
+                    "on-background": "#151e10",
+                    "tertiary-container": "#697a53",
+                    "surface-bright": "#f1fde5",
+                    "surface-container-high": "#e0ecd4",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#dae6cf",
+                    "surface": "#f1fde5",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed": "#d6e9ba",
+                    "on-tertiary-container": "#f9ffea",
+                    "background": "#f1fde5",
+                    "on-surface": "#151e10",
+                    "outline-variant": "#c6c8ba",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#3e4b26",
+                    "on-primary-container": "#faffe8",
+                    "surface-container": "#e6f2da",
+                    "tertiary-fixed-dim": "#bacda0",
+                    "surface-dim": "#d2dec7",
+                    "on-primary-fixed": "#141f01",
+                    "secondary-fixed-dim": "#bdcd9e",
+                    "surface-variant": "#dae6cf",
+                    "primary-fixed-dim": "#bccd9c",
+                    "primary-container": "#6b7a50",
+                    "on-secondary-container": "#5b6942",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-surface-variant": "#45483e",
+                    "secondary-container": "#d9e9b8",
+                    "on-tertiary-fixed": "#121f03",
+                    "inverse-surface": "#293323",
+                    "on-tertiary-fixed-variant": "#3c4c29"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "0px"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Space Grotesk"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-shadow {
+            box-shadow: 4px 4px 0px 0px #536139;
+        }
+        .neo-shadow-active:active {
+            box-shadow: 0px 0px 0px 0px #536139;
+            transform: translate(4px, 4px);
+        }
+        .logo-bounce:active {
+            transform: scale(0.95) rotate(-2deg);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#E8F4DC] font-body text-on-background min-h-screen flex flex-col items-center justify-center p-6 selection:bg-accent selection:text-primary">
+<main class="w-full max-w-md">
+<!-- Brand Identity -->
+<div class="text-center mb-12">
+<h1 class="logo-bounce inline-block text-5xl md:text-6xl font-black text-[#536139] tracking-tighter uppercase cursor-pointer transition-transform duration-200">
+                THIN WALLET
+            </h1>
+<p class="mt-4 font-label text-xs tracking-[0.2em] text-primary uppercase font-bold">
+                The Botanical Archivist / Finanzas
+            </p>
+</div>
+<!-- Login Container -->
+<div class="bg-surface-container-lowest border-2 border-primary p-8 md:p-10 neo-shadow relative">
+<h2 class="text-2xl font-bold text-primary mb-8 uppercase tracking-tight border-b-2 border-primary pb-4">
+                Acceso Archivista
+            </h2>
+<form class="space-y-6" onsubmit="return false;">
+<!-- Username Field -->
+<div class="flex flex-col gap-2">
+<label class="font-label text-xs font-bold text-primary uppercase tracking-widest">
+                        Usuario o Email
+                    </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">person</span>
+<input class="w-full bg-surface-container-low border-2 border-primary py-4 pl-12 pr-4 focus:ring-0 focus:outline-none focus:bg-surface-bright text-primary placeholder:text-primary/40 font-medium" placeholder="nombre@archivo.com" type="text"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-2">
+<label class="font-label text-xs font-bold text-primary uppercase tracking-widest">
+                        Contraseña
+                    </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">lock</span>
+<input class="w-full bg-surface-container-low border-2 border-primary py-4 pl-12 pr-4 focus:ring-0 focus:outline-none focus:bg-surface-bright text-primary placeholder:text-primary/40 font-medium" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="w-full bg-[#536139] text-[#E8F4DC] font-black text-lg py-5 border-2 border-[#536139] uppercase tracking-widest neo-shadow-active transition-all flex items-center justify-center gap-2" type="submit">
+                    Iniciar Sesión
+                    <span class="material-symbols-outlined">arrow_right_alt</span>
+</button>
+</form>
+<div class="mt-8 flex flex-col gap-4">
+<!-- Secondary Option -->
+<button class="w-full border-2 border-primary bg-transparent text-primary font-bold py-4 uppercase tracking-tighter hover:bg-secondary-container transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">key</span>
+                    Entrar con Token
+                </button>
+<!-- Support Links -->
+<div class="flex justify-between items-center mt-4">
+<a class="text-xs font-bold text-primary underline decoration-2 underline-offset-4 hover:bg-secondary-fixed transition-all px-1" href="#">
+                        ¿Olvidó contraseña?
+                    </a>
+<a class="text-xs font-bold text-primary underline decoration-2 underline-offset-4 hover:bg-secondary-fixed transition-all px-1" href="#">
+                        Crear Cuenta
+                    </a>
+</div>
+</div>
+</div>
+<!-- Footer / Editorial Note -->
+<div class="mt-12 text-center">
+<div class="flex justify-center items-center gap-4 mb-4">
+<div class="h-[2px] w-12 bg-primary"></div>
+<span class="material-symbols-outlined text-primary">eco</span>
+<div class="h-[2px] w-12 bg-primary"></div>
+</div>
+<p class="text-[10px] text-primary/60 font-label tracking-widest uppercase leading-relaxed max-w-xs mx-auto">
+                Diseñado para el minimalismo financiero. <br/>
+                Edición Neo-Brutalista 2024.
+            </p>
+</div>
+</main>
+<!-- Decorative Grid Overlay (Subtle) -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03]" style="background-image: linear-gradient(#536139 1px, transparent 1px), linear-gradient(90deg, #536139 1px, transparent 1px); background-size: 40px 40px;"></div>
+<!-- Background Image Asset (Asymmetric Positioning) -->
+<div class="fixed top-12 right-12 hidden lg:block w-48 h-48 border-2 border-primary grayscale opacity-50">
+<img class="w-full h-full object-cover" data-alt="Close-up of a structured green leaf with architectural geometric patterns and sharp shadows on a pale background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlEZ2GMQIGaDwujbAM5N25N_X-gF_M7ngHp2wCArpAb2QcC5fMaFiu1e7nlBUXivS9eq6P5cYykLtF6SoblDY7Ns9uevhRN0Amvm7y23P4i6AIZr7Bjmi8hm-SYxRDrUqUM92sCmQD4IfzTzYQDZ7Jxc72xkshI-Vb9lnRYKq32QQGz0mQ7CTLrg-_eCv0kaQ3_XhKCW6Gad3ZSdnmYYtXazRi7DPueU0b2_mTAMkEiCSwBWGkmo6qscZVkuBmMbFOPgL-kFM6JIs"/>
+</div>
+<div class="fixed bottom-12 left-12 hidden lg:block w-64 h-32 border-2 border-primary grayscale opacity-50">
+<img class="w-full h-full object-cover" data-alt="Abstract architectural lines and green concrete textures with harsh sunlight creating bold brutalist shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgalD757iwUERCmORr77p0gqec-wsTRCCy1yWBybGx_liHskqNR9Z1P4bpQJuTgJQDpgWanm8C0ljjTb2_w_nYODZlw3GyNfmiseYrYNi_zR8xYX6Bx-pnxH0SeZWrFxbayl-umOKobMdrA1-25X_zFxDDMFir_QQL0FARH8WpID3kpwY0vKAjsduiAuRQ_ZWbzIi4ZvE-GybOuW8LIda4DW_sAsfdypNpaEIS8QxWAV0tVObrrpiI2_l-gGqaD7qa7cN2MLXBUzI"/>
+</div>
+</body></html>
