@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+:root {
+  /* Primary Palette — Neo-Brutalist Organic (Verde) */
+  --primary: #536139;
+  --primary-container: #6b7a50;
+  --on-primary: #ffffff;
+  --on-primary-container: #faffe8;
+
+  /* Secondary */
+  --secondary: #55633d;
+  --secondary-container: #d9e9b8;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #5b6942;
+  --secondary-fixed: #d9e9b8;
+
+  /* Tertiary */
+  --tertiary: #51613c;
+  --tertiary-container: #697a53;
+  --on-tertiary: #ffffff;
+
+  /* Surface & Background */
+  --background: #E8F4DC;
+  --surface: #f1fde5;
+  --surface-container: #e6f2da;
+  --surface-container-low: #ecf8df;
+  --surface-container-high: #e0ecd4;
+  --surface-container-highest: #dae6cf;
+  --surface-container-lowest: #ffffff;
+  --surface-bright: #f1fde5;
+  --surface-dim: #d2dec7;
+
+  /* Text */
+  --on-background: #151e10;
+  --on-surface: #151e10;
+  --on-surface-variant: #45483e;
+
+  /* Borders */
+  --outline: #76786d;
+  --outline-variant: #c6c8ba;
+
+  /* Error */
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+
+  /* Accent */
+  --accent: #B6C99C;
+  --inverse-surface: #293323;
+  --inverse-on-surface: #e9f5dd;
+  --inverse-primary: #bccd9c;
+
+  /* Typography */
+  --font-headline: 'Space Grotesk', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-label: 'Space Grotesk', sans-serif;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ===========================
+   GLOBAL RESET & BASE
+   =========================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--background);
+  color: var(--on-background);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ===========================
+   NEO-BRUTALIST UTILITIES
+   =========================== */
+.neo-shadow {
+  box-shadow: 4px 4px 0px 0px var(--primary);
+}
+
+.neo-shadow-sm {
+  box-shadow: 2px 2px 0px 0px var(--primary);
+}
+
+.neo-shadow-hover:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--primary);
+}
+
+.neo-shadow-active:active {
+  box-shadow: 0px 0px 0px 0px var(--primary);
+  transform: translate(4px, 4px);
+}
+
+/* ===========================
+   TYPOGRAPHY
+   =========================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+/* ===========================
+   DECORATIVE GRID OVERLAY
+   =========================== */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: linear-gradient(var(--primary) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--primary) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+}
