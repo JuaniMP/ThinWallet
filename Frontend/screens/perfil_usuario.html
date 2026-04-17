@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Thin Wallet - Profile</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Font: Space Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#d9e9b8",
+                        "outline": "#76786d",
+                        "inverse-primary": "#bccd9c",
+                        "error": "#ba1a1a",
+                        "tertiary": "#51613c",
+                        "surface-container-low": "#ecf8df",
+                        "secondary": "#55633d",
+                        "primary-fixed": "#d8e9b6",
+                        "on-secondary-fixed": "#141f02",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#55633b",
+                        "inverse-on-surface": "#e9f5dd",
+                        "primary": "#536139",
+                        "on-secondary-fixed-variant": "#3e4b27",
+                        "on-background": "#151e10",
+                        "tertiary-container": "#697a53",
+                        "surface-bright": "#f1fde5",
+                        "surface-container-high": "#e0ecd4",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#dae6cf",
+                        "surface": "#f1fde5",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#d6e9ba",
+                        "on-tertiary-container": "#f9ffea",
+                        "background": "#f1fde5",
+                        "on-surface": "#151e10",
+                        "outline-variant": "#c6c8ba",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#3e4b26",
+                        "on-primary-container": "#faffe8",
+                        "surface-container": "#e6f2da",
+                        "tertiary-fixed-dim": "#bacda0",
+                        "surface-dim": "#d2dec7",
+                        "on-primary-fixed": "#141f01",
+                        "secondary-fixed-dim": "#bdcd9e",
+                        "surface-variant": "#dae6cf",
+                        "primary-fixed-dim": "#bccd9c",
+                        "primary-container": "#6b7a50",
+                        "on-secondary-container": "#5b6942",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#45483e",
+                        "secondary-container": "#d9e9b8",
+                        "on-tertiary-fixed": "#121f03",
+                        "inverse-surface": "#293323",
+                        "on-tertiary-fixed-variant": "#3c4c29"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Space Grotesk"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-shadow {
+            box-shadow: 4px 4px 0px 0px #536139;
+        }
+        .neo-shadow-hover:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px #536139;
+        }
+        .neo-shadow-active:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px #536139;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-background selection:bg-inverse-primary selection:text-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-[#E8F4DC] dark:bg-stone-900 border-b-2 border-[#536139] dark:border-[#B6C99C] flex justify-between items-center px-6 py-4">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#536139] dark:text-[#B6C99C] cursor-pointer">menu</span>
+<h1 class="text-2xl font-black text-[#536139] dark:text-[#B6C99C] tracking-tighter font-['Space_Grotesk'] uppercase">THIN WALLET</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#536139] dark:text-[#B6C99C] cursor-pointer">account_circle</span>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 max-w-4xl mx-auto">
+<!-- Hero Profile Section -->
+<section class="mb-8">
+<div class="bg-[#B6C99C] border-2 border-[#536139] p-8 neo-shadow flex flex-col md:flex-row items-center gap-8">
+<div class="w-32 h-32 border-2 border-[#536139] bg-surface-container-lowest overflow-hidden shrink-0">
+<img alt="Alex Smith" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional man with a friendly expression, studio lighting with soft moss green background tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGyYDtUU72TZ2NH6ldBYzoj4CAzoOj656t6TeXJUDK3VJmnEmjrBQulDYGNvd4Wbq2YXUdT_1ATFLAOw7m9GoK-Zu7EG3DtP1xfYr0ME_N79-2CHJlDW8SdPlFyPtDcakpRH7tfIPvKPVa9a7Ih-9gQ5cgJnvsO1ii13YOurf1GthN2va7HwxUmSHm-fLCTQXfveT2WBOp2xicKRBnsc0onwuGGYq8DgA6KX-28kRdH09Jt-P0Y82jdhssrOz8eLREeDigFjn-97s"/>
+</div>
+<div class="flex-grow text-center md:text-left">
+<h2 class="text-4xl md:text-5xl font-bold text-primary tracking-tighter uppercase mb-2">Alex Smith</h2>
+<p class="text-lg text-primary font-medium opacity-90 mb-4">alex.smith@archived.com</p>
+<div class="inline-block bg-primary text-on-primary px-4 py-1 text-xs font-bold tracking-widest uppercase">
+                        Miembro desde: Enero 2024
+                    </div>
+</div>
+<div class="flex flex-col gap-2 w-full md:w-auto">
+<button class="bg-primary text-on-primary border-2 border-primary px-6 py-3 font-bold uppercase text-sm neo-shadow-hover neo-shadow-active transition-all">
+                        Edit Profile
+                    </button>
+<button class="bg-transparent text-primary border-2 border-primary px-6 py-3 font-bold uppercase text-sm hover:bg-[#CFE1BB] transition-colors">
+                        Settings
+                    </button>
+</div>
+</div>
+</section>
+<!-- Stats Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-surface-container-high border-2 border-primary p-6 neo-shadow">
+<p class="text-xs font-bold text-primary opacity-70 uppercase tracking-widest mb-1">Total Assets</p>
+<h3 class="text-3xl font-black text-primary tracking-tighter">$24,500.00</h3>
+</div>
+<div class="bg-[#CFE1BB] border-2 border-primary p-6 neo-shadow">
+<p class="text-xs font-bold text-primary opacity-70 uppercase tracking-widest mb-1">Savings Goal</p>
+<h3 class="text-3xl font-black text-primary tracking-tighter">82%</h3>
+</div>
+<div class="bg-surface-container-high border-2 border-primary p-6 neo-shadow">
+<p class="text-xs font-bold text-primary opacity-70 uppercase tracking-widest mb-1">Active Cards</p>
+<h3 class="text-3xl font-black text-primary tracking-tighter">04</h3>
+</div>
+</section>
+<!-- Detailed Sections -->
+<div class="space-y-6">
+<!-- Security Section -->
+<div class="border-2 border-primary bg-surface-container-lowest p-6">
+<h4 class="text-xl font-bold text-primary uppercase tracking-tight border-b-2 border-primary pb-2 mb-6">Security &amp; Privacy</h4>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<div>
+<p class="font-bold uppercase text-sm">Two-Factor Authentication</p>
+<p class="text-xs text-outline italic">Enabled via Authenticator App</p>
+</div>
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<div>
+<p class="font-bold uppercase text-sm">Data Sharing</p>
+<p class="text-xs text-outline italic">Limited to essential services</p>
+</div>
+<span class="material-symbols-outlined text-primary">toggle_on</span>
+</div>
+</div>
+</div>
+<!-- Recent Activity Placeholder -->
+<div class="border-2 border-primary bg-[#CFE1BB] p-6">
+<h4 class="text-xl font-bold text-primary uppercase tracking-tight border-b-2 border-primary pb-2 mb-6">Archived Activity</h4>
+<div class="space-y-3">
+<div class="flex items-center gap-4 bg-surface-container-lowest border-2 border-primary p-4">
+<div class="bg-secondary-fixed p-2 border border-primary">
+<span class="material-symbols-outlined text-primary">shopping_bag</span>
+</div>
+<div class="flex-grow">
+<p class="font-bold text-sm">RETAIL_PURCHASE_049</p>
+<p class="text-[10px] uppercase font-bold text-outline">Yesterday, 14:20</p>
+</div>
+<p class="font-black text-primary">-$120.50</p>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-lowest border-2 border-primary p-4">
+<div class="bg-secondary-fixed p-2 border border-primary">
+<span class="material-symbols-outlined text-primary">payments</span>
+</div>
+<div class="flex-grow">
+<p class="font-bold text-sm">DIVIDEND_INCOME</p>
+<p class="text-[10px] uppercase font-bold text-outline">Oct 12, 09:00</p>
+</div>
+<p class="font-black text-primary">+$45.00</p>
+</div>
+</div>
+<button class="w-full mt-6 py-2 border-2 border-primary text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors">
+                    View Full Archive
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-16 bg-[#E8F4DC] dark:bg-stone-900 border-t-2 border-[#536139] dark:border-[#B6C99C] flex justify-around items-stretch overflow-hidden z-50">
+<!-- WALLET -->
+<a class="flex flex-col items-center justify-center text-[#536139] dark:text-stone-400 opacity-70 px-4 hover:bg-[#CFE1BB] dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">WALLET</span>
+</a>
+<!-- ANALYTICS -->
+<a class="flex flex-col items-center justify-center text-[#536139] dark:text-stone-400 opacity-70 px-4 hover:bg-[#CFE1BB] dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">ANALYTICS</span>
+</a>
+<!-- CARDS -->
+<a class="flex flex-col items-center justify-center text-[#536139] dark:text-stone-400 opacity-70 px-4 hover:bg-[#CFE1BB] dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">CARDS</span>
+</a>
+<!-- PROFILE (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-[#B6C99C] dark:bg-[#536139] text-[#536139] dark:text-[#E8F4DC] border-l-2 border-r-2 border-[#536139] h-full px-4 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">PROFILE</span>
+</a>
+</nav>
+</body></html>

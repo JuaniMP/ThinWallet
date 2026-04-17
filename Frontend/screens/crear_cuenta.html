@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Thin Wallet - Crear Cuenta</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f1fde5",
+                        "primary": "#536139",
+                        "on-secondary-fixed-variant": "#3e4b27",
+                        "surface-container": "#e6f2da",
+                        "secondary-fixed-dim": "#bdcd9e",
+                        "primary-container": "#6b7a50",
+                        "on-tertiary-container": "#f9ffea",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#d6e9ba",
+                        "tertiary": "#51613c",
+                        "secondary": "#55633d",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#45483e",
+                        "on-primary-container": "#faffe8",
+                        "on-primary-fixed-variant": "#3e4b26",
+                        "secondary-container": "#d9e9b8",
+                        "error-container": "#ffdad6",
+                        "inverse-on-surface": "#e9f5dd",
+                        "secondary-fixed": "#d9e9b8",
+                        "primary-fixed": "#d8e9b6",
+                        "on-tertiary-fixed": "#121f03",
+                        "on-surface": "#151e10",
+                        "on-secondary-fixed": "#141f02",
+                        "on-secondary-container": "#5b6942",
+                        "on-primary-fixed": "#141f01",
+                        "surface-container-highest": "#dae6cf",
+                        "inverse-primary": "#bccd9c",
+                        "surface-variant": "#dae6cf",
+                        "surface-container-high": "#e0ecd4",
+                        "surface-tint": "#55633b",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#293323",
+                        "on-tertiary-fixed-variant": "#3c4c29",
+                        "surface-container-low": "#ecf8df",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#697a53",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f1fde5",
+                        "primary-fixed-dim": "#bccd9c",
+                        "surface-dim": "#d2dec7",
+                        "surface": "#f1fde5",
+                        "on-background": "#151e10",
+                        "outline-variant": "#c6c8ba",
+                        "tertiary-fixed-dim": "#bacda0",
+                        "outline": "#76786d",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Space Grotesk"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neo-shadow {
+            box-shadow: 4px 4px 0px 0px #536139;
+        }
+        .neo-shadow-sm {
+            box-shadow: 2px 2px 0px 0px #536139;
+        }
+        .neo-shadow-active {
+            box-shadow: 0px 0px 0px 0px #536139;
+            transform: translate(4px, 4px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #E8F4DC;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+<main class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-0 border-2 border-primary bg-surface-container-low neo-shadow">
+<!-- Left Side: Branding & Visuals (Asymmetric Layout) -->
+<section class="hidden md:flex md:col-span-5 flex-col justify-between p-10 bg-primary text-on-primary border-r-2 border-primary overflow-hidden relative">
+<div class="z-10">
+<div class="flex items-center gap-2 mb-12">
+<span class="material-symbols-outlined text-4xl" data-icon="account_balance">account_balance</span>
+<h1 class="text-2xl font-bold tracking-tighter uppercase">THIN WALLET</h1>
+</div>
+<div class="space-y-6">
+<h2 class="text-6xl font-bold leading-none tracking-tighter -ml-1">
+                        THE <br/>BOTANICAL <br/>ARCHIVIST.
+                    </h2>
+<p class="text-on-primary/80 font-medium max-w-xs">
+                        Organiza tus activos digitales con la precisión de un herbario real. Estructura, seguridad y crecimiento orgánico.
+                    </p>
+</div>
+</div>
+<div class="relative z-10">
+<div class="border-2 border-on-primary p-4 bg-primary-container inline-block neo-shadow-sm shadow-white/20">
+<p class="text-xs font-bold uppercase tracking-widest">Version 2.0.4 - 2024</p>
+</div>
+</div>
+<!-- Decorative Organic Shape / Masked Image -->
+<div class="absolute -right-20 -bottom-20 w-96 h-96 opacity-30 mix-blend-overlay">
+<img alt="close-up of vibrant green fern leaves with intricate natural patterns and soft architectural lighting" class="w-full h-full object-cover grayscale brightness-50 border-2 border-on-primary" data-alt="close-up of vibrant green fern leaves with intricate natural patterns and soft architectural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDups2fD_eeAg4DQMFTLQRIVQMJ65_h7VHDuWrFX59iNDSBFdyRtk4kcE1fni3oiaOa7SdZWj3OPW8lrcQR94RQZOs7mjSHeNL3_6oToHQsG20vh2U7Plswnk0AvoyPPQQK95c_fGYpIQ5LsZz9WqiAHys1xec7yfD_T6-pWXfJ_CS-Ub7V2kTjvRtqni62Y9HyZ2eSpDaF0nkzABZTPBv72X4cYzc44FZtKGxKZ4pDIhGnAKzJYTvtHClnD7lHH5wAYVTjq7TFqjc"/>
+</div>
+</section>
+<!-- Right Side: The Form -->
+<section class="md:col-span-7 p-6 md:p-12 flex flex-col justify-center">
+<header class="mb-10">
+<h3 class="text-4xl md:text-5xl font-bold text-primary tracking-tighter mb-2">NUEVA CUENTA</h3>
+<div class="h-1 w-24 bg-primary mb-4"></div>
+<p class="text-on-surface-variant font-medium">Empieza a cultivar tu patrimonio hoy mismo.</p>
+</header>
+<form class="space-y-6">
+<!-- Nombre Completo -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary">Nombre Completo</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary" data-icon="person">person</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-2 border-primary text-primary font-medium focus:ring-0 focus:bg-white transition-colors placeholder:text-primary/30 uppercase" placeholder="EJ. JULIÁN ARCHIVISTA" type="text"/>
+</div>
+</div>
+<!-- Correo Electrónico -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary">Correo Electrónico</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary" data-icon="alternate_email">alternate_email</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-2 border-primary text-primary font-medium focus:ring-0 focus:bg-white transition-colors placeholder:text-primary/30 uppercase" placeholder="CORREO@EJEMPLO.COM" type="email"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Contraseña -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary">Contraseña</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary" data-icon="lock">lock</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-2 border-primary text-primary font-medium focus:ring-0 focus:bg-white transition-colors placeholder:text-primary/30" placeholder="********" type="password"/>
+</div>
+</div>
+<!-- Confirmar Contraseña -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary">Confirmar Contraseña</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary" data-icon="lock_reset">lock_reset</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-2 border-primary text-primary font-medium focus:ring-0 focus:bg-white transition-colors placeholder:text-primary/30" placeholder="********" type="password"/>
+</div>
+</div>
+</div>
+<!-- Checkbox -->
+<div class="flex items-start gap-3 py-2">
+<input class="w-5 h-5 border-2 border-primary text-primary focus:ring-0 focus:ring-offset-0 bg-surface-container-lowest cursor-pointer" id="terms" type="checkbox"/>
+<label class="text-sm font-medium text-on-surface-variant cursor-pointer" for="terms">
+                        Acepto los términos y condiciones de uso del servicio.
+                    </label>
+</div>
+<!-- Primary Action -->
+<button class="w-full bg-primary text-on-primary py-5 font-bold text-lg uppercase tracking-widest border-2 border-primary neo-shadow active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3" type="button">
+                    CREAR CUENTA
+                    <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- Social Media / External Services -->
+<div class="mt-8">
+<div class="flex items-center gap-4 mb-6">
+<div class="h-0.5 flex-grow bg-primary/20"></div>
+<span class="text-[10px] font-bold text-primary/40 uppercase tracking-widest">O REGÍSTRATE CON</span>
+<div class="h-0.5 flex-grow bg-primary/20"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<button class="border-2 border-primary p-3 flex items-center justify-center gap-2 font-bold text-xs uppercase hover:bg-surface-container-high transition-colors">
+<img alt="Google" class="w-4 h-4 grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeJL0iBTwQsdvvupGBWTP3S-dvCdVyg8faV8TcudUIVZnfZMGDEs2HqRpPERiUmpsB53Qy4BpF8041MH4cbv5LBI4Raqtt8sq8HfSkgndbsNj7aVy8nUy6E07m_6O7w_MCndT6jpUaEQc4wK_G86DLveGi_MWdwsHRYsDiH3XJg1StV_wq_TUMS23sTGDe7wLVZ61sKcmxEcraM0uEb9DxCUHYeXhFA-b07O7x3VOPKPBKQeIs-EADp-od3IATgSRfwS9Bnw0g1GI"/>
+                        GOOGLE
+                    </button>
+<button class="border-2 border-primary p-3 flex items-center justify-center gap-2 font-bold text-xs uppercase hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="cloud">cloud</span>
+                        APPLE ID
+                    </button>
+</div>
+</div>
+<!-- Secondary Link -->
+<footer class="mt-10 text-center">
+<p class="text-sm font-medium">
+                    ¿Ya tienes cuenta? 
+                    <a class="text-primary font-bold underline decoration-2 underline-offset-4 hover:bg-accent/20 transition-colors px-1" href="#">Inicia sesión</a>
+</p>
+</footer>
+</section>
+</main>
+<!-- Contextual Info / Footer Area (Mobile only as bottom spacer) -->
+<div class="mt-8 flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 text-[10px] font-bold uppercase tracking-[0.2em]">
+<span>PRIVACY POLICY</span>
+<span>SECURITY PROTOCOL</span>
+<span>ARCHIVE SYSTEM v2</span>
+</div>
+</body></html>
