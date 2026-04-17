@@ -5,17 +5,11 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
 export function Register() {
-dev-frontend
   const [nombres, setNombres] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
-
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
- main
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
@@ -28,22 +22,13 @@ dev-frontend
     e.preventDefault();
     setError('');
 
-dev-frontend
     if (contrasena !== confirmPassword) {
-
-    if (password !== confirmPassword) {
-main
       setError('Las contraseñas no coinciden');
       return;
     }
 
- dev-frontend
     if (contrasena.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
-
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
-main
       return;
     }
 
@@ -55,7 +40,6 @@ main
     setIsLoading(true);
 
     try {
-dev-frontend
       await register({ 
         nombres, 
         apellidos, 
@@ -63,11 +47,7 @@ dev-frontend
         correo, 
         contrasena 
       });
-      navigate('/verify');
-
-      await register({ name, email, password });
       navigate('/login');
- main
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear cuenta');
     } finally {
@@ -108,7 +88,6 @@ dev-frontend
           {error && <div className="error-alert">{error}</div>}
 
           <form onSubmit={handleSubmit}>
- dev-frontend
             <div className="form-row">
               <Input
                 label="Nombres"
@@ -140,35 +119,17 @@ dev-frontend
               placeholder="julian_archivista"
               value={nombreUsuario}
               onChange={(e) => setNombreUsuario(e.target.value)}
-
-            <Input
-              label="Nombre Completo"
-              type="text"
-              name="name"
-              icon="person"
-              placeholder="EJ. JULIÁN ARCHIVISTA"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
- main
               required
             />
 
             <Input
               label="Correo Electrónico"
               type="email"
-dev-frontend
               name="correo"
               icon="alternate_email"
               placeholder="CORREO@EJEMPLO.COM"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
-
-              name="email"
-              icon="alternate_email"
-              placeholder="CORREO@EJEMPLO.COM"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
- main
               required
             />
 
@@ -176,7 +137,6 @@ dev-frontend
               <Input
                 label="Contraseña"
                 type="password"
- dev-frontend
                 name="contrasena"
                 icon="lock"
                 placeholder="********"
@@ -185,17 +145,7 @@ dev-frontend
                 required
               />
               <Input
-                label="Confirmar"
-        name="password"
-                icon="lock"
-                placeholder="********"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Input
                 label="Confirmar Contraseña"
- main
                 type="password"
                 name="confirmPassword"
                 icon="lock_reset"
@@ -223,27 +173,6 @@ dev-frontend
             </Button>
           </form>
 
- dev-frontend
-=
-          {/* Social Auth */}
-          <div className="social-separator">
-            <div className="line" />
-            <span>O REGÍSTRATE CON</span>
-            <div className="line" />
-          </div>
-
-          <div className="social-buttons">
-            <button className="social-btn" type="button">
-              <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>public</span>
-              GOOGLE
-            </button>
-            <button className="social-btn" type="button">
-              <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>cloud</span>
-              APPLE ID
-            </button>
-          </div>
-
- main
           {/* Footer */}
           <div className="register-footer">
             <p>

@@ -36,11 +36,7 @@ export function Layout({ children }: LayoutProps) {
               color: 'var(--primary)',
               fontSize: '1rem'
             }}>
-< dev-frontend
-              {user?.nombres?.charAt(0)?.toUpperCase() || 'U'}
-
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
- main
+              {(user?.nombres?.charAt(0) || user?.name?.charAt(0) || 'U').toUpperCase()}
             </div>
           </div>
           <h1>THIN WALLET</h1>

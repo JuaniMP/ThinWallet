@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useTransactions } from '../../context/TransactionContext';
 import { Layout } from '../../components/layout/Layout';
 
 export function Dashboard() {
-  const { user } = useAuth();
   const { transactions, balance, fetchTransactions, fetchBalance } = useTransactions();
 
   useEffect(() => {
