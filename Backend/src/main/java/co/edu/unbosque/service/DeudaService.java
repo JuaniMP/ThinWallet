@@ -31,12 +31,12 @@ public class DeudaService {
 
     @Transactional(readOnly = true)
     public List<Deuda> findByUsuarioDeudor(Long idUsuarioDeudor) {
-        return deudaRepository.findByIdUsuarioDeudor(idUsuarioDeudor);
+        return deudaRepository.findByDeudor(idUsuarioDeudor);
     }
 
     @Transactional(readOnly = true)
     public List<Deuda> findByUsuarioAcreedor(Long idUsuarioAcreedor) {
-        return deudaRepository.findByIdUsuarioAcreedor(idUsuarioAcreedor);
+        return deudaRepository.findByAcreedor(idUsuarioAcreedor);
     }
 
     @Transactional(readOnly = true)
@@ -46,11 +46,15 @@ public class DeudaService {
 
     @Transactional
     public Deuda create(DeudaRequest request) {
+        if (request.getIdUsuarioDeudor() != null
+                && request.getIdUsuarioDeudor().equals(request.getIdUsuarioAcreedor())) {
+            throw new IllegalArgumentException("El deudor y el acreedor no pueden ser el mismo usuario");
+        }
         Deuda deuda = new Deuda();
         deuda.setMonto(request.getMonto());
         deuda.setMetodoPagoSugerido(request.getMetodoPagoSugerido());
         deuda.setPorcentajeDivision(request.getPorcentajeDivision());
-        deuda.setEstadoPago(request.getEstadoPago());
+        deuda.setEstadoPago(request.getEstadoPago() != null ? request.getEstadoPago() : "PENDIENTE");
         deuda.setIdTransaccion(request.getIdTransaccion());
         deuda.setIdUsuarioDeudor(request.getIdUsuarioDeudor());
         deuda.setIdUsuarioAcreedor(request.getIdUsuarioAcreedor());

@@ -9,7 +9,9 @@ export function Login() {
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const { login, loginWithToken } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +33,20 @@ export function Login() {
     }
   };
 
+  const handleTokenSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      await loginWithToken(tokenInput.trim());
+      navigate('/grupos');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Token inválido');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page">
       {/* Grid Overlay */}
@@ -46,9 +62,9 @@ export function Login() {
         {/* Login Card */}
         <div className="auth-card neo-shadow">
           <h2>Acceso Archivista</h2>
-          
+
           {error && <div className="error-alert">{error}</div>}
-          
+
           <form onSubmit={handleSubmit}>
             <Input
               label="Correo Electrónico"
@@ -60,7 +76,7 @@ export function Login() {
               onChange={(e) => setCorreo(e.target.value)}
               required
             />
-            
+
             <Input
               label="Contraseña"
               type="password"
@@ -71,25 +87,30 @@ export function Login() {
               onChange={(e) => setContrasena(e.target.value)}
               required
             />
-            
+
             <Button type="submit" isLoading={isLoading} icon="arrow_right_alt">
               Iniciar Sesión
             </Button>
           </form>
 
-          <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Token button */}
-            <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>key</span>
+          <div style={{ marginTop: '16px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              onClick={() => { setShowTokenModal(true); setError(''); }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>key</span>
               Entrar con Token
             </button>
+          </div>
 
-            {/* Links */}
+          <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="auth-links-row">
-              <Link to="/forgot-password"  className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+              <Link to="/forgot-password" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
                 ¿Olvidó contraseña?
               </Link>
-              <Link to="/register"  className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+              <Link to="/register" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
                 Crear Cuenta
               </Link>
             </div>
@@ -109,6 +130,50 @@ export function Login() {
           </p>
         </div>
       </main>
+
+      {/* Modal: Entrar con Token */}
+      {showTokenModal && (
+        <div className="modal-overlay" onClick={() => setShowTokenModal(false)}>
+          <div className="modal-overlay-content neo-shadow" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Entrar con Token</h2>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setShowTokenModal(false)}
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <p style={{ fontSize: '0.85rem', marginBottom: '16px', color: 'var(--on-surface-variant)' }}>
+              Ingresa el token personal que recibiste para acceder a tu círculo.
+            </p>
+            {error && <div className="error-alert">{error}</div>}
+            <form onSubmit={handleTokenSubmit}>
+              <div className="input-group">
+                <label>Token de acceso</label>
+                <input
+                  type="text"
+                  value={tokenInput}
+                  onChange={e => setTokenInput(e.target.value)}
+                  placeholder="Pega aquí tu token"
+                  style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="submit-btn neo-shadow"
+                disabled={isLoading || !tokenInput.trim()}
+                style={{ width: '100%', marginTop: '12px' }}
+              >
+                {isLoading ? 'Verificando...' : 'Acceder'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

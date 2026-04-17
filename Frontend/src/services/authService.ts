@@ -29,4 +29,16 @@ export const authService = {
   async changePassword(correo: string, codigo: string, nuevaContrasena: string): Promise<string> {
     return api.post<string>('/usuarios/cambiar-contrasena', { correo, codigo, nuevaContrasena });
   },
+
+  async getUserById(id: number): Promise<User> {
+    return api.get<User>(`/usuarios/${id}`);
+  },
+
+  async reenviarVerificacion(correo: string): Promise<string> {
+    return api.post<string>('/usuarios/reenviar-verificacion', { correo });
+  },
+
+  async loginWithToken(token: string): Promise<User> {
+    return api.post<User>('/usuarios/login-token', { tokenInvitacion: token });
+  },
 };

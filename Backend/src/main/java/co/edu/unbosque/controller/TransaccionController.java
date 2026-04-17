@@ -35,6 +35,11 @@ public class TransaccionController {
         return ResponseEntity.ok(transaccionService.findByUsuario(idUsuario));
     }
 
+    @GetMapping("/circulo/{idCirculo}")
+    public ResponseEntity<List<Transaccion>> getByCirculo(@PathVariable Long idCirculo) {
+        return ResponseEntity.ok(transaccionService.findByCirculoGasto(idCirculo));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody TransaccionRequest request) {
         try {

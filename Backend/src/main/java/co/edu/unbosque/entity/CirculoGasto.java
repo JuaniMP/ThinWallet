@@ -24,7 +24,15 @@ public class CirculoGasto {
     @Column(name = "token_invitacion")
     private String tokenInvitacion;
 
-    @Column(name = "tipo_circulo")
+    @Transient
+    private String tokenInvitacionOriginal;
+
+    // FK a tipo_circulo — columna real en la BD
+    @Column(name = "id_tipo_circulo")
+    private Long idTipoCirculo;
+
+    // Campo de conveniencia: poblado por el servicio, no persiste en BD
+    @Transient
     private String tipoCirculo;
 
     @Column(name = "presupuesto_grupal")

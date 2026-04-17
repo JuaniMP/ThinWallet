@@ -1,5 +1,12 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
+export class ApiError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 interface RequestOptions {
   method?: string;
   body?: unknown;
@@ -46,7 +53,7 @@ class ApiService {
       } catch {
         // ignore text error
       }
-      throw new Error(errorMessage);
+      throw new ApiError(response.status, errorMessage);
     }
 
     const text = await response.text();

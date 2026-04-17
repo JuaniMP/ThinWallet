@@ -41,8 +41,12 @@ public class DeudaController {
     }
 
     @PostMapping
-    public ResponseEntity<Deuda> create(@Valid @RequestBody DeudaRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(deudaService.create(request));
+    public ResponseEntity<?> create(@Valid @RequestBody DeudaRequest request) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(deudaService.create(request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

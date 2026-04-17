@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
@@ -9,15 +10,14 @@ export function Verify() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [resending, setResending] = useState(false);
+
   const { verify, registrationEmail } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!registrationEmail) {
-      // If no email in context, maybe user reached here directly
-      // We could redirect to login or ask for email, 
-      // but for now let's hope it's there from Register/Login flow
+      // User reached this page without going through registration
     }
   }, [registrationEmail]);
 
@@ -35,13 +35,29 @@ export function Verify() {
     try {
       await verify(registrationEmail, code);
       setSuccess('¡Correo verificado exitosamente! Ya puedes iniciar sesión.');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Código de verificación incorrecto o expirado');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!registrationEmail) {
+      setError('No se encontró un correo. Por favor intenta registrarte de nuevo.');
+      return;
+    }
+    setResending(true);
+    setError('');
+    setSuccess('');
+    try {
+      await authService.reenviarVerificacion(registrationEmail);
+      setSuccess('Código reenviado a tu correo. Revisa tu bandeja de entrada.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al reenviar el código');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -61,10 +77,10 @@ export function Verify() {
             Hemos enviado un código de 6 dígitos a: <br />
             <strong>{registrationEmail || 'tu correo electrónico'}</strong>
           </p>
-          
+
           {error && <div className="error-alert">{error}</div>}
           {success && <div className="success-alert">{success}</div>}
-          
+
           <form onSubmit={handleSubmit}>
             <Input
               label="Código de Verificación"
@@ -77,7 +93,7 @@ export function Verify() {
               required
               maxLength={6}
             />
-            
+
             <Button type="submit" isLoading={isLoading} icon="verified_user">
               Verificar Cuenta
             </Button>
@@ -86,13 +102,14 @@ export function Verify() {
           <div style={{ marginTop: '32px', textAlign: 'center' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 500 }}>
               ¿No recibiste el código?{' '}
-              <button 
+              <button
                 type="button"
-                className="auth-links" 
-                style={{ background: 'none', border: 'none', cursor: 'pointer', decoration: 'underline' }}
-                onClick={() => alert('Funcionalidad de reenvío próximamente')}
+                className="auth-links"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 700, color: 'var(--primary)' }}
+                onClick={handleResend}
+                disabled={resending}
               >
-                Reenviar código
+                {resending ? 'Reenviando...' : 'Reenviar código'}
               </button>
             </p>
             <div style={{ marginTop: '16px' }}>

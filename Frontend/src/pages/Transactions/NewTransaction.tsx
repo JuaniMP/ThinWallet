@@ -13,6 +13,7 @@ export function NewTransaction() {
     tipoMovimiento: string;
     idUsuario: number;
     idCategoria?: number;
+    idTipoMovimiento: number;
   }) => {
     await createTransaction(data);
     navigate('/dashboard');
@@ -22,9 +23,9 @@ export function NewTransaction() {
     <Layout>
       <div className="new-transaction-page">
         <h2>Nueva Transacción</h2>
-        
+
         {error && <div className="error-alert">{error}</div>}
-        
+
         <TransactionForm onSubmit={handleSubmit} isLoading={isLoading} />
       </div>
     </Layout>

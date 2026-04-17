@@ -1,5 +1,6 @@
 package co.edu.unbosque.service;
 
+import co.edu.unbosque.dto.UsuarioBusquedaResponse;
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.UsuarioRepository;
 import co.edu.unbosque.request.LoginRequest;
@@ -26,6 +27,7 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final TokenHashingService tokenHashingService;
 
     // Almacena temporalmente los tokens de recuperacion: <Correo, Codigo>
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
@@ -57,6 +59,21 @@ public class UsuarioService {
     public Optional<Usuario> login(LoginRequest request) {
         return usuarioRepository.findByCorreo(request.getCorreo())
                 .filter(usuario -> passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash()));
+    }
+
+    public void reenviarVerificacion(String correo) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
+        if (usuarioOpt.isEmpty()) {
+            throw new RuntimeException("No existe un usuario con ese correo electrónico");
+        }
+        Usuario usuario = usuarioOpt.get();
+        if (usuario.getEstado() == 1) {
+            throw new RuntimeException("El usuario ya está verificado");
+        }
+        String codigo = String.format("%06d", new Random().nextInt(999999));
+        registrationTokens.put(correo, codigo);
+        emailService.enviarCodigoVerificacion(correo, codigo);
+        log.info("Codigo de verificacion reenviado para {}: {}", correo, codigo);
     }
 
     public void solicitarRecuperacionPassword(String correo) {
@@ -170,6 +187,36 @@ public class UsuarioService {
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);
         });
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioBusquedaResponse> buscarUsuariosRegistrados(String q, Long excludeId) {
+        String query = q == null ? "" : q.toLowerCase().trim();
+        return usuarioRepository.findAll().stream()
+                .filter(u -> u.getEstado() == 1 && (u.getIdTipoUsuario() == null || u.getIdTipoUsuario() != 3))
+                .filter(u -> excludeId == null || !u.getIdUsuario().equals(excludeId))
+                .filter(u -> u.getCorreo() != null && u.getCorreo().toLowerCase().contains(query)
+                        || u.getNombreUsuario() != null && u.getNombreUsuario().toLowerCase().contains(query)
+                        || u.getNombres() != null && u.getNombres().toLowerCase().contains(query))
+                .limit(10)
+                .map(u -> new UsuarioBusquedaResponse(
+                        u.getIdUsuario(),
+                        (u.getNombres() + " " + (u.getApellidos() != null ? u.getApellidos() : "")).trim(),
+                        u.getCorreo(),
+                        u.getNombreUsuario()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Usuario> loginWithToken(String tokenReclamo) {
+        List<Usuario> todos = usuarioRepository.findAll();
+        for (Usuario usuario : todos) {
+            if (usuario.getTokenReclamo() != null &&
+                    usuario.getTokenReclamo().equals(tokenReclamo)) {
+                return Optional.of(usuario);
+            }
+        }
+        return Optional.empty();
     }
 
     @Transactional

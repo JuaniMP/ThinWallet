@@ -3,6 +3,7 @@ package co.edu.unbosque.request;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class CirculoGastoRequest {
@@ -16,6 +17,8 @@ public class CirculoGastoRequest {
 
     private String tipoCirculo;
 
+    private Long idTipoCirculo;
+
     private BigDecimal presupuestoGrupal;
 
     private Boolean permiteMesadas;
@@ -23,4 +26,6 @@ public class CirculoGastoRequest {
     private Boolean permiteSimplificacionDeudas;
 
     private Long idUsuarioCreador;
+
+    private List<String> nombresInvitados;
 }
