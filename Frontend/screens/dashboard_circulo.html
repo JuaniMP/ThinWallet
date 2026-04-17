@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#51613c",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e0ecd4",
+                        "tertiary-container": "#697a53",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#e9f5dd",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#d9e9b8",
+                        "surface-container-highest": "#dae6cf",
+                        "surface-container-low": "#ecf8df",
+                        "secondary-fixed-dim": "#bdcd9e",
+                        "surface-container": "#e6f2da",
+                        "on-secondary-container": "#5b6942",
+                        "primary-fixed-dim": "#bccd9c",
+                        "surface-dim": "#d2dec7",
+                        "on-primary-container": "#faffe8",
+                        "tertiary-fixed": "#d6e9ba",
+                        "surface-tint": "#55633b",
+                        "on-secondary-fixed-variant": "#3e4b27",
+                        "secondary-fixed": "#d9e9b8",
+                        "on-primary-fixed-variant": "#3e4b26",
+                        "surface-bright": "#f1fde5",
+                        "outline-variant": "#c6c8ba",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#bacda0",
+                        "on-tertiary-fixed": "#121f03",
+                        "on-tertiary-fixed-variant": "#3c4c29",
+                        "surface": "#f1fde5",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#141f01",
+                        "surface-variant": "#dae6cf",
+                        "secondary": "#55633d",
+                        "outline": "#76786d",
+                        "on-tertiary-container": "#f9ffea",
+                        "primary-fixed": "#d8e9b6",
+                        "on-secondary-fixed": "#141f02",
+                        "primary-container": "#6b7a50",
+                        "inverse-surface": "#293323",
+                        "primary": "#536139",
+                        "error": "#ba1a1a",
+                        "on-surface": "#151e10",
+                        "on-surface-variant": "#45483e",
+                        "inverse-primary": "#bccd9c",
+                        "background": "#f1fde5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Space Grotesk"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #E8F4DC; /* Surface/Background as per spec */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-brutalist-shadow {
+            box-shadow: 4px 4px 0px 0px #536139;
+        }
+        .neo-brutalist-shadow-sm {
+            box-shadow: 2px 2px 0px 0px #536139;
+        }
+        .active-shadow-none:active {
+            box-shadow: 0px 0px 0px 0px #536139;
+            transform: translate(2px, 2px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#E8F4DC] text-[#151E10] min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-[#E8F4DC] dark:bg-stone-900 border-b-2 border-[#536139] dark:border-[#B6C99C] sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 border-2 border-[#536139] overflow-hidden">
+<img alt="User Profile Image" class="w-full h-full object-cover" data-alt="Professional studio portrait of a young man with a friendly expression, minimalist clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARWjlxablXwQkVbJXBYMQcwsD5MROQLvmF9v9znoIq8R6jLB_hGyGcoX1YOhrN2PnbvHbDqYX3tIQPM_64pK1fWqV8CQRb1PZcfjZutNK4ZzRPjFaYCRiRogruX3S20YNmfxJQOe1_3XPbt1cZpr44mXT7MaUxvI-eHkm60xUdcKUbYQrd9fk1RlmiopIkzMotCKR1iwo-4EmPr1mD4dix2aprnSe8-RDFJWMuDjX5Fw2xJcs-t0ySE2qaDjfz6B6KyHeR_MtuFtg"/>
+</div>
+<h1 class="font-['Space_Grotesk'] font-bold uppercase tracking-tighter text-2xl text-[#536139] dark:text-[#E8F4DC]">THIN WALLET</h1>
+</div>
+<button class="text-[#536139] dark:text-[#B6C99C] hover:bg-[#B6C99C] transition-colors duration-100 p-1 active:translate-x-1 active:translate-y-1">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto p-6 space-y-8">
+<!-- Hero Section: Group Title & Balance -->
+<section class="flex flex-col md:flex-row gap-6">
+<div class="flex-1 bg-primary text-on-primary p-8 border-2 border-primary neo-brutalist-shadow">
+<p class="font-label uppercase tracking-widest text-xs mb-2 opacity-80">Círculo Activo</p>
+<h2 class="font-headline text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-4">VIAJE A TOKIO</h2>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-4xl" data-icon="group">group</span>
+<span class="text-xl font-medium">8 Miembros</span>
+</div>
+</div>
+<div class="w-full md:w-1/3 bg-accent border-2 border-primary p-8 neo-brutalist-shadow flex flex-col justify-center">
+<p class="font-label uppercase tracking-widest text-xs mb-1 text-primary">Balance Total del Grupo</p>
+<p class="font-headline text-4xl font-extrabold text-primary tracking-tight">$1,250.00</p>
+<button class="mt-6 bg-primary text-white border-2 border-primary px-4 py-2 font-bold uppercase text-sm neo-brutalist-shadow-sm active-shadow-none transition-all">
+                    Registrar Gasto
+                </button>
+</div>
+</section>
+<!-- Bento Grid: Main Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Matrix de Liquidación -->
+<div class="lg:col-span-8 space-y-6">
+<div class="bg-surface-container border-2 border-primary p-6 neo-brutalist-shadow">
+<div class="flex justify-between items-end mb-6 border-b-2 border-primary pb-2">
+<h3 class="font-headline text-2xl font-bold uppercase">Matriz de Liquidación</h3>
+<span class="font-label text-xs uppercase text-primary mb-1">Debts &amp; Credits</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Debt Card 1 -->
+<div class="bg-white border-2 border-primary p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Carlos M.</p>
+<p class="text-xs opacity-70">le debe a</p>
+<p class="font-bold text-sm uppercase">Ana G.</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-error font-bold text-lg">$45.00</p>
+<button class="text-[10px] uppercase font-bold underline text-primary">Liquidar</button>
+</div>
+</div>
+<!-- Debt Card 2 -->
+<div class="bg-white border-2 border-primary p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Tú</p>
+<p class="text-xs opacity-70">debes a</p>
+<p class="font-bold text-sm uppercase">Luis P.</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-error font-bold text-lg">$120.00</p>
+<button class="text-[10px] uppercase font-bold underline text-primary">Liquidar</button>
+</div>
+</div>
+<!-- Debt Card 3 -->
+<div class="bg-white border-2 border-primary p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Elena R.</p>
+<p class="text-xs opacity-70">te debe a</p>
+<p class="font-bold text-sm uppercase">Ti</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-primary font-bold text-lg">$85.50</p>
+<button class="text-[10px] uppercase font-bold underline text-primary">Recordar</button>
+</div>
+</div>
+<!-- Debt Card 4 -->
+<div class="bg-white border-2 border-primary p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Sofía V.</p>
+<p class="text-xs opacity-70">le debe a</p>
+<p class="font-bold text-sm uppercase">Ana G.</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-error font-bold text-lg">$12.00</p>
+<button class="text-[10px] uppercase font-bold underline text-primary">Liquidar</button>
+</div>
+</div>
+</div>
+<div class="mt-8">
+<img alt="Tokio Destination" class="w-full h-48 object-cover border-2 border-primary grayscale hover:grayscale-0 transition-all duration-500" data-alt="Cinematic street view of Tokyo Shinjuku district at night with glowing neon signs and architectural geometric lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjQRQKkovzVe2KUFB-ASz4AwGN1d3FxcRSF1epfHFTRUHRlGkQtBucejMoP7lRIjmiNpmk6NllmxpMJllpvYzpy29Tue730f98DoBfO49MNPBOmP4sCxLIKkfjcSA-oxLU9F5HHhEiU38W_F2ssQGx7CPe0fdOpeNbf2V0gixlrJ80KpV58esygb2MiG9VoxzVKxCdHqzt5gdWOkwreQ-6EDq0r7t7M0OQCBlvaKZ6veLqVbK5Q12uyUi5gvQdj5iK_9o5o55IxjE"/>
+</div>
+</div>
+</div>
+<!-- Recent Activity Timeline -->
+<div class="lg:col-span-4">
+<div class="bg-surface-container-low border-2 border-primary p-6 h-full neo-brutalist-shadow">
+<h3 class="font-headline text-2xl font-bold uppercase mb-6 border-b-2 border-primary pb-2">Actividad Reciente</h3>
+<div class="space-y-8 relative before:content-[''] before:absolute before:left-[11px] before:top-0 before:bottom-0 before:w-0.5 before:bg-primary/30">
+<!-- Timeline Item 1 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-primary border-2 border-primary flex items-center justify-center text-white z-10">
+<span class="material-symbols-outlined text-xs" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Cena en Shibuya</p>
+<p class="text-xs opacity-70">Pagado por Ana G.</p>
+<p class="text-sm font-bold text-primary mt-1">$210.00</p>
+<p class="text-[10px] uppercase mt-2 opacity-50">Hace 2 horas</p>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-surface-container-highest border-2 border-primary flex items-center justify-center text-primary z-10">
+<span class="material-symbols-outlined text-xs" data-icon="train">train</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Japan Rail Pass</p>
+<p class="text-xs opacity-70">Pagado por Luis P.</p>
+<p class="text-sm font-bold text-primary mt-1">$540.00</p>
+<p class="text-[10px] uppercase mt-2 opacity-50">Ayer, 18:45</p>
+</div>
+</div>
+<!-- Timeline Item 3 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-surface-container-highest border-2 border-primary flex items-center justify-center text-primary z-10">
+<span class="material-symbols-outlined text-xs" data-icon="hotel">hotel</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Reserva Hotel Shinjuku</p>
+<p class="text-xs opacity-70">Pagado por Ti</p>
+<p class="text-sm font-bold text-primary mt-1">$450.00</p>
+<p class="text-[10px] uppercase mt-2 opacity-50">Ayer, 09:20</p>
+</div>
+</div>
+<!-- Timeline Item 4 -->
+<div class="relative pl-10 opacity-60">
+<div class="absolute left-0 top-1 w-6 h-6 bg-surface-container-highest border-2 border-primary flex items-center justify-center text-primary z-10">
+<span class="material-symbols-outlined text-xs" data-icon="local_cafe">local_cafe</span>
+</div>
+<div>
+<p class="font-bold text-sm uppercase">Café Temático Gatos</p>
+<p class="text-xs opacity-70">Pagado por Elena R.</p>
+<p class="text-sm font-bold text-primary mt-1">$50.00</p>
+<p class="text-[10px] uppercase mt-2 opacity-50">20 Oct, 16:30</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 border-2 border-primary p-3 font-bold uppercase text-xs hover:bg-surface-container-high transition-colors">
+                        Ver todo el historial
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-2 bg-[#E8F4DC] border-t-2 border-[#536139] dark:border-[#B6C99C] z-50">
+<!-- INICIO -->
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">INICIO</span>
+</a>
+<!-- CÍRCULOS (Active) -->
+<a class="flex flex-col items-center justify-center bg-[#B6C99C] text-[#536139] border-2 border-[#536139] -translate-y-1 -translate-x-1 shadow-[2px_2px_0px_0px_#536139] p-2 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">CÍRCULOS</span>
+</a>
+<!-- AÑADIR -->
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">AÑADIR</span>
+</a>
+<!-- REPORTES -->
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="insert_chart">insert_chart</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">REPORTES</span>
+</a>
+<!-- PERFIL -->
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">PERFIL</span>
+</a>
+</nav>
+</body></html>
