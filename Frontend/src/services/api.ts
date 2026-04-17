@@ -1,4 +1,8 @@
+ dev-frontend
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+main
 
 interface RequestOptions {
   method?: string;
@@ -34,11 +38,35 @@ class ApiService {
     const response = await fetch(`${API_URL}${endpoint}`, config);
 
     if (!response.ok) {
+ dev-frontend
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const text = await response.text();
+        try {
+          const json = JSON.parse(text);
+          errorMessage = json.message || text || errorMessage;
+        } catch {
+          errorMessage = text || errorMessage;
+        }
+      } catch {
+        // ignore text error
+      }
+      throw new Error(errorMessage);
+    }
+
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text as unknown as T;
+    }
+
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
     return response.json();
+ main
   }
 
   get<T>(endpoint: string): Promise<T> {
