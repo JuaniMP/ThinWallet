@@ -5,12 +5,21 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
 export function Login() {
+ dev-frontend
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const { login, setRegistrationEmail } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { login } = useAuth();
+main
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,6 +28,7 @@ export function Login() {
     setIsLoading(true);
 
     try {
+ dev-frontend
       await login({ correo, contrasena });
       navigate('/dashboard');
     } catch (err) {
@@ -30,6 +40,12 @@ export function Login() {
         setRegistrationEmail(correo);
         setTimeout(() => navigate('/verify'), 1500);
       }
+
+      await login({ email, password });
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+ main
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +71,7 @@ export function Login() {
           
           <form onSubmit={handleSubmit}>
             <Input
+dev-frontend
               label="Correo Electrónico"
               type="email"
               name="correo"
@@ -62,17 +79,34 @@ export function Login() {
               placeholder="nombre@archivo.com"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
+
+              label="Usuario o Email"
+              type="email"
+              name="email"
+              icon="person"
+              placeholder="nombre@archivo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+ main
               required
             />
             
             <Input
               label="Contraseña"
               type="password"
+ dev-frontend
               name="contrasena"
               icon="lock"
               placeholder="••••••••"
               value={contrasena}
               onChange={(e) => setContrasena(e.target.value)}
+=======
+              name="password"
+              icon="lock"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+ main
               required
             />
             
@@ -90,10 +124,17 @@ export function Login() {
 
             {/* Links */}
             <div className="auth-links-row">
+dev-frontend
               <Link to="/forgot-password" size="small" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
                 ¿Olvidó contraseña?
               </Link>
               <Link to="/register" size="small" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+=======
+              <Link to="/forgot-password" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+                ¿Olvidó contraseña?
+              </Link>
+              <Link to="/register" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+ main
                 Crear Cuenta
               </Link>
             </div>
