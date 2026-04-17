@@ -4,10 +4,6 @@ import { TransactionProvider } from './context/TransactionContext';
 import { AuthGuard } from './components/layout/AuthGuard';
 import { Login } from './pages/Auth/Login';
 import { Register } from './pages/Auth/Register';
-< dev-frontend
-import { Verify } from './pages/Auth/Verify';
-
- main
 import { ForgotPassword } from './pages/Auth/ForgotPassword';
 import { Dashboard } from './pages/Dashboard/Dashboard';
 import { TransactionList } from './pages/Transactions/TransactionList';
@@ -25,9 +21,6 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-< dev-frontend
-            <Route path="/verify" element={<Verify />} />
- main
             <Route path="/forgot-password" element={<ForgotPassword />} />
             
             <Route
@@ -79,11 +72,7 @@ function App() {
               }
             />
             
-< dev-frontend
-            <Route path="/" element={<Navigate to="/login" replace />} />
-
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
- main
           </Routes>
         </TransactionProvider>
       </AuthProvider>
