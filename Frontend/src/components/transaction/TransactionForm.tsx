@@ -151,15 +151,6 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         required
       />
 
-      <Input
-        label="Fecha"
-        type="date"
-        name="date"
-        value={new Date().toISOString().split('T')[0]}
-        onChange={() => {}}
-        required
-      />
-
       <Button type="submit" isLoading={isLoading}>
         Guardar Transacción
       </Button>

@@ -1,15 +1,15 @@
-import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
-import type { Transaction, Balance, TransactionFilters } from '../types';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import type { Transaction, TransactionFilters } from '../types';
 import { api } from '../services/api';
 
-// Backend entity shape (what the API actually returns)
 interface BackendTransaccion {
   idTransaccion: number;
   nombre: string;
   montoOriginal: number;
   monedaOriginal: string | null;
   tasaCambio: number | null;
-  tipoMovimiento: string;
+  tipoMovimiento: string | null;
+  tipoCategoria: string | null;
   modalidadDivision: string | null;
   contexto: string | null;
   idUsuario: number;
@@ -19,26 +19,38 @@ interface BackendTransaccion {
   idTipoMovimiento: number | null;
 }
 
-// Map backend entity to frontend Transaction type
 function mapToFrontend(t: BackendTransaccion): Transaction {
   return {
     id: String(t.idTransaccion),
     userId: String(t.idUsuario),
     amount: t.montoOriginal * (t.tasaCambio ?? 1),
     description: t.nombre,
-    type: t.tipoMovimiento === 'DEPOSITO' ? 'income' : 'expense',
+    type: t.tipoCategoria === 'DEPOSITO' ? 'income' : 'expense',
     categoryId: t.idCategoria ? String(t.idCategoria) : '',
-    date: new Date().toISOString(), // backend doesn't have a date field on transaccion
+    date: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     idTipoMovimiento: t.idTipoMovimiento ?? 1,
   };
 }
+
+function getStoredUserId(): number | null {
+  try {
+    const stored = localStorage.getItem('user');
+    if (!stored) return null;
+    const user = JSON.parse(stored);
+    return user.idUsuario ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface TransactionContextType {
   transactions: Transaction[];
-  balance: Balance | null;
+  saldoTotal: number;
   isLoading: boolean;
   error: string | null;
   fetchTransactions: (filters?: TransactionFilters) => Promise<void>;
+  fetchSaldo: () => Promise<void>;
   createTransaction: (data: {
     nombre: string;
     montoOriginal: number;
@@ -48,41 +60,40 @@ interface TransactionContextType {
     idTipoMovimiento: number;
   }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
-  fetchBalance: () => Promise<void>;
 }
 
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
 
 export function TransactionProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [balance, setBalance] = useState<Balance | null>(null);
+  const [saldoTotal, setSaldoTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTransactions = async (filters?: TransactionFilters) => {
+  const fetchSaldo = async () => {
+    const idUsuario = getStoredUserId();
+    if (!idUsuario) return;
+    try {
+      const response = await api.get<{ saldoTotal: number }>(`/usuarios/${idUsuario}/saldo`);
+      setSaldoTotal(response.saldoTotal ?? 0);
+    } catch {
+      // keep existing value on error
+    }
+  };
+
+  const fetchTransactions = async (_filters?: TransactionFilters) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Get user from localStorage to filter by user
-      const storedUser = localStorage.getItem('user');
-      let idUsuario: number | null = null;
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          idUsuario = user.idUsuario;
-        } catch { /* ignore */ }
-      }
-
-      let endpoint = '/transacciones';
-      if (idUsuario) {
-        endpoint = `/transacciones/usuario/${idUsuario}`;
-      }
+      const idUsuario = getStoredUserId();
+      const endpoint = idUsuario
+        ? `/transacciones/usuario/${idUsuario}`
+        : '/transacciones';
 
       const response = await api.get<BackendTransaccion[]>(endpoint);
       const mapped = (Array.isArray(response) ? response : []).map(mapToFrontend);
       setTransactions(mapped);
     } catch (err) {
-      // Don't set error for empty results — just show no transactions
       console.error('Error fetching transactions:', err);
       setTransactions([]);
     } finally {
@@ -103,6 +114,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     try {
       await api.post<BackendTransaccion>('/transacciones', data);
       await fetchTransactions();
+      await fetchSaldo();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear transacción');
       throw err;
@@ -117,6 +129,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     try {
       await api.delete(`/transacciones/${id}`);
       await fetchTransactions();
+      await fetchSaldo();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar transacción');
       throw err;
@@ -125,22 +138,17 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchBalance = async () => {
-    // Balance is now handled by the saldo endpoint in Dashboard directly
-    // This is kept for compatibility but does nothing
-  };
-
   return (
     <TransactionContext.Provider
       value={{
         transactions,
-        balance,
+        saldoTotal,
         isLoading,
         error,
         fetchTransactions,
+        fetchSaldo,
         createTransaction,
         deleteTransaction,
-        fetchBalance,
       }}
     >
       {children}

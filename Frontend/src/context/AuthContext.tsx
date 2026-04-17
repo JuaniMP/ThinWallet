@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
+  loginWithToken: (tokenValue: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   verify: (correo: string, codigo: string) => Promise<void>;
@@ -41,29 +42,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (credentials: LoginRequest) => {
-    if (credentials.correo === 'usuario@hotmail.com' && credentials.contrasena === '123') {
-      const mockUser: User = {
-        idUsuario: 123,
-        nombres: 'Usuario',
-        apellidos: 'Quemado',
-        correo: 'usuario@hotmail.com',
-        nombreUsuario: 'usuario_mock',
-      };
-      const mockToken = 'mock-token-xyz';
-
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setToken(mockToken);
-      setUser(mockUser);
-      return;
-    }
-
     const userData = await authService.login(credentials);
     const authToken = `session-${Date.now()}`;
 
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(userData));
 
+    setToken(authToken);
+    setUser(userData);
+  };
+
+  const loginWithToken = async (tokenValue: string) => {
+    const userData = await authService.loginWithToken(tokenValue);
+    const authToken = `session-token-${Date.now()}`;
+    localStorage.setItem('token', authToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('userToken', tokenValue);
     setToken(authToken);
     setUser(userData);
   };
@@ -92,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token,
         isLoading,
         login,
+        loginWithToken,
         register,
         logout,
         verify,

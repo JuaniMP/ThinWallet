@@ -1,23 +1,64 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Layout } from '../../components/layout/Layout';
+import { authService } from '../../services/authService';
+import { transactionService } from '../../services/transactionService';
+import type { User } from '../../types';
 
 export function Profile() {
-  const { user, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const [profileData, setProfileData] = useState<User | null>(authUser);
+  const [saldo, setSaldo] = useState<number | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingSaldo, setLoadingSaldo] = useState(true);
+
+  useEffect(() => {
+    if (!authUser?.idUsuario) {
+      setLoadingProfile(false);
+      setLoadingSaldo(false);
+      return;
+    }
+
+    authService.getUserById(authUser.idUsuario)
+      .then((data) => setProfileData(data))
+      .catch(() => setProfileData(authUser))
+      .finally(() => setLoadingProfile(false));
+
+    transactionService.getSaldo(authUser.idUsuario)
+      .then((res) => setSaldo(res.saldoTotal))
+      .catch(() => setSaldo(null))
+      .finally(() => setLoadingSaldo(false));
+  }, [authUser?.idUsuario]);
+
+  const fullName = profileData
+    ? `${profileData.nombres} ${profileData.apellidos}`
+    : 'Usuario';
+
+  const initials = profileData
+    ? profileData.nombres.charAt(0).toUpperCase()
+    : 'U';
+
+  const memberSince = profileData?.fechaRegistro
+    ? new Date(profileData.fechaRegistro).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+      })
+    : null;
+
+  const saldoFormatted =
+    saldo !== null
+      ? saldo.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
+      : '—';
 
   const stats = [
-    { label: 'Total Assets', value: '$24,500.00', bg: 'bg-high' },
-    { label: 'Savings Goal', value: '82%', bg: 'bg-accent' },
-    { label: 'Active Cards', value: '04', bg: 'bg-high' },
+    { label: 'Saldo Total', value: loadingSaldo ? '...' : saldoFormatted, bg: 'bg-high' },
+    { label: 'Usuario', value: profileData?.nombreUsuario || '—', bg: 'bg-accent' },
+    { label: 'Estado', value: profileData?.estado === 1 ? 'Activo' : '—', bg: 'bg-high' },
   ];
 
   const securityItems = [
     { label: 'Two-Factor Authentication', desc: 'Habilitado via Authenticator App', icon: 'check_circle' },
     { label: 'Compartir Datos', desc: 'Limitado a servicios esenciales', icon: 'toggle_on' },
-  ];
-
-  const activityItems = [
-    { name: 'RETAIL_PURCHASE_049', date: 'Ayer, 14:20', amount: '-$120.50', icon: 'shopping_bag' },
-    { name: 'DIVIDEND_INCOME', date: 'Oct 12, 09:00', amount: '+$45.00', icon: 'payments' },
   ];
 
   return (
@@ -33,15 +74,26 @@ export function Profile() {
               fontWeight: 900, color: 'var(--primary)', fontSize: '3rem',
               fontFamily: 'var(--font-headline)'
             }}>
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              {loadingProfile ? '…' : initials}
             </div>
           </div>
           <div className="profile-info">
-            <h2>{user?.name || 'Usuario'}</h2>
-            <p className="email">{user?.email || 'email@ejemplo.com'}</p>
-            <div className="member-badge">
-              Miembro desde: Enero 2024
-            </div>
+            {loadingProfile ? (
+              <h2>Cargando...</h2>
+            ) : (
+              <>
+                <h2>{fullName}</h2>
+                <p className="email">{profileData?.correo || '—'}</p>
+                {profileData?.descripcion && (
+                  <p style={{ fontSize: '0.85rem', opacity: 0.75, marginTop: '4px' }}>
+                    {profileData.descripcion}
+                  </p>
+                )}
+                <div className="member-badge">
+                  {memberSince ? `Miembro desde: ${memberSince}` : 'ThinWallet'}
+                </div>
+              </>
+            )}
           </div>
           <div className="profile-actions">
             <button className="btn btn-primary neo-shadow-hover neo-shadow-active" style={{ fontSize: '0.875rem' }}>
@@ -75,26 +127,6 @@ export function Profile() {
               <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>{item.icon}</span>
             </div>
           ))}
-        </div>
-
-        {/* Archived Activity */}
-        <div className="profile-section bg-accent">
-          <h4>Actividad Archivada</h4>
-          {activityItems.map((item) => (
-            <div key={item.name} className="activity-item">
-              <div className="activity-icon">
-                <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>{item.icon}</span>
-              </div>
-              <div className="activity-info">
-                <p className="activity-name">{item.name}</p>
-                <p className="activity-date">{item.date}</p>
-              </div>
-              <p className="activity-amount">{item.amount}</p>
-            </div>
-          ))}
-          <button className="btn btn-secondary" style={{ marginTop: '24px', fontSize: '0.75rem', letterSpacing: '0.1em' }}>
-            Ver Archivo Completo
-          </button>
         </div>
       </div>
     </Layout>

@@ -1,6 +1,10 @@
 package co.edu.unbosque.service;
 
+import co.edu.unbosque.entity.Categoria;
+import co.edu.unbosque.entity.TipoMovimiento;
 import co.edu.unbosque.entity.Transaccion;
+import co.edu.unbosque.repository.CategoriaRepository;
+import co.edu.unbosque.repository.TipoMovimientoRepository;
 import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.request.TransaccionRequest;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -17,26 +23,78 @@ import java.util.Optional;
 public class TransaccionService {
 
     private final TransaccionRepository transaccionRepository;
+    private final TipoMovimientoRepository tipoMovimientoRepository;
+    private final CategoriaRepository categoriaRepository;
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private void populateTipos(List<Transaccion> lista) {
+        Map<Long, String> tiposMovimiento = tipoMovimientoRepository.findAll().stream()
+                .collect(Collectors.toMap(TipoMovimiento::getIdTipoMovimiento, TipoMovimiento::getNombre));
+        Map<Long, String> tiposCategoria = categoriaRepository.findAll().stream()
+                .filter(c -> c.getTipoCategoria() != null)
+                .collect(Collectors.toMap(Categoria::getIdCategoria, Categoria::getTipoCategoria, (a, b) -> a));
+        lista.forEach(t -> {
+            if (t.getIdTipoMovimiento() != null) {
+                t.setTipoMovimiento(tiposMovimiento.getOrDefault(t.getIdTipoMovimiento(), null));
+            }
+            if (t.getIdCategoria() != null) {
+                t.setTipoCategoria(tiposCategoria.getOrDefault(t.getIdCategoria(), null));
+            }
+        });
+    }
+
+    private void populateTipo(Transaccion t) {
+        if (t.getIdTipoMovimiento() != null) {
+            tipoMovimientoRepository.findById(t.getIdTipoMovimiento())
+                    .ifPresent(tm -> t.setTipoMovimiento(tm.getNombre()));
+        }
+        if (t.getIdCategoria() != null) {
+            categoriaRepository.findById(t.getIdCategoria())
+                    .ifPresent(c -> t.setTipoCategoria(c.getTipoCategoria()));
+        }
+    }
+
+    /** Si el request trae nombre pero no id, resuelve el id desde la tabla. */
+    private Long resolverIdTipoMovimiento(TransaccionRequest request) {
+        if (request.getIdTipoMovimiento() != null) return request.getIdTipoMovimiento();
+        if (request.getTipoMovimiento() != null) {
+            return tipoMovimientoRepository.findByNombre(request.getTipoMovimiento().toUpperCase())
+                    .map(TipoMovimiento::getIdTipoMovimiento)
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<Transaccion> findAll() {
-        return transaccionRepository.findAll();
+        List<Transaccion> lista = transaccionRepository.findAll();
+        populateTipos(lista);
+        return lista;
     }
 
     @Transactional(readOnly = true)
     public Optional<Transaccion> findById(Long id) {
-        return transaccionRepository.findById(id);
+        return transaccionRepository.findById(id).map(t -> { populateTipo(t); return t; });
     }
 
     @Transactional(readOnly = true)
     public List<Transaccion> findByUsuario(Long idUsuario) {
-        return transaccionRepository.findByIdUsuario(idUsuario);
+        List<Transaccion> lista = transaccionRepository.findByIdUsuario(idUsuario);
+        populateTipos(lista);
+        return lista;
     }
 
     @Transactional(readOnly = true)
     public List<Transaccion> findByCirculoGasto(Long idCirculoGasto) {
-        return transaccionRepository.findByIdCirculoGasto(idCirculoGasto);
+        List<Transaccion> lista = transaccionRepository.findByIdCirculoGasto(idCirculoGasto);
+        populateTipos(lista);
+        return lista;
     }
+
+    // ── Mutations ─────────────────────────────────────────────────────────────
 
     @Transactional
     public Transaccion create(TransaccionRequest request) {
@@ -45,15 +103,16 @@ public class TransaccionService {
         transaccion.setMontoOriginal(request.getMontoOriginal());
         transaccion.setMonedaOriginal(request.getMonedaOriginal());
         transaccion.setTasaCambio(request.getTasaCambio());
-        transaccion.setTipoMovimiento(request.getTipoMovimiento());
         transaccion.setModalidadDivision(request.getModalidadDivision());
         transaccion.setContexto(request.getContexto());
         transaccion.setIdUsuario(request.getIdUsuario());
         transaccion.setIdCirculoGasto(request.getIdCirculoGasto());
         transaccion.setIdCategoria(request.getIdCategoria());
         transaccion.setIdGasto(request.getIdGasto());
-        transaccion.setIdTipoMovimiento(request.getIdTipoMovimiento());
-        return transaccionRepository.save(transaccion);
+        transaccion.setIdTipoMovimiento(resolverIdTipoMovimiento(request));
+        Transaccion saved = transaccionRepository.save(transaccion);
+        populateTipo(saved);
+        return saved;
     }
 
     @Transactional
@@ -63,11 +122,12 @@ public class TransaccionService {
             transaccion.setMontoOriginal(request.getMontoOriginal());
             transaccion.setMonedaOriginal(request.getMonedaOriginal());
             transaccion.setTasaCambio(request.getTasaCambio());
-            transaccion.setTipoMovimiento(request.getTipoMovimiento());
             transaccion.setModalidadDivision(request.getModalidadDivision());
             transaccion.setContexto(request.getContexto());
-            transaccion.setIdTipoMovimiento(request.getIdTipoMovimiento());
-            return transaccionRepository.save(transaccion);
+            transaccion.setIdTipoMovimiento(resolverIdTipoMovimiento(request));
+            Transaccion saved = transaccionRepository.save(transaccion);
+            populateTipo(saved);
+            return saved;
         });
     }
 

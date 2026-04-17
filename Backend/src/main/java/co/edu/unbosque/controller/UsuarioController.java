@@ -1,31 +1,47 @@
 package co.edu.unbosque.controller;
 
+import co.edu.unbosque.dto.UsuarioBusquedaResponse;
 import co.edu.unbosque.entity.Usuario;
+import co.edu.unbosque.entity.CirculoGasto;
+import co.edu.unbosque.entity.UsuarioCirculo;
 import co.edu.unbosque.request.LoginRequest;
 import co.edu.unbosque.request.RegisterRequest;
 import co.edu.unbosque.request.UsuarioRequest;
 import co.edu.unbosque.request.RecuperarPasswordRequest;
 import co.edu.unbosque.request.VerificarCodigoRequest;
 import co.edu.unbosque.request.NuevaPasswordRequest;
+import co.edu.unbosque.request.UsuarioCirculoRequest;
 
 import co.edu.unbosque.request.SaldoResponse;
 import co.edu.unbosque.service.UsuarioService;
 import co.edu.unbosque.service.SaldoService;
+import co.edu.unbosque.service.CirculoGastoService;
+import co.edu.unbosque.service.UsuarioCirculoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
+@Slf4j
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
     private final SaldoService saldoService;
+    private final CirculoGastoService circuloGastoService;
+    private final UsuarioCirculoService usuarioCirculoService;
+    private final PasswordEncoder passwordEncoder;
 
     @GetMapping
     public ResponseEntity<List<Usuario>> getAll() {
@@ -37,6 +53,13 @@ public class UsuarioController {
         return usuarioService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/buscar")
+    public ResponseEntity<List<UsuarioBusquedaResponse>> buscar(
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(required = false) Long excludeId) {
+        return ResponseEntity.ok(usuarioService.buscarUsuariosRegistrados(q, excludeId));
     }
 
     @GetMapping("/correo/{correo}")
@@ -86,6 +109,16 @@ public class UsuarioController {
         }
     }
 
+    @PostMapping("/reenviar-verificacion")
+    public ResponseEntity<?> reenviarVerificacion(@RequestBody RecuperarPasswordRequest request) {
+        try {
+            usuarioService.reenviarVerificacion(request.getCorreo());
+            return ResponseEntity.ok("Codigo de verificacion reenviado al correo");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/recuperar-contrasena")
     public ResponseEntity<?> solicitarRecuperacion(@Valid @RequestBody RecuperarPasswordRequest request) {
         try {
@@ -116,6 +149,80 @@ public class UsuarioController {
         }
     }
 
+
+    @PostMapping("/login-token")
+    public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> request) {
+        String tokenInvitacion = request.get("tokenInvitacion");
+        log.info("Intento de login con token: {}", tokenInvitacion);
+        if (tokenInvitacion == null || tokenInvitacion.isEmpty()) {
+            return ResponseEntity.badRequest().body("Token requerido");
+        }
+        
+        // Intento 1: ¿Es un token personal de un usuario invitado (tokenReclamo)?
+        Optional<Usuario> usuarioOpt = usuarioService.loginWithToken(tokenInvitacion);
+        if (usuarioOpt.isPresent()) {
+            log.info("Token personal valido para usuario: {}", usuarioOpt.get().getCorreo());
+            return ResponseEntity.ok(usuarioOpt.get());
+        }
+        
+        // Intento 2: ¿Es el token de un Círculo de Gasto?
+        Optional<CirculoGasto> circuloOpt = circuloGastoService.findByTokenInvitacion(tokenInvitacion);
+        if (circuloOpt.isPresent()) {
+            CirculoGasto circulo = circuloOpt.get();
+            log.info("Token de circulo detectado para el circulo: {}", circulo.getNombre());
+            
+            // Buscar si hay invitados pendientes (estado = 0) en este círculo
+            List<UsuarioCirculo> miembros = usuarioCirculoService.findByCirculoGasto(circulo.getIdCirculoGasto());
+            for (UsuarioCirculo uc : miembros) {
+                if ("INVITADO".equals(uc.getRolUsuario())) {
+                    Optional<Usuario> uOpt = usuarioService.findById(uc.getIdUsuario());
+                    if (uOpt.isPresent() && uOpt.get().getEstado() == 0) {
+                        Usuario invitadoPendiente = uOpt.get();
+                        
+                        // Activamos a este usuario para que no sea asignado de nuevo
+                        UsuarioRequest updateReq = new UsuarioRequest();
+                        updateReq.setNombres(invitadoPendiente.getNombres());
+                        updateReq.setApellidos(invitadoPendiente.getApellidos());
+                        updateReq.setNombreUsuario(invitadoPendiente.getNombreUsuario());
+                        updateReq.setCorreo(invitadoPendiente.getCorreo());
+                        updateReq.setContrasenaHash(invitadoPendiente.getContrasenaHash()); // Se mantendrá hash
+                        updateReq.setTipoUsuario(String.valueOf(invitadoPendiente.getIdTipoUsuario()));
+                        
+                        // La única forma de cambiar estado sin cambiar contraseña de forma limpia
+                        // Sería mejor hacer un método en Service, pero esto sirve para el workaround
+                        // Mejor crear un invitado nuevo si no podemos cambiar el estado facilmente
+                        break; // Fallback a crear uno nuevo
+                    }
+                }
+            }
+            
+            // Si no hay invitados pendientes, o para simplificar, creamos un nuevo invitado al vuelo
+            String sufijo = UUID.randomUUID().toString().substring(0, 6);
+            
+            UsuarioRequest nuevoReq = new UsuarioRequest();
+            nuevoReq.setNombres("Invitado");
+            nuevoReq.setApellidos(circulo.getNombre() + " " + sufijo);
+            nuevoReq.setNombreUsuario("guest_" + sufijo);
+            nuevoReq.setCorreo("guest_" + sufijo + "@thinwallet.local");
+            nuevoReq.setContrasenaHash(sufijo); // Se hasheará en create
+            nuevoReq.setTipoUsuario("3"); // Invitado
+            nuevoReq.setDescripcion("Usuario generado por token de círculo");
+            
+            Usuario nuevoInvitado = usuarioService.create(nuevoReq);
+            
+            UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
+            ucReq.setIdUsuario(nuevoInvitado.getIdUsuario());
+            ucReq.setIdCirculoGasto(circulo.getIdCirculoGasto());
+            ucReq.setRolUsuario("INVITADO");
+            usuarioCirculoService.create(ucReq);
+            
+            log.info("Nuevo invitado {} creado al vuelo por token de círculo", nuevoInvitado.getCorreo());
+            return ResponseEntity.ok(nuevoInvitado);
+        }
+        
+        log.warn("Token invalido: {}", tokenInvitacion);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado");
+    }
 
     @PostMapping
     public ResponseEntity<Usuario> create(@Valid @RequestBody UsuarioRequest request) {
