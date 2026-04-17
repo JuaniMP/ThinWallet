@@ -42,10 +42,10 @@ public class UsuarioController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         if (usuarioService.findByCorreo(request.getCorreo()).isPresent()) {
-            return ResponseEntity.badRequest().body("El correo ya está registrado");
+            return ResponseEntity.badRequest().body("El correo ya esta registrado");
         }
         if (usuarioService.findByNombreUsuario(request.getNombreUsuario()).isPresent()) {
-            return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso");
+            return ResponseEntity.badRequest().body("El nombre de usuario ya esta en uso");
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.register(request));
     }
@@ -53,8 +53,8 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return usuarioService.login(request)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas"));
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
     }
 
     @PostMapping
