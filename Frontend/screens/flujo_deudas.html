@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Thin Wallet - Flujo de Deudas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#51613c",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e0ecd4",
+                        "tertiary-container": "#697a53",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#e9f5dd",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#d9e9b8",
+                        "surface-container-highest": "#dae6cf",
+                        "surface-container-low": "#ecf8df",
+                        "secondary-fixed-dim": "#bdcd9e",
+                        "surface-container": "#e6f2da",
+                        "on-secondary-container": "#5b6942",
+                        "primary-fixed-dim": "#bccd9c",
+                        "surface-dim": "#d2dec7",
+                        "on-primary-container": "#faffe8",
+                        "tertiary-fixed": "#d6e9ba",
+                        "surface-tint": "#55633b",
+                        "on-secondary-fixed-variant": "#3e4b27",
+                        "secondary-fixed": "#d9e9b8",
+                        "on-primary-fixed-variant": "#3e4b26",
+                        "surface-bright": "#f1fde5",
+                        "outline-variant": "#c6c8ba",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#bacda0",
+                        "on-tertiary-fixed": "#121f03",
+                        "on-background": "#151e10",
+                        "on-tertiary-fixed-variant": "#3c4c29",
+                        "surface": "#f1fde5",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#141f01",
+                        "surface-variant": "#dae6cf",
+                        "secondary": "#55633d",
+                        "outline": "#76786d",
+                        "on-tertiary-container": "#f9ffea",
+                        "primary-fixed": "#d8e9b6",
+                        "on-secondary-fixed": "#141f02",
+                        "primary-container": "#6b7a50",
+                        "inverse-surface": "#293323",
+                        "primary": "#536139",
+                        "error": "#ba1a1a",
+                        "on-surface": "#151e10",
+                        "on-surface-variant": "#45483e",
+                        "inverse-primary": "#bccd9c",
+                        "background": "#f1fde5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Space Grotesk"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neo-brutalist-shadow {
+            box-shadow: 4px 4px 0px 0px #536139;
+        }
+        .neo-brutalist-shadow-active {
+            box-shadow: 0px 0px 0px 0px #536139;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#E8F4DC] font-body text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-[#E8F4DC] dark:bg-stone-900 border-b-2 border-[#536139] dark:border-[#B6C99C] flex justify-between items-center w-full px-6 py-4 sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 border-2 border-[#536139] flex items-center justify-center bg-[#B6C99C]">
+<span class="material-symbols-outlined text-[#536139]">account_balance_wallet</span>
+</div>
+<h1 class="font-['Space_Grotesk'] font-bold uppercase tracking-tighter text-2xl text-[#536139] dark:text-[#E8F4DC]">THIN WALLET</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#536139] dark:text-[#B6C99C] hover:bg-[#B6C99C] p-2 transition-colors duration-100">notifications</button>
+<div class="w-10 h-10 border-2 border-[#536139] overflow-hidden">
+<img alt="User Profile Image" class="w-full h-full object-cover" data-alt="portrait of a young man with a creative professional look in soft daylight with a minimalist background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsGxaitf3ly7f3nU_gAQkriGde0H3J7udtbByTXF7uRYdWogZtflaCF4FkQbcPRD9Ii0H1JlIFkdrEH9EZnux_5TJhxzW59bdKznAGJOmXnxBh23af5c4y-dSJgtLYHiGXwHpMYsTwSCoM0sRYVvrbOtL5-bSgfZg7kw_udkME7gYvY7v4rqWeJY7K3HkRuOjW5YxsU_kPeBVFSjQrig_y3whecLqYn3-RPubg94ceeO-jITSTF99x7fhJXTyp6g1tN0m0dRbjqvo"/>
+</div>
+</div>
+</header>
+<main class="max-w-6xl mx-auto px-6 py-8">
+<!-- Dashboard Header -->
+<section class="mb-12">
+<p class="font-label uppercase tracking-widest text-xs mb-2 text-primary font-bold">Estado de Cuenta</p>
+<h2 class="text-5xl md:text-7xl font-bold border-b-4 border-primary pb-4 mb-8 tracking-tighter uppercase">Flujo de Deudas</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Summary Card 1 -->
+<div class="bg-surface-container-high border-2 border-primary p-6 neo-brutalist-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-4xl text-primary">outbound</span>
+<span class="font-label font-bold uppercase text-xs border-2 border-primary px-2 py-1">Pendiente</span>
+</div>
+<h3 class="text-xl font-bold uppercase mb-1">Cuentas por Pagar</h3>
+<p class="text-4xl font-bold text-primary tracking-tighter">$4,250.00</p>
+</div>
+<!-- Summary Card 2 -->
+<div class="bg-secondary-container border-2 border-primary p-6 neo-brutalist-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-4xl text-primary">receipt_long</span>
+<span class="font-label font-bold uppercase text-xs border-2 border-primary px-2 py-1">Por Recibir</span>
+</div>
+<h3 class="text-xl font-bold uppercase mb-1">Cuentas por Cobrar</h3>
+<p class="text-4xl font-bold text-primary tracking-tighter">$1,890.50</p>
+</div>
+</div>
+</section>
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+<!-- Column 1: Cuentas por Pagar -->
+<div class="lg:col-span-2 space-y-6">
+<div class="flex items-center gap-4 mb-6">
+<div class="h-8 w-2 bg-primary"></div>
+<h3 class="text-3xl font-bold uppercase tracking-tighter">Cuentas por Pagar</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Payable Card 1 -->
+<div class="bg-surface border-2 border-primary p-5 hover:translate-x-1 hover:translate-y-1 transition-all">
+<div class="flex justify-between mb-4">
+<p class="font-label text-xs font-bold bg-primary text-white px-2">VENCE EN 2 DÍAS</p>
+<span class="material-symbols-outlined text-primary">priority_high</span>
+</div>
+<h4 class="text-lg font-bold uppercase leading-tight mb-2">Alquiler Oficina Central</h4>
+<div class="flex items-baseline gap-2 mb-6">
+<span class="text-2xl font-bold tracking-tighter">$2,500.00</span>
+</div>
+<button class="w-full bg-primary text-white border-2 border-primary py-3 font-bold uppercase tracking-widest text-sm hover:bg-tertiary-container transition-colors active:translate-x-1 active:translate-y-1">
+                            Marcar como Pagado
+                        </button>
+</div>
+<!-- Payable Card 2 -->
+<div class="bg-surface border-2 border-primary p-5 hover:translate-x-1 hover:translate-y-1 transition-all">
+<div class="flex justify-between mb-4">
+<p class="font-label text-xs font-bold border-2 border-primary px-2">15 MAR 2024</p>
+</div>
+<h4 class="text-lg font-bold uppercase leading-tight mb-2">Servicios de Cloud Computing</h4>
+<div class="flex items-baseline gap-2 mb-6">
+<span class="text-2xl font-bold tracking-tighter">$150.00</span>
+</div>
+<button class="w-full bg-primary text-white border-2 border-primary py-3 font-bold uppercase tracking-widest text-sm hover:bg-tertiary-container transition-colors active:translate-x-1 active:translate-y-1">
+                            Marcar como Pagado
+                        </button>
+</div>
+<!-- Payable Card 3 -->
+<div class="bg-surface border-2 border-primary p-5 hover:translate-x-1 hover:translate-y-1 transition-all">
+<div class="flex justify-between mb-4">
+<p class="font-label text-xs font-bold border-2 border-primary px-2">18 MAR 2024</p>
+</div>
+<h4 class="text-lg font-bold uppercase leading-tight mb-2">Proveedores Logística</h4>
+<div class="flex items-baseline gap-2 mb-6">
+<span class="text-2xl font-bold tracking-tighter">$1,600.00</span>
+</div>
+<button class="w-full bg-primary text-white border-2 border-primary py-3 font-bold uppercase tracking-widest text-sm hover:bg-tertiary-container transition-colors active:translate-x-1 active:translate-y-1">
+                            Marcar como Pagado
+                        </button>
+</div>
+</div>
+<!-- Column 2: Cuentas por Cobrar -->
+<div class="pt-8">
+<div class="flex items-center gap-4 mb-6">
+<div class="h-8 w-2 bg-secondary"></div>
+<h3 class="text-3xl font-bold uppercase tracking-tighter">Cuentas por Cobrar</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Receivable Card 1 -->
+<div class="bg-secondary-container border-2 border-primary p-5 neo-brutalist-shadow">
+<div class="flex items-center gap-3 mb-4">
+<img class="w-10 h-10 border-2 border-primary object-cover" data-alt="headshot of a smiling professional woman with dark hair and glasses in a bright studio environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbCJIMCjyzirY3wy1CkgdMYdjLB4qvtsbYG-eyPNjT_FQXEK-rvRT0NONDHQZKb_8AOjUgE0yZYEJ2L0XdoYfGDlvB73pQaCMEQzD91Cet0ogeYZKIytkxme-xm6oCM1noz-5fAGYh82dmDWf-FLv--THv4yptIjd5CBHkepH76CAJ1lgOpwwimB80Anc3qqmcGMY2nq1OZPhNbNzwOCWtMFW0OOWEC83Bg4QNOj8d-09ptKzobHdVdsN7OjRJT9wHDA208zS4UyA"/>
+<div>
+<h4 class="font-bold uppercase text-sm">Elena Rodríguez</h4>
+<p class="text-[10px] font-label">CONSULTORÍA UX</p>
+</div>
+</div>
+<div class="mb-6">
+<span class="text-3xl font-bold tracking-tighter">$850.00</span>
+</div>
+<button class="w-full bg-transparent text-primary border-2 border-primary py-3 font-bold uppercase tracking-widest text-sm hover:bg-[#B6C99C] transition-colors active:bg-[#B6C99C]">
+                                Confirmar Recepción
+                            </button>
+</div>
+<!-- Receivable Card 2 -->
+<div class="bg-secondary-container border-2 border-primary p-5 neo-brutalist-shadow">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 border-2 border-primary bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined">corporate_fare</span>
+</div>
+<div>
+<h4 class="font-bold uppercase text-sm">TechCorp Inc.</h4>
+<p class="text-[10px] font-label">PROYECTO Q1</p>
+</div>
+</div>
+<div class="mb-6">
+<span class="text-3xl font-bold tracking-tighter">$1,040.50</span>
+</div>
+<button class="w-full bg-transparent text-primary border-2 border-primary py-3 font-bold uppercase tracking-widest text-sm hover:bg-[#B6C99C] transition-colors active:bg-[#B6C99C]">
+                                Confirmar Recepción
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: History Sidebar -->
+<aside class="space-y-6">
+<div class="bg-surface-container-highest border-2 border-primary p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-xl font-bold uppercase tracking-tight">Historial</h3>
+<span class="material-symbols-outlined">history</span>
+</div>
+<div class="space-y-6">
+<!-- History Item 1 -->
+<div class="border-l-4 border-primary pl-4 py-1">
+<p class="text-[10px] font-label text-primary font-bold">HOY 10:45 AM</p>
+<h5 class="font-bold text-sm uppercase">Pago Recibido</h5>
+<p class="text-xs text-on-surface-variant mb-1">Proyecto Frontend - Juan Perez</p>
+<p class="font-bold text-primary">+$450.00</p>
+</div>
+<!-- History Item 2 -->
+<div class="border-l-4 border-error pl-4 py-1">
+<p class="text-[10px] font-label text-error font-bold">AYER 04:20 PM</p>
+<h5 class="font-bold text-sm uppercase">Pago Realizado</h5>
+<p class="text-xs text-on-surface-variant mb-1">Suscripción SaaS Anual</p>
+<p class="font-bold text-error">-$1,200.00</p>
+</div>
+<!-- History Item 3 -->
+<div class="border-l-4 border-primary pl-4 py-1">
+<p class="text-[10px] font-label text-primary font-bold">8 MAR 2024</p>
+<h5 class="font-bold text-sm uppercase">Pago Recibido</h5>
+<p class="text-xs text-on-surface-variant mb-1">Intereses Cuenta Ahorro</p>
+<p class="font-bold text-primary">+$12.30</p>
+</div>
+<!-- History Item 4 -->
+<div class="border-l-4 border-primary pl-4 py-1">
+<p class="text-[10px] font-label text-primary font-bold">5 MAR 2024</p>
+<h5 class="font-bold text-sm uppercase">Deuda Liquidada</h5>
+<p class="text-xs text-on-surface-variant mb-1">Préstamo Personal - Familiar</p>
+<p class="font-bold text-primary">-$500.00</p>
+</div>
+</div>
+<button class="w-full mt-8 text-primary border-b-2 border-primary py-2 font-bold uppercase tracking-widest text-xs hover:bg-[#B6C99C] transition-colors">
+                        Ver Reporte Completo
+                    </button>
+</div>
+<!-- Quick Action Card -->
+<div class="bg-primary text-white p-6 border-2 border-primary">
+<h4 class="text-lg font-bold uppercase mb-4 tracking-tighter">¿Nueva Transacción?</h4>
+<p class="text-xs mb-6 opacity-90 leading-relaxed">Registra rápidamente cualquier entrada o salida para mantener tu Thin Wallet siempre al día.</p>
+<button class="bg-[#B6C99C] text-[#536139] border-2 border-[#536139] px-6 py-3 font-bold uppercase tracking-widest text-xs w-full neo-brutalist-shadow active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
+                        AÑADIR DEUDA
+                    </button>
+</div>
+</aside>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-2 bg-[#E8F4DC] border-t-2 border-[#536139] dark:border-[#B6C99C] z-50">
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest mt-1">INICIO</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest mt-1">CÍRCULOS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest mt-1">AÑADIR</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#B6C99C] text-[#536139] border-2 border-[#536139] -translate-y-1 -translate-x-1 shadow-[2px_2px_0px_0px_#536139] p-2 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all" href="#">
+<span class="material-symbols-outlined">insert_chart</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest mt-1">REPORTES</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#536139] p-2 hover:bg-[#ECF8DF] transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest mt-1">PERFIL</span>
+</a>
+</nav>
+</body></html>
