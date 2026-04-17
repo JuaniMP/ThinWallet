@@ -1,7 +1,15 @@
 export interface User {
+dev-frontend
+  idUsuario: number;
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  nombreUsuario: string;
+
   id: string;
   name: string;
   email: string;
+main
 }
 
 export interface AuthResponse {
@@ -10,6 +18,18 @@ export interface AuthResponse {
 }
 
 export interface LoginRequest {
+ dev-frontend
+  correo: string;
+  contrasena: string;
+}
+
+export interface RegisterRequest {
+  nombres: string;
+  apellidos: string;
+  nombreUsuario: string;
+  correo: string;
+  contrasena: string;
+
   email: string;
   password: string;
 }
@@ -18,6 +38,7 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+ main
 }
 
 export interface Transaction {
