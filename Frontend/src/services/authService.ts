@@ -14,7 +14,15 @@ export const authService = {
     return Promise.resolve();
   },
 
-  async forgotPassword(email: string): Promise<{ message: string }> {
-    return api.post('/usuarios/forgot-password', { email });
+  async requestPasswordResetCode(correo: string): Promise<string> {
+    return api.post<string>('/usuarios/recuperar-contrasena', { correo });
+  },
+
+  async verifyPasswordResetCode(correo: string, codigo: string): Promise<string> {
+    return api.post<string>('/usuarios/verificar-codigo', { correo, codigo });
+  },
+
+  async changePassword(correo: string, codigo: string, nuevaContrasena: string): Promise<string> {
+    return api.post<string>('/usuarios/cambiar-contrasena', { correo, codigo, nuevaContrasena });
   },
 };
