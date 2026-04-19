@@ -1,21 +1,30 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/document/Notificacion.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/TransaccionRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioCirculoRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/TipoUsuario.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/dto/CirculoDetalleResponse.java
+=======
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/TransaccionRepository.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioCirculoRequest.java
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/UsuarioCirculo.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/CirculoGastoService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/CirculoGastoController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/UsuarioGastoRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioController.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/dto/CirculoInvitadoDetalleResponse.java
+=======
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/DeudaRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/UsuarioGastoService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/CategoriaController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/GastoRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/AuditoriaSistemaService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Transaccion.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/NotificacionController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioGastoController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/TipoUsuarioRequest.java
@@ -45,24 +54,48 @@
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/TipoCirculo.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/AuditoriaSistemaController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/TipoMovimientoService.java
+=======
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioGastoController.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioCirculoController.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/CirculoGastoRequest.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/CategoriaRequest.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/CategoriaRepository.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/GastoRepository.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/AuditoriaSistema.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/NuevaPasswordRequest.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/ThinWalletApplication.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/AuditoriaSistemaRequest.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/CirculoGasto.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/CategoriaService.java
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/AuditoriaSistemaController.java
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/VerificarCodigoRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Deuda.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/config/SecurityConfig.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/config/CorsConfig.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/store/CategoriaMongoStore.java
+=======
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/UsuarioService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/DeudaController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/SaldoService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/UsuarioCirculoService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/TransaccionService.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/TipoUsuarioRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/store/ICategoriaStore.java
+=======
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Categoria.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioGastoRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/DeudaService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/TransaccionController.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/store/CategoriaJpaStore.java
+=======
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/DeudaRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/GastoController.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/CirculoGastoRepository.java
@@ -70,11 +103,15 @@
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/SaldoResponse.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/UsuarioRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/GastoService.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/TipoCirculoService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/document/CategoriaDocument.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/TipoMovimientoRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/AuditoriaSistemaRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/TipoCirculoController.java
+=======
+/Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/AuditoriaSistemaRepository.java
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/RecuperarPasswordRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/UsuarioCirculoRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/UsuarioGasto.java
@@ -83,6 +120,7 @@
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/RegisterRequest.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/EmailService.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/TransaccionRequest.java
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UnirseCirculoRequest.java
 =======
 C:\Users\juame\ThinWallet\Backend\src\main\java\co\edu\unbosque\repository\CategoriaRepository.java
@@ -136,3 +174,5 @@ C:\Users\juame\ThinWallet\Backend\src\main\java\co\edu\unbosque\request\Auditori
 C:\Users\juame\ThinWallet\Backend\src\main\java\co\edu\unbosque\entity\Gasto.java
 C:\Users\juame\ThinWallet\Backend\src\main\java\co\edu\unbosque\service\UsuarioGastoService.java
 >>>>>>> cd492a2 (Guardando cambios antes del merge)
+=======
+>>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
