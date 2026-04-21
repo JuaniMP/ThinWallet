@@ -42,7 +42,7 @@ public class CategoriaService {
         categoria.setExclusivaPerfilSolo(request.getExclusivaPerfilSolo());
         categoria.setFrecuenciaUso(request.getFrecuenciaUso());
         categoria.setIdCirculoGasto(request.getIdCirculoGasto());
-        categoria.setEstado("ACTIVO");
+        categoria.setEstado(1);
         return categoriaRepository.save(categoria);
     }
 

@@ -74,3 +74,7 @@ export interface PaginatedResponse<T> {
     total: number;
   };
 }
+
+export interface SaldoResponse {
+  saldoTotal: number;
+}
