@@ -29,7 +29,7 @@ public class Categoria {
     private Integer frecuenciaUso;
 
     @Column(name = "estado")
-    private String estado;
+    private Integer estado;
 
     @Column(name = "id_circulo_gasto")
     private Long idCirculoGasto;

@@ -1,17 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../../context/TransactionContext';
+import { useAuth } from '../../context/AuthContext';
+import { transactionService } from '../../services/transactionService';
 import { TransactionCard } from '../../components/transaction/TransactionCard';
-import { BalanceSummary } from '../../components/transaction/BalanceSummary';
 import { Layout } from '../../components/layout/Layout';
 
 export function TransactionList() {
-  const { transactions, balance, isLoading, error, fetchTransactions, fetchBalance, deleteTransaction } = useTransactions();
+  const { transactions, isLoading, error, fetchTransactions, deleteTransaction } = useTransactions();
+  const { user } = useAuth();
+  const [saldoTotal, setSaldoTotal] = useState<number>(0);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     fetchTransactions();
-    fetchBalance();
-  }, []);
+    
+    if (user?.idUsuario) {
+      transactionService.getSaldo(user.idUsuario)
+        .then(res => setSaldoTotal(res.saldoTotal))
+        .catch(() => setSaldoTotal(0));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id: string) => {
     if (window.confirm('¿Eliminar esta transacción?')) {
@@ -34,7 +46,12 @@ export function TransactionList() {
       <div className="transactions-page">
         <h2>Mis Transacciones</h2>
         
-        <BalanceSummary balance={balance} isLoading={isLoading} />
+        <div className="balance-summary">
+          <div className="balance-item total positive">
+            <span className="balance-label">Saldo Total</span>
+            <span className="balance-value">${saldoTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+          </div>
+        </div>
 
         {isLoading && transactions.length === 0 ? (
           <div className="loading">Cargando transacciones...</div>

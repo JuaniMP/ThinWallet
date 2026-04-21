@@ -2,15 +2,20 @@ import { useNavigate } from 'react-router-dom';
 import { useTransactions } from '../../context/TransactionContext';
 import { TransactionForm } from '../../components/transaction/TransactionForm';
 import { Layout } from '../../components/layout/Layout';
-import type { CreateTransactionRequest } from '../../types';
 
 export function NewTransaction() {
   const { createTransaction, isLoading, error } = useTransactions();
   const navigate = useNavigate();
 
-  const handleSubmit = async (data: CreateTransactionRequest) => {
+  const handleSubmit = async (data: {
+    nombre: string;
+    montoOriginal: number;
+    tipoMovimiento: string;
+    idUsuario: number;
+    idCategoria?: number;
+  }) => {
     await createTransaction(data);
-    navigate('/transactions');
+    navigate('/dashboard');
   };
 
   return (

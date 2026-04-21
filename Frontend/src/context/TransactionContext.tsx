@@ -1,6 +1,36 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { Transaction, CreateTransactionRequest, Balance, TransactionFilters, PaginatedResponse } from '../types';
+import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
+import type { Transaction, Balance, TransactionFilters } from '../types';
 import { api } from '../services/api';
+
+// Backend entity shape (what the API actually returns)
+interface BackendTransaccion {
+  idTransaccion: number;
+  nombre: string;
+  montoOriginal: number;
+  monedaOriginal: string | null;
+  tasaCambio: number | null;
+  tipoMovimiento: string;
+  modalidadDivision: string | null;
+  contexto: string | null;
+  idUsuario: number;
+  idCirculoGasto: number | null;
+  idCategoria: number | null;
+  idGasto: number | null;
+}
+
+// Map backend entity to frontend Transaction type
+function mapToFrontend(t: BackendTransaccion): Transaction {
+  return {
+    id: String(t.idTransaccion),
+    userId: String(t.idUsuario),
+    amount: t.montoOriginal * (t.tasaCambio ?? 1),
+    description: t.nombre,
+    type: t.tipoMovimiento === 'DEPOSITO' ? 'income' : 'expense',
+    categoryId: t.idCategoria ? String(t.idCategoria) : '',
+    date: new Date().toISOString(), // backend doesn't have a date field on transaccion
+    createdAt: new Date().toISOString(),
+  };
+}
 
 interface TransactionContextType {
   transactions: Transaction[];
@@ -8,7 +38,13 @@ interface TransactionContextType {
   isLoading: boolean;
   error: string | null;
   fetchTransactions: (filters?: TransactionFilters) => Promise<void>;
-  createTransaction: (data: CreateTransactionRequest) => Promise<void>;
+  createTransaction: (data: {
+    nombre: string;
+    montoOriginal: number;
+    tipoMovimiento: string;
+    idUsuario: number;
+    idCategoria?: number;
+  }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   fetchBalance: () => Promise<void>;
 }
@@ -25,33 +61,47 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.categoryId) params.append('categoryId', filters.categoryId);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.limit) params.append('limit', String(filters.limit));
-
-      const query = params.toString();
-      const endpoint = query ? `/transactions?${query}` : '/transactions';
+      // Get user from localStorage to filter by user
+      const storedUser = localStorage.getItem('user');
+      let idUsuario: number | null = null;
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          idUsuario = user.idUsuario;
+        } catch { /* ignore */ }
+      }
       
-      const response = await api.get<PaginatedResponse<Transaction>>(endpoint);
-      setTransactions(response.data);
+      let endpoint = '/transacciones';
+      if (idUsuario) {
+        endpoint = `/transacciones/usuario/${idUsuario}`;
+      }
+      
+      const response = await api.get<BackendTransaccion[]>(endpoint);
+      const mapped = (Array.isArray(response) ? response : []).map(mapToFrontend);
+      setTransactions(mapped);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
+      // Don't set error for empty results — just show no transactions
+      console.error('Error fetching transactions:', err);
+      setTransactions([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createTransaction = async (data: CreateTransactionRequest) => {
+  const createTransaction = async (data: {
+    nombre: string;
+    montoOriginal: number;
+    tipoMovimiento: string;
+    idUsuario: number;
+    idCategoria?: number;
+  }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.post<Transaction>('/transactions', data);
+      await api.post<BackendTransaccion>('/transacciones', data);
       await fetchTransactions();
-      await fetchBalance();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create transaction');
+      setError(err instanceof Error ? err.message : 'Error al crear transacción');
       throw err;
     } finally {
       setIsLoading(false);
@@ -62,11 +112,10 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      await api.delete(`/transactions/${id}`);
+      await api.delete(`/transacciones/${id}`);
       await fetchTransactions();
-      await fetchBalance();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete transaction');
+      setError(err instanceof Error ? err.message : 'Error al eliminar transacción');
       throw err;
     } finally {
       setIsLoading(false);
@@ -74,12 +123,8 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchBalance = async () => {
-    try {
-      const response = await api.get<Balance>('/transactions/balance');
-      setBalance(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch balance');
-    }
+    // Balance is now handled by the saldo endpoint in Dashboard directly
+    // This is kept for compatibility but does nothing
   };
 
   return (
