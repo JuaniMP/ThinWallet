@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/document/Notificacion.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/TransaccionRepository.java
 /Users/nandoski/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioCirculoRequest.java
@@ -176,3 +177,61 @@ C:\Users\juame\ThinWallet\Backend\src\main\java\co\edu\unbosque\service\UsuarioG
 >>>>>>> cd492a2 (Guardando cambios antes del merge)
 =======
 >>>>>>> 56605a3 (feat: implement features spec 002 (saldo) and 003 (transaction form) and fix styles)
+=======
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/AuditoriaSistemaRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioGastoController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/GastoRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/TransaccionService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/LoginRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/CirculoGastoRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/CategoriaController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/EmailService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/config/CorsConfig.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/UsuarioCirculo.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/DeudaRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Transaccion.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/GastoController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/VerificarCodigoRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/AuditoriaSistemaService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/config/SecurityConfig.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/UsuarioRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioGastoRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/TransaccionRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Deuda.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/UsuarioGastoRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/CirculoGasto.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/ThinWalletApplication.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/AuditoriaSistemaRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/CirculoGastoRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/UsuarioCirculoRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/DeudaRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/GastoRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/UsuarioGastoService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/UsuarioGasto.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/CategoriaRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Usuario.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/CirculoGastoService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/repository/CategoriaRepository.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Categoria.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioCirculoController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/SaldoResponse.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/RegisterRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/UsuarioController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/AuditoriaSistemaController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/TransaccionController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/NuevaPasswordRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/CirculoGastoController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/UsuarioCirculoRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/Gasto.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/entity/AuditoriaSistema.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/controller/DeudaController.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/SaldoService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/UsuarioService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/GastoService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/TransaccionRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/request/RecuperarPasswordRequest.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/DeudaService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/UsuarioCirculoService.java
+/home/runner/work/ThinWallet/ThinWallet/Backend/src/main/java/co/edu/unbosque/service/CategoriaService.java
+>>>>>>> d54e05b (chore: plan merge conflict resolution)
