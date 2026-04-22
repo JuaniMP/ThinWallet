@@ -1,22 +1,28 @@
 import { useState, useEffect } from 'react';
-import { categoryService } from '../../services/categoryService';
-import type { Category } from '../../types';
+import { api } from '../../services/api';
+
+interface BackendCategoria {
+  idCategoria: number;
+  nombre: string;
+  tipoCategoria: string | null;
+}
 
 interface CategorySelectProps {
-  type: 'income' | 'expense';
-  value: string;
-  onChange: (categoryId: string) => void;
+  type: 'DEPOSITO' | 'RETIRO';
+  value: number | '';
+  onChange: (categoryId: number) => void;
 }
 
 export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<BackendCategoria[]>([]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await categoryService.getAll();
-        const filtered = response.data.filter(
-          (cat) => cat.type === type || cat.type === 'both'
+        const response = await api.get<BackendCategoria[]>('/categorias');
+        // El backend retorna un Array, filtramos por el tipo de movimiento o si es genérico
+        const filtered = (Array.isArray(response) ? response : []).filter(
+          (cat) => !cat.tipoCategoria || cat.tipoCategoria === type || cat.tipoCategoria === 'AMBOS'
         );
         setCategories(filtered);
       } catch (err) {
@@ -29,11 +35,15 @@ export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
   return (
     <div className="input-group">
       <label>Categoría</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} required>
-        <option value="">Seleccionar categoría</option>
+      <select 
+        value={value} 
+        onChange={(e) => onChange(Number(e.target.value))} 
+        required
+      >
+        <option value="" disabled>Seleccionar categoría</option>
         {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
+          <option key={cat.idCategoria} value={cat.idCategoria}>
+            {cat.nombre}
           </option>
         ))}
       </select>

@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Transaction, CreateTransactionRequest, Balance, TransactionFilters, PaginatedResponse } from '../types';
+import type { Transaction, CreateTransactionRequest, Balance, TransactionFilters, PaginatedResponse, SaldoResponse } from '../types';
 
 export const transactionService = {
   async getAll(filters?: TransactionFilters): Promise<PaginatedResponse<Transaction>> {
@@ -29,5 +29,9 @@ export const transactionService = {
 
   async getBalance(): Promise<Balance> {
     return api.get<Balance>('/transactions/balance');
+  },
+
+  async getSaldo(idUsuario: number): Promise<SaldoResponse> {
+    return api.get<SaldoResponse>(`/usuarios/${idUsuario}/saldo`);
   },
 };

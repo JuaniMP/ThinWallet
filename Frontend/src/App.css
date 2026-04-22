@@ -726,6 +726,7 @@
   font-weight: 700;
   letter-spacing: -0.05em;
   margin-bottom: var(--space-4);
+  color: var(--on-primary);
 }
 
 .balance-hero .actions {

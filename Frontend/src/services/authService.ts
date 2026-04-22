@@ -1,20 +1,28 @@
 import { api } from './api';
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types';
+import type { LoginRequest, RegisterRequest, User } from '../types';
 
 export const authService = {
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/login', credentials);
+  async login(credentials: LoginRequest): Promise<User> {
+    return api.post<User>('/usuarios/login', credentials);
   },
 
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/register', data);
+  async register(data: RegisterRequest): Promise<User> {
+    return api.post<User>('/usuarios/register', data);
   },
 
   async logout(): Promise<void> {
-    await api.post('/auth/logout', {});
+    return Promise.resolve();
   },
 
-  async forgotPassword(email: string): Promise<{ message: string }> {
-    return api.post('/auth/forgot-password', { email });
+  async requestPasswordResetCode(correo: string): Promise<string> {
+    return api.post<string>('/usuarios/recuperar-contrasena', { correo });
+  },
+
+  async verifyPasswordResetCode(correo: string, codigo: string): Promise<string> {
+    return api.post<string>('/usuarios/verificar-codigo', { correo, codigo });
+  },
+
+  async changePassword(correo: string, codigo: string, nuevaContrasena: string): Promise<string> {
+    return api.post<string>('/usuarios/cambiar-contrasena', { correo, codigo, nuevaContrasena });
   },
 };

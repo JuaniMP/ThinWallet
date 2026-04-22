@@ -36,8 +36,17 @@ public class TransaccionController {
     }
 
     @PostMapping
-    public ResponseEntity<Transaccion> create(@Valid @RequestBody TransaccionRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaccionService.create(request));
+    public ResponseEntity<?> create(@Valid @RequestBody TransaccionRequest request) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(transaccionService.create(request));
+        } catch (Exception e) {
+            String cause = e.getCause() != null ? e.getCause().getMessage() : "None";
+            if (e.getCause() != null && e.getCause().getCause() != null) {
+                cause += " | " + e.getCause().getCause().getMessage();
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage() + " | Cause: " + cause);
+        }
     }
 
     @PutMapping("/{id}")

@@ -5,11 +5,10 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
 export function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +18,7 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      await login({ email, password });
+      await login({ correo, contrasena });
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
@@ -48,24 +47,24 @@ export function Login() {
           
           <form onSubmit={handleSubmit}>
             <Input
-              label="Usuario o Email"
+              label="Correo Electrónico"
               type="email"
-              name="email"
+              name="correo"
               icon="person"
               placeholder="nombre@archivo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
               required
             />
             
             <Input
               label="Contraseña"
               type="password"
-              name="password"
+              name="contrasena"
               icon="lock"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={contrasena}
+              onChange={(e) => setContrasena(e.target.value)}
               required
             />
             

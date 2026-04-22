@@ -1,20 +1,37 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useTransactions } from '../../context/TransactionContext';
+import { useAuth } from '../../context/AuthContext';
+import { transactionService } from '../../services/transactionService';
 import { Layout } from '../../components/layout/Layout';
 
 export function Dashboard() {
+  const { transactions, fetchTransactions } = useTransactions();
   const { user } = useAuth();
-  const { transactions, balance, fetchTransactions, fetchBalance } = useTransactions();
+  const [saldoTotal, setSaldoTotal] = useState<number>(0);
+  const [loadingSaldo, setLoadingSaldo] = useState(true);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     fetchTransactions({ limit: 5 });
-    fetchBalance();
-  }, []);
+    
+    if (user?.idUsuario) {
+      transactionService.getSaldo(user.idUsuario)
+        .then(res => setSaldoTotal(res.saldoTotal))
+        .catch(() => {
+          // 404 or any error → saldo = 0, no retries
+          setSaldoTotal(0);
+        })
+        .finally(() => setLoadingSaldo(false));
+    } else {
+      setLoadingSaldo(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const recentTransactions = transactions.slice(0, 5);
-  const totalBalance = balance ? balance.totalIncome - balance.totalExpense : 0;
 
   const mockCategories = [
     { name: 'Vivienda', percent: 45, color: 'primary' },
@@ -31,7 +48,9 @@ export function Dashboard() {
           <div className="balance-hero neo-shadow">
             <div style={{ position: 'relative', zIndex: 10 }}>
               <p className="label">SALDO TOTAL DISPONIBLE</p>
-              <h2 className="amount">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h2>
+              <h2 className="amount">
+                {loadingSaldo ? '...' : `$${saldoTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+              </h2>
               <div className="actions">
                 <Link to="/transactions/new" className="hero-btn accent" style={{ textDecoration: 'none' }}>
                   Transferir

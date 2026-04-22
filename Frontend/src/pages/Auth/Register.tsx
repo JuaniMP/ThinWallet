@@ -5,9 +5,11 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
 export function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [nombreUsuario, setNombreUsuario] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
@@ -20,13 +22,13 @@ export function Register() {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
+    if (contrasena !== confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
     }
 
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
+    if (contrasena.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -38,7 +40,13 @@ export function Register() {
     setIsLoading(true);
 
     try {
-      await register({ name, email, password });
+      await register({ 
+        nombres, 
+        apellidos, 
+        nombreUsuario, 
+        correo, 
+        contrasena 
+      });
       navigate('/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear cuenta');
@@ -80,25 +88,48 @@ export function Register() {
           {error && <div className="error-alert">{error}</div>}
 
           <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <Input
+                label="Nombres"
+                type="text"
+                name="nombres"
+                icon="person"
+                placeholder="EJ. JULIÁN"
+                value={nombres}
+                onChange={(e) => setNombres(e.target.value)}
+                required
+              />
+              <Input
+                label="Apellidos"
+                type="text"
+                name="apellidos"
+                icon="person"
+                placeholder="EJ. ARCHIVISTA"
+                value={apellidos}
+                onChange={(e) => setApellidos(e.target.value)}
+                required
+              />
+            </div>
+
             <Input
-              label="Nombre Completo"
+              label="Nombre de Usuario"
               type="text"
-              name="name"
-              icon="person"
-              placeholder="EJ. JULIÁN ARCHIVISTA"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="nombreUsuario"
+              icon="badge"
+              placeholder="julian_archivista"
+              value={nombreUsuario}
+              onChange={(e) => setNombreUsuario(e.target.value)}
               required
             />
 
             <Input
               label="Correo Electrónico"
               type="email"
-              name="email"
+              name="correo"
               icon="alternate_email"
               placeholder="CORREO@EJEMPLO.COM"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
               required
             />
 
@@ -106,11 +137,11 @@ export function Register() {
               <Input
                 label="Contraseña"
                 type="password"
-                name="password"
+                name="contrasena"
                 icon="lock"
                 placeholder="********"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={contrasena}
+                onChange={(e) => setContrasena(e.target.value)}
                 required
               />
               <Input
@@ -141,24 +172,6 @@ export function Register() {
               CREAR CUENTA
             </Button>
           </form>
-
-          {/* Social Auth */}
-          <div className="social-separator">
-            <div className="line" />
-            <span>O REGÍSTRATE CON</span>
-            <div className="line" />
-          </div>
-
-          <div className="social-buttons">
-            <button className="social-btn" type="button">
-              <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>public</span>
-              GOOGLE
-            </button>
-            <button className="social-btn" type="button">
-              <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>cloud</span>
-              APPLE ID
-            </button>
-          </div>
 
           {/* Footer */}
           <div className="register-footer">
