@@ -4,7 +4,13 @@ import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.request.LoginRequest;
 import co.edu.unbosque.request.RegisterRequest;
 import co.edu.unbosque.request.UsuarioRequest;
+import co.edu.unbosque.request.RecuperarPasswordRequest;
+import co.edu.unbosque.request.VerificarCodigoRequest;
+import co.edu.unbosque.request.NuevaPasswordRequest;
+
+import co.edu.unbosque.request.SaldoResponse;
 import co.edu.unbosque.service.UsuarioService;
+import co.edu.unbosque.service.SaldoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +25,7 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final SaldoService saldoService;
 
     @GetMapping
     public ResponseEntity<List<Usuario>> getAll() {
@@ -39,13 +46,20 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/saldo")
+    public ResponseEntity<SaldoResponse> getSaldo(@PathVariable Long id) {
+        return saldoService.calcularSaldo(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         if (usuarioService.findByCorreo(request.getCorreo()).isPresent()) {
-            return ResponseEntity.badRequest().body("El correo ya está registrado");
+            return ResponseEntity.badRequest().body("El correo ya esta registrado");
         }
         if (usuarioService.findByNombreUsuario(request.getNombreUsuario()).isPresent()) {
-            return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso");
+            return ResponseEntity.badRequest().body("El nombre de usuario ya esta en uso");
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.register(request));
     }
@@ -53,9 +67,40 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return usuarioService.login(request)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas"));
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
     }
+
+    @PostMapping("/recuperar-contrasena")
+    public ResponseEntity<?> solicitarRecuperacion(@Valid @RequestBody RecuperarPasswordRequest request) {
+        try {
+            usuarioService.solicitarRecuperacionPassword(request.getCorreo());
+            return ResponseEntity.ok("Codigo de recuperacion enviado al correo");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/verificar-codigo")
+    public ResponseEntity<?> verificarCodigo(@Valid @RequestBody VerificarCodigoRequest request) {
+        boolean esValido = usuarioService.validarCodigoRecuperacion(request.getCorreo(), request.getCodigo());
+        if (esValido) {
+            return ResponseEntity.ok("Codigo valido");
+        } else {
+            return ResponseEntity.badRequest().body("El codigo de recuperacion es incorrecto o ha expirado");
+        }
+    }
+
+    @PostMapping("/cambiar-contrasena")
+    public ResponseEntity<?> cambiarContrasena(@Valid @RequestBody NuevaPasswordRequest request) {
+        try {
+            usuarioService.cambiarContrasena(request.getCorreo(), request.getCodigo(), request.getNuevaContrasena());
+            return ResponseEntity.ok("Contrasena actualizada exitosamente");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
     @PostMapping
     public ResponseEntity<Usuario> create(@Valid @RequestBody UsuarioRequest request) {

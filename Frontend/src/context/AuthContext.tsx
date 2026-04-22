@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { User, AuthResponse, LoginRequest, RegisterRequest } from '../types';
-import { api } from '../services/api';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { authService } from '../services/authService';
+import type { LoginRequest, RegisterRequest, User } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -23,20 +23,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    if (storedToken && storedUser && storedUser !== 'undefined') {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Error parsing stored user:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
+
     setIsLoading(false);
   }, []);
 
   const login = async (credentials: LoginRequest) => {
-    if (credentials.email === 'usuario@hotmail.com' && credentials.password === '123') {
-      const mockUser = {
-        id: 'mock-123',
-        name: 'Usuario Quemado',
-        email: 'usuario@hotmail.com'
-      } as User;
+    if (credentials.correo === 'usuario@hotmail.com' && credentials.contrasena === '123') {
+      const mockUser: User = {
+        idUsuario: 123,
+        nombres: 'Usuario',
+        apellidos: 'Quemado',
+        correo: 'usuario@hotmail.com',
+        nombreUsuario: 'usuario_mock',
+      };
       const mockToken = 'mock-token-xyz';
 
       localStorage.setItem('token', mockToken);
@@ -46,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const response = await api.post<AuthResponse>('/auth/login', credentials);
-    const { user: userData, token: authToken } = response;
+    const userData = await authService.login(credentials);
+    const authToken = `session-${Date.now()}`;
 
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(userData));
@@ -57,14 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (data: RegisterRequest) => {
-    const response = await api.post<AuthResponse>('/auth/register', data);
-    const { user: userData, token: authToken } = response;
-
-    localStorage.setItem('token', authToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-
-    setToken(authToken);
-    setUser(userData);
+    await authService.register(data);
   };
 
   const logout = () => {

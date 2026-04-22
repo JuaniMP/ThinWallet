@@ -1,23 +1,30 @@
 export interface User {
-  id: string;
-  name: string;
-  email: string;
+  id?: string;
+  idUsuario?: number;
+  nombres?: string;
+  apellidos?: string;
+  nombreUsuario?: string;
+  correo?: string;
+  name?: string;
+  email?: string;
 }
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  token?: string;
 }
 
 export interface LoginRequest {
-  email: string;
-  password: string;
+  correo: string;
+  contrasena: string;
 }
 
 export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
+  nombres: string;
+  apellidos: string;
+  nombreUsuario: string;
+  correo: string;
+  contrasena: string;
 }
 
 export interface Transaction {
@@ -66,4 +73,8 @@ export interface PaginatedResponse<T> {
     limit: number;
     total: number;
   };
+}
+
+export interface SaldoResponse {
+  saldoTotal: number;
 }
