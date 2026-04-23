@@ -67,8 +67,23 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return usuarioService.login(request)
-                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(usuario -> {
+                    if (usuario.getEstado() == 0) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Debe verificar su correo para iniciar sesion");
+                    }
+                    return ResponseEntity.ok(usuario);
+                })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<?> verify(@Valid @RequestBody VerificarCodigoRequest request) {
+        boolean verificado = usuarioService.verifyRegistration(request.getCorreo(), request.getCodigo());
+        if (verificado) {
+            return ResponseEntity.ok("Cuenta verificada exitosamente. Ya puede iniciar sesion.");
+        } else {
+            return ResponseEntity.badRequest().body("Codigo de verificacion incorrecto o correo no encontrado");
+        }
     }
 
     @PostMapping("/recuperar-contrasena")

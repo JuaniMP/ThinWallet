@@ -10,6 +10,7 @@ interface TransactionFormProps {
     tipoMovimiento: string;
     idUsuario: number;
     idCategoria?: number;
+    idTipoMovimiento: number;
   }) => Promise<void>;
   isLoading?: boolean;
 }
@@ -19,6 +20,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'DEPOSITO' | 'RETIRO'>('RETIRO');
   const [categoryId, setCategoryId] = useState<number | ''>('');
+  const [paymentMethodId, setPaymentMethodId] = useState<number>(1); // 1: Efectivo, 2: Tarjeta
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,6 +65,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         tipoMovimiento: type,
         idUsuario,
         idCategoria: Number(categoryId),
+        idTipoMovimiento: paymentMethodId,
       });
       
       setAmount('');
@@ -100,12 +103,33 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         </button>
       </div>
 
+      <div className="input-group">
+        <label>Método de Pago</label>
+        <div className="type-selector payment-method">
+          <button
+            type="button"
+            className={`type-btn payment-btn ${paymentMethodId === 1 ? 'active cash' : ''}`}
+            onClick={() => setPaymentMethodId(1)}
+          >
+            <span className="material-symbols-outlined">payments</span>
+            Efectivo
+          </button>
+          <button
+            type="button"
+            className={`type-btn payment-btn ${paymentMethodId === 2 ? 'active card' : ''}`}
+            onClick={() => setPaymentMethodId(2)}
+          >
+            <span className="material-symbols-outlined">credit_card</span>
+            Tarjeta
+          </button>
+        </div>
+      </div>
+
       <CategorySelect 
         type={type} 
         value={categoryId} 
         onChange={setCategoryId} 
       />
-
       <Input
         label="Monto"
         type="number"

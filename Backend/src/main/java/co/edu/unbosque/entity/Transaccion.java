@@ -26,8 +26,9 @@ public class Transaccion {
     @Column(name = "tasa_cambio")
     private BigDecimal tasaCambio;
 
-    @Column(name = "tipo_movimiento")
+    @Transient
     private String tipoMovimiento;
+
 
     @Column(name = "modalidad_division")
     private String modalidadDivision;
@@ -46,4 +47,7 @@ public class Transaccion {
 
     @Column(name = "id_gasto")
     private Long idGasto;
+
+    @Column(name = "id_tipo_movimiento")
+    private Long idTipoMovimiento;
 }

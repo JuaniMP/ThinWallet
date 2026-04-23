@@ -2242,6 +2242,29 @@
   color: var(--on-primary);
 }
 
+.type-btn.active.cash {
+  background: var(--accent);
+  color: var(--primary);
+}
+
+.type-btn.active.card {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+}
+
+.payment-method.type-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.payment-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
 /* Balance summary (existing component) */
 .balance-summary {
   display: grid;

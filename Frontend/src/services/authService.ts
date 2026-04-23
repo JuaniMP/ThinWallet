@@ -22,6 +22,10 @@ export const authService = {
     return api.post<string>('/usuarios/verificar-codigo', { correo, codigo });
   },
 
+  async verify(correo: string, codigo: string): Promise<string> {
+    return api.post<string>('/usuarios/verify', { correo, codigo });
+  },
+
   async changePassword(correo: string, codigo: string, nuevaContrasena: string): Promise<string> {
     return api.post<string>('/usuarios/cambiar-contrasena', { correo, codigo, nuevaContrasena });
   },
