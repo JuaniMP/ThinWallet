@@ -18,8 +18,8 @@ public class TransaccionRequest {
 
     private BigDecimal tasaCambio;
 
-    @NotBlank
     private String tipoMovimiento;
+
 
     private String modalidadDivision;
 
@@ -32,4 +32,6 @@ public class TransaccionRequest {
     private Long idCategoria;
 
     private Long idGasto;
+
+    private Long idTipoMovimiento;
 }

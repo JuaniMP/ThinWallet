@@ -74,7 +74,6 @@ export function ForgotPassword() {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="auth-page" style={{
       backgroundImage: 'radial-gradient(var(--primary) 1px, transparent 1px)',

@@ -30,7 +30,6 @@ export const transactionService = {
   async getBalance(): Promise<Balance> {
     return api.get<Balance>('/transactions/balance');
   },
-
   async getSaldo(idUsuario: number): Promise<SaldoResponse> {
     return api.get<SaldoResponse>(`/usuarios/${idUsuario}/saldo`);
   },

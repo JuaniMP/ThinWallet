@@ -1,17 +1,11 @@
 export interface User {
-  id?: string;
-  idUsuario?: number;
-  nombres?: string;
-  apellidos?: string;
-  nombreUsuario?: string;
-  correo?: string;
-  name?: string;
-  email?: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  token?: string;
+  id?: string; // For some local mock maps
+  idUsuario: number;
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  nombreUsuario: string;
+  name?: string; // For compatibility with some layouts
 }
 
 export interface LoginRequest {
@@ -36,21 +30,7 @@ export interface Transaction {
   categoryId: string;
   date: string;
   createdAt: string;
-}
-
-export interface CreateTransactionRequest {
-  amount: number;
-  description: string;
-  type: 'income' | 'expense';
-  categoryId: string;
-  date: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  type: 'income' | 'expense' | 'both';
-  icon?: string;
+  idTipoMovimiento?: number;
 }
 
 export interface Balance {
@@ -64,15 +44,6 @@ export interface TransactionFilters {
   categoryId?: string;
   page?: number;
   limit?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-  };
 }
 
 export interface SaldoResponse {
