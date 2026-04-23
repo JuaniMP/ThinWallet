@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../../context/TransactionContext';
 import { useAuth } from '../../context/AuthContext';
@@ -16,13 +16,12 @@ export function Dashboard() {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    fetchTransactions({ limit: 5 });
+    fetchTransactions();
     
     if (user?.idUsuario) {
       transactionService.getSaldo(user.idUsuario)
         .then(res => setSaldoTotal(res.saldoTotal))
         .catch(() => {
-          // 404 or any error → saldo = 0, no retries
           setSaldoTotal(0);
         })
         .finally(() => setLoadingSaldo(false));
@@ -42,9 +41,7 @@ export function Dashboard() {
   return (
     <Layout>
       <div className="dashboard">
-        {/* Main Column */}
         <div className="dashboard-main">
-          {/* Hero Balance Banner */}
           <div className="balance-hero neo-shadow">
             <div style={{ position: 'relative', zIndex: 10 }}>
               <p className="label">SALDO TOTAL DISPONIBLE</p>
@@ -65,9 +62,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Bento Grid */}
           <div className="bento-grid">
-            {/* Gastos Hormiga */}
             <div className="bento-card bg-alert neo-shadow">
               <div className="card-header">
                 <div>
@@ -85,7 +80,6 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Coach Financiero */}
             <div className="bento-card bg-coach neo-shadow">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>psychology</span>
@@ -100,7 +94,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Activity */}
           <div className="activity-section">
             <div className="section-header">
               <h3>Actividad Reciente</h3>
@@ -123,7 +116,7 @@ export function Dashboard() {
                       </div>
                       <div>
                         <p className="tx-name">{t.description}</p>
-                        <p className={`tx-date ${t.type === 'expense' ? '' : ''}`}>
+                        <p className="tx-date">
                           {new Date(t.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
                         </p>
                       </div>
@@ -138,9 +131,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="dashboard-sidebar">
-          {/* Categories */}
           <div className="categories-card neo-shadow">
             <h3>Categorías</h3>
             {mockCategories.map((cat) => (
@@ -156,7 +147,6 @@ export function Dashboard() {
             ))}
           </div>
 
-          {/* Quick Actions */}
           <div className="quick-actions-grid">
             <Link to="/transactions" className="quick-action-btn neo-shadow-sm" style={{ textDecoration: 'none', color: 'var(--primary)' }}>
               <span className="material-symbols-outlined">receipt_long</span>
@@ -170,7 +160,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* FAB (Desktop only) */}
       <Link to="/transactions/new" className="fab neo-shadow" style={{ textDecoration: 'none', color: 'var(--primary)' }}>
         <span className="material-symbols-outlined">add</span>
       </Link>

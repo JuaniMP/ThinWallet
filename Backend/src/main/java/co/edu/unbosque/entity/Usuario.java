@@ -31,8 +31,8 @@ public class Usuario {
     @Column(name = "contrasena_hash", nullable = false)
     private String contrasenaHash;
 
-    @Column(name = "tipo_usuario")
-    private String tipoUsuario;
+    @Column(name = "id_tipo_usuario")
+    private Long idTipoUsuario;
 
     @Column(name = "token_reclamo")
     private String tokenReclamo;

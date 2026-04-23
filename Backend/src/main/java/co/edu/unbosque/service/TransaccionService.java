@@ -52,6 +52,7 @@ public class TransaccionService {
         transaccion.setIdCirculoGasto(request.getIdCirculoGasto());
         transaccion.setIdCategoria(request.getIdCategoria());
         transaccion.setIdGasto(request.getIdGasto());
+        transaccion.setIdTipoMovimiento(request.getIdTipoMovimiento());
         return transaccionRepository.save(transaccion);
     }
 
@@ -65,6 +66,7 @@ public class TransaccionService {
             transaccion.setTipoMovimiento(request.getTipoMovimiento());
             transaccion.setModalidadDivision(request.getModalidadDivision());
             transaccion.setContexto(request.getContexto());
+            transaccion.setIdTipoMovimiento(request.getIdTipoMovimiento());
             return transaccionRepository.save(transaccion);
         });
     }

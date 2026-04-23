@@ -47,7 +47,7 @@ export function Register() {
         correo, 
         contrasena 
       });
-      navigate('/login');
+      navigate('/verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear cuenta');
     } finally {

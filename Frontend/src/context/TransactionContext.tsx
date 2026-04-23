@@ -16,6 +16,7 @@ interface BackendTransaccion {
   idCirculoGasto: number | null;
   idCategoria: number | null;
   idGasto: number | null;
+  idTipoMovimiento: number | null;
 }
 
 // Map backend entity to frontend Transaction type
@@ -29,9 +30,9 @@ function mapToFrontend(t: BackendTransaccion): Transaction {
     categoryId: t.idCategoria ? String(t.idCategoria) : '',
     date: new Date().toISOString(), // backend doesn't have a date field on transaccion
     createdAt: new Date().toISOString(),
+    idTipoMovimiento: t.idTipoMovimiento ?? 1,
   };
 }
-
 interface TransactionContextType {
   transactions: Transaction[];
   balance: Balance | null;
@@ -44,6 +45,7 @@ interface TransactionContextType {
     tipoMovimiento: string;
     idUsuario: number;
     idCategoria?: number;
+    idTipoMovimiento: number;
   }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   fetchBalance: () => Promise<void>;
@@ -70,12 +72,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           idUsuario = user.idUsuario;
         } catch { /* ignore */ }
       }
-      
+
       let endpoint = '/transacciones';
       if (idUsuario) {
         endpoint = `/transacciones/usuario/${idUsuario}`;
       }
-      
+
       const response = await api.get<BackendTransaccion[]>(endpoint);
       const mapped = (Array.isArray(response) ? response : []).map(mapToFrontend);
       setTransactions(mapped);
@@ -94,6 +96,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     tipoMovimiento: string;
     idUsuario: number;
     idCategoria?: number;
+    idTipoMovimiento: number;
   }) => {
     setIsLoading(true);
     setError(null);

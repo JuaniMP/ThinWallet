@@ -10,6 +10,9 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
+  verify: (correo: string, codigo: string) => Promise<void>;
+  registrationEmail: string | null;
+  setRegistrationEmail: (email: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [registrationEmail, setRegistrationEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -33,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('user');
       }
     }
-
     setIsLoading(false);
   }, []);
 
@@ -67,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterRequest) => {
     await authService.register(data);
+    setRegistrationEmail(data.correo);
+  };
+
+  const verify = async (correo: string, codigo: string) => {
+    await authService.verify(correo, codigo);
   };
 
   const logout = () => {
@@ -86,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        verify,
+        registrationEmail,
+        setRegistrationEmail,
       }}
     >
       {children}

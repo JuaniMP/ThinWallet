@@ -15,6 +15,12 @@ export function TransactionCard({ transaction, onDelete }: TransactionCardProps)
         <span className="transaction-date">
           {new Date(transaction.date).toLocaleDateString('es-ES')}
         </span>
+        <span className="method-tag">
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+            {transaction.idTipoMovimiento === 2 ? 'credit_card' : 'payments'}
+          </span>
+          {transaction.idTipoMovimiento === 2 ? 'Tarjeta' : 'Efectivo'}
+        </span>
       </div>
       <div className="transaction-amount">
         <span className={isIncome ? 'amount-income' : 'amount-expense'}>
