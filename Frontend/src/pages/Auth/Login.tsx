@@ -21,7 +21,11 @@ export function Login() {
       await login({ correo, contrasena });
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión';
+      setError(errorMessage);
+      if (errorMessage.toLowerCase().includes('verificar') || errorMessage.toLowerCase().includes('verify')) {
+        navigate('/verify');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -82,10 +86,10 @@ export function Login() {
 
             {/* Links */}
             <div className="auth-links-row">
-              <Link to="/forgot-password" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+              <Link to="/forgot-password"  className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
                 ¿Olvidó contraseña?
               </Link>
-              <Link to="/register" className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
+              <Link to="/register"  className="auth-links" style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px', padding: '2px 4px' }}>
                 Crear Cuenta
               </Link>
             </div>

@@ -53,7 +53,6 @@ class ApiService {
     if (!text) {
       return undefined as T;
     }
-
     try {
       return JSON.parse(text);
     } catch {

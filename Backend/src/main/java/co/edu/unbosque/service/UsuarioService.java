@@ -30,6 +30,9 @@ public class UsuarioService {
     // Almacena temporalmente los tokens de recuperacion: <Correo, Codigo>
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
 
+    // Almacena temporalmente los tokens de verificacion de registro: <Correo, Codigo>
+    private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
+
     @Transactional(readOnly = true)
     public List<Usuario> findAll() {
         return usuarioRepository.findAll();
@@ -103,10 +106,37 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasena()));
-        usuario.setTipoUsuario("CLIENTE");
+        usuario.setIdTipoUsuario(2L); // ID 2 para Cliente
         usuario.setFechaRegistro(LocalDateTime.now());
-        usuario.setEstado(1);
-        return usuarioRepository.save(usuario);
+        usuario.setEstado(0); // 0 para Pendiente de verificación
+        
+        Usuario savedUser = usuarioRepository.save(usuario);
+        
+        // Generar y enviar código de verificación
+        String codigo = String.format("%06d", new Random().nextInt(999999));
+        registrationTokens.put(request.getCorreo(), codigo);
+        emailService.enviarCodigoVerificacion(request.getCorreo(), codigo);
+        
+        log.info("Usuario registrado (pendiente verif): {}. Codigo: {}", request.getCorreo(), codigo);
+        
+        return savedUser;
+    }
+
+    @Transactional
+    public boolean verifyRegistration(String correo, String codigo) {
+        String codigoGuardado = registrationTokens.get(correo);
+        if (codigoGuardado != null && codigoGuardado.equals(codigo)) {
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                usuario.setEstado(1); // Activar usuario
+                usuarioRepository.save(usuario);
+                registrationTokens.remove(correo);
+                log.info("Usuario verificado y activado: {}", correo);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Transactional
@@ -117,7 +147,9 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
-        usuario.setTipoUsuario(request.getTipoUsuario());
+        if (request.getTipoUsuario() != null) {
+            usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+        }
         usuario.setDescripcion(request.getDescripcion());
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEstado(1);
@@ -132,7 +164,9 @@ public class UsuarioService {
             usuario.setNombreUsuario(request.getNombreUsuario());
             usuario.setCorreo(request.getCorreo());
             usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
-            usuario.setTipoUsuario(request.getTipoUsuario());
+            if (request.getTipoUsuario() != null) {
+                usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+            }
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);
         });
