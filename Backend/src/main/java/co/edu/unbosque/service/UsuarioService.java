@@ -26,11 +26,9 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final TokenHashingService tokenHashingService;
 
-    // Almacena temporalmente los tokens de recuperacion: <Correo, Codigo>
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
-
-    // Almacena temporalmente los tokens de verificacion de registro: <Correo, Codigo>
     private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
@@ -59,19 +57,26 @@ public class UsuarioService {
                 .filter(usuario -> passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash()));
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Usuario> loginWithToken(String tokenReclamo) {
+        // Obtener todos los usuarios para validar contra tokens hasheados en BD
+        List<Usuario> todosUsuarios = usuarioRepository.findAll();
+        for (Usuario usuario : todosUsuarios) {
+            if (usuario.getTokenReclamo() != null && 
+                tokenHashingService.validateToken(tokenReclamo, usuario.getTokenReclamo())) {
+                return Optional.of(usuario);
+            }
+        }
+        return Optional.empty();
+    }
+
     public void solicitarRecuperacionPassword(String correo) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("No existe un usuario con ese correo electrónico");
         }
-        
-        // Generar codigo aleatorio de 6 digitos
         String codigo = String.format("%06d", new Random().nextInt(999999));
-        
-        // Guardar token en memoria
         resetTokens.put(correo, codigo);
-        
-        // Enviar correo
         emailService.enviarCodigoRecuperacion(correo, codigo);
         log.info("Codigo de recuperacion generado para {}: {}", correo, codigo);
     }
@@ -86,16 +91,11 @@ public class UsuarioService {
         if (!validarCodigoRecuperacion(correo, codigo)) {
             throw new RuntimeException("El codigo de recuperacion es incorrecto o ha expirado");
         }
-
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("No existe un usuario con ese correo electrónico"));
-
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
-
-        // Remover el token luego de usarlo para evitar re-uso
         resetTokens.remove(correo);
-        log.info("Contrasena actualizada exitosamente para {}", correo);
     }
 
     @Transactional

@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   verify: (correo: string, codigo: string) => Promise<void>;
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apellidos: 'Quemado',
         correo: 'usuario@hotmail.com',
         nombreUsuario: 'usuario_mock',
+        tipoUsuario: 2,
       };
       const mockToken = 'mock-token-xyz';
 
@@ -63,6 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(userData));
+
+    setToken(authToken);
+    setUser(userData);
+  };
+
+  const loginWithToken = async (tokenValue: string) => {
+    const userData = await authService.loginWithToken(tokenValue);
+    const authToken = `session-token-${Date.now()}`;
+
+    localStorage.setItem('token', authToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('userToken', tokenValue); // Store the original token
 
     setToken(authToken);
     setUser(userData);
@@ -92,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token,
         isLoading,
         login,
+        loginWithToken,
         register,
         logout,
         verify,

@@ -9,16 +9,18 @@ import java.time.LocalDateTime;
 @Data
 public class UsuarioCirculo {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_usuario_circulo")
-    private Long idUsuarioCirculo;
+    @EmbeddedId
+    private UsuarioCirculoId id;
 
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @MapsId("idUsuario")
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
 
-    @Column(name = "id_circulo_gasto")
-    private Long idCirculoGasto;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @MapsId("idCirculoGasto")
+    @JoinColumn(name = "id_circulo_gasto")
+    private CirculoGasto circuloGasto;
 
     @Column(name = "rol_usuario")
     private String rolUsuario;

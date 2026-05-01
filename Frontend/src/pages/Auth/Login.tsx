@@ -9,7 +9,9 @@ export function Login() {
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const { login, loginWithToken } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,6 +28,22 @@ export function Login() {
       if (errorMessage.toLowerCase().includes('verificar') || errorMessage.toLowerCase().includes('verify')) {
         navigate('/verify');
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTokenSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      await loginWithToken(tokenInput);
+      navigate('/grupos');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Token inválido';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +97,15 @@ export function Login() {
 
           <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Token button */}
-            <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <button 
+              type="button"
+              className="btn btn-secondary" 
+              onClick={() => {
+                setShowTokenModal(true);
+                setError('');
+              }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>key</span>
               Entrar con Token
             </button>
@@ -109,6 +135,42 @@ export function Login() {
           </p>
         </div>
       </main>
+
+      {/* Token Modal */}
+      {showTokenModal && (
+        <div className="modal-overlay" onClick={() => setShowTokenModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Ingresa con Token</h3>
+              <button 
+                type="button"
+                className="modal-close"
+                onClick={() => setShowTokenModal(false)}
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleTokenSubmit}>
+              <Input
+                label="Token de Invitación"
+                type="text"
+                name="token"
+                icon="key"
+                placeholder="Pega tu token de acceso aquí"
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                required
+              />
+              
+              <Button type="submit" isLoading={isLoading} icon="arrow_right_alt">
+                Entrar
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface CirculoGastoRepository extends JpaRepository<CirculoGasto, Long> {
     List<CirculoGasto> findByIdUsuarioCreador(Long idUsuarioCreador);
     Optional<CirculoGasto> findByTokenInvitacion(String tokenInvitacion);
+    boolean existsByTokenInvitacion(String tokenInvitacion);
 }
