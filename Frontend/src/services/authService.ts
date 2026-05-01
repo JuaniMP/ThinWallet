@@ -6,6 +6,10 @@ export const authService = {
     return api.post<User>('/usuarios/login', credentials);
   },
 
+  async loginWithToken(token: string): Promise<User> {
+    return api.post<User>('/usuarios/login-token', { tokenInvitacion: token });
+  },
+
   async register(data: RegisterRequest): Promise<User> {
     return api.post<User>('/usuarios/register', data);
   },

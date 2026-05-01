@@ -10,13 +10,21 @@ export function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
   const location = useLocation();
 
-  const navItems = [
-    { path: '/dashboard', icon: 'home', label: 'INICIO' },
-    { path: '/grupos', icon: 'group', label: 'GRUPOS' },
-    { path: '/transactions/new', icon: 'add_box', label: 'AÑADIR' },
-    { path: '/debts', icon: 'insert_chart', label: 'REPORTES' },
-    { path: '/profile', icon: 'person', label: 'PERFIL' },
-  ];
+  // Para usuarios fantasma (invitados): solo círculos y perfil
+  const isPhantomUser = user?.tipoUsuario === 3;
+
+  const navItems = isPhantomUser
+    ? [
+        { path: '/grupos', icon: 'group', label: 'CÍRCULOS' },
+        { path: '/profile', icon: 'person', label: 'PERFIL' },
+      ]
+    : [
+        { path: '/dashboard', icon: 'home', label: 'INICIO' },
+        { path: '/grupos', icon: 'group', label: 'GRUPOS' },
+        { path: '/transactions/new', icon: 'add_box', label: 'AÑADIR' },
+        { path: '/debts', icon: 'insert_chart', label: 'REPORTES' },
+        { path: '/profile', icon: 'person', label: 'PERFIL' },
+      ];
 
 
   return (

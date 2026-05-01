@@ -1,7 +1,9 @@
 package co.edu.unbosque.service;
 
+import co.edu.unbosque.entity.TipoUsuario; // IMPORTANTE
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.UsuarioRepository;
+import co.edu.unbosque.repository.TipoUsuarioRepository; // NUEVO REPOSITORY
 import co.edu.unbosque.request.LoginRequest;
 import co.edu.unbosque.request.RegisterRequest;
 import co.edu.unbosque.request.UsuarioRequest;
@@ -24,13 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final TipoUsuarioRepository tipoUsuarioRepository; // Agregado
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final TokenHashingService tokenHashingService; // Agregar TokenHashingService
 
-    // Almacena temporalmente los tokens de recuperacion: <Correo, Codigo>
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
-
-    // Almacena temporalmente los tokens de verificacion de registro: <Correo, Codigo>
     private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
@@ -59,19 +60,26 @@ public class UsuarioService {
                 .filter(usuario -> passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash()));
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Usuario> loginWithToken(String tokenReclamo) {
+        // Obtener todos los usuarios para validar contra tokens hasheados en BD
+        List<Usuario> todosUsuarios = usuarioRepository.findAll();
+        for (Usuario usuario : todosUsuarios) {
+            if (usuario.getTokenReclamo() != null && 
+                tokenHashingService.validateToken(tokenReclamo, usuario.getTokenReclamo())) {
+                return Optional.of(usuario);
+            }
+        }
+        return Optional.empty();
+    }
+
     public void solicitarRecuperacionPassword(String correo) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("No existe un usuario con ese correo electrónico");
         }
-        
-        // Generar codigo aleatorio de 6 digitos
         String codigo = String.format("%06d", new Random().nextInt(999999));
-        
-        // Guardar token en memoria
         resetTokens.put(correo, codigo);
-        
-        // Enviar correo
         emailService.enviarCodigoRecuperacion(correo, codigo);
         log.info("Codigo de recuperacion generado para {}: {}", correo, codigo);
     }
@@ -86,16 +94,11 @@ public class UsuarioService {
         if (!validarCodigoRecuperacion(correo, codigo)) {
             throw new RuntimeException("El codigo de recuperacion es incorrecto o ha expirado");
         }
-
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("No existe un usuario con ese correo electrónico"));
-
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
-
-        // Remover el token luego de usarlo para evitar re-uso
         resetTokens.remove(correo);
-        log.info("Contrasena actualizada exitosamente para {}", correo);
     }
 
     @Transactional
@@ -106,19 +109,21 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasena()));
-        usuario.setIdTipoUsuario(2L); // ID 2 para Cliente
+
+        // --- CORRECCIÓN AQUÍ ---
+        TipoUsuario tipoCliente = new TipoUsuario();
+        tipoCliente.setIdTipoUsuario(2L); // Asumiendo que 2 es Cliente
+        usuario.setTipoUsuario(tipoCliente);
+
         usuario.setFechaRegistro(LocalDateTime.now());
-        usuario.setEstado(0); // 0 para Pendiente de verificación
-        
+        usuario.setEstado(0);
+
         Usuario savedUser = usuarioRepository.save(usuario);
-        
-        // Generar y enviar código de verificación
+
         String codigo = String.format("%06d", new Random().nextInt(999999));
         registrationTokens.put(request.getCorreo(), codigo);
         emailService.enviarCodigoVerificacion(request.getCorreo(), codigo);
-        
-        log.info("Usuario registrado (pendiente verif): {}. Codigo: {}", request.getCorreo(), codigo);
-        
+
         return savedUser;
     }
 
@@ -129,10 +134,9 @@ public class UsuarioService {
             Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
             if (usuarioOpt.isPresent()) {
                 Usuario usuario = usuarioOpt.get();
-                usuario.setEstado(1); // Activar usuario
+                usuario.setEstado(1);
                 usuarioRepository.save(usuario);
                 registrationTokens.remove(correo);
-                log.info("Usuario verificado y activado: {}", correo);
                 return true;
             }
         }
@@ -147,9 +151,14 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
+
+        // --- CORRECCIÓN AQUÍ ---
         if (request.getTipoUsuario() != null) {
-            usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+            TipoUsuario tipo = new TipoUsuario();
+            tipo.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+            usuario.setTipoUsuario(tipo);
         }
+
         usuario.setDescripcion(request.getDescripcion());
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEstado(1);
@@ -164,9 +173,14 @@ public class UsuarioService {
             usuario.setNombreUsuario(request.getNombreUsuario());
             usuario.setCorreo(request.getCorreo());
             usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
+
+            // --- CORRECCIÓN AQUÍ ---
             if (request.getTipoUsuario() != null) {
-                usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+                TipoUsuario tipo = new TipoUsuario();
+                tipo.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+                usuario.setTipoUsuario(tipo);
             }
+
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);
         });

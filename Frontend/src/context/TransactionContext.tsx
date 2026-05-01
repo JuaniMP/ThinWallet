@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
-import type { Transaction, Balance, TransactionFilters } from '../types';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import type { Transaction, Balance, TransactionFilters, CreateTransactionRequest } from '../types';
 import { api } from '../services/api';
 
 // Backend entity shape (what the API actually returns)
@@ -39,14 +39,7 @@ interface TransactionContextType {
   isLoading: boolean;
   error: string | null;
   fetchTransactions: (filters?: TransactionFilters) => Promise<void>;
-  createTransaction: (data: {
-    nombre: string;
-    montoOriginal: number;
-    tipoMovimiento: string;
-    idUsuario: number;
-    idCategoria?: number;
-    idTipoMovimiento: number;
-  }) => Promise<void>;
+  createTransaction: (data: CreateTransactionRequest) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   fetchBalance: () => Promise<void>;
 }
@@ -55,7 +48,7 @@ const TransactionContext = createContext<TransactionContextType | undefined>(und
 
 export function TransactionProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [balance, setBalance] = useState<Balance | null>(null);
+  const [balance] = useState<Balance | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +71,16 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         endpoint = `/transacciones/usuario/${idUsuario}`;
       }
 
+      const params = new URLSearchParams();
+      if (filters?.type) params.append('type', filters.type);
+      if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+      if (filters?.page) params.append('page', String(filters.page));
+      if (filters?.limit) params.append('limit', String(filters.limit));
+      const query = params.toString();
+      if (query) {
+        endpoint = `${endpoint}?${query}`;
+      }
+
       const response = await api.get<BackendTransaccion[]>(endpoint);
       const mapped = (Array.isArray(response) ? response : []).map(mapToFrontend);
       setTransactions(mapped);
@@ -90,14 +93,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const createTransaction = async (data: {
-    nombre: string;
-    montoOriginal: number;
-    tipoMovimiento: string;
-    idUsuario: number;
-    idCategoria?: number;
-    idTipoMovimiento: number;
-  }) => {
+  const createTransaction = async (data: CreateTransactionRequest) => {
     setIsLoading(true);
     setError(null);
     try {

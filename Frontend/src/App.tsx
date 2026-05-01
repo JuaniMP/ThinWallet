@@ -10,6 +10,7 @@ import { TransactionList } from './pages/Transactions/TransactionList';
 import { NewTransaction } from './pages/Transactions/NewTransaction';
 import { Profile } from './pages/Profile/Profile';
 import { Groups } from './pages/Groups/Groups';
+import { CircleDetail } from './pages/Groups/CircleDetail';
 import { Debts } from './pages/Debts/Debts';
 import './App.css';
 
@@ -40,6 +41,7 @@ function AppRoutes() {
       <Route path="/transactions/new" element={<PrivateRoute><NewTransaction /></PrivateRoute>} />
       <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/grupos" element={<PrivateRoute><Groups /></PrivateRoute>} />
+      <Route path="/grupos/:id" element={<PrivateRoute><CircleDetail /></PrivateRoute>} />
       <Route path="/debts" element={<PrivateRoute><Debts /></PrivateRoute>} />
       
       <Route path="/" element={<Navigate to="/dashboard" />} />
