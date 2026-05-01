@@ -1,9 +1,7 @@
 package co.edu.unbosque.service;
 
-import co.edu.unbosque.entity.TipoUsuario; // IMPORTANTE
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.UsuarioRepository;
-import co.edu.unbosque.repository.TipoUsuarioRepository; // NUEVO REPOSITORY
 import co.edu.unbosque.request.LoginRequest;
 import co.edu.unbosque.request.RegisterRequest;
 import co.edu.unbosque.request.UsuarioRequest;
@@ -26,10 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final TipoUsuarioRepository tipoUsuarioRepository; // Agregado
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private final TokenHashingService tokenHashingService; // Agregar TokenHashingService
+    private final TokenHashingService tokenHashingService;
 
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
     private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
@@ -109,21 +106,19 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasena()));
-
-        // --- CORRECCIÓN AQUÍ ---
-        TipoUsuario tipoCliente = new TipoUsuario();
-        tipoCliente.setIdTipoUsuario(2L); // Asumiendo que 2 es Cliente
-        usuario.setTipoUsuario(tipoCliente);
-
+        usuario.setIdTipoUsuario(2L); // ID 2 para Cliente
         usuario.setFechaRegistro(LocalDateTime.now());
-        usuario.setEstado(0);
-
+        usuario.setEstado(0); // 0 para Pendiente de verificación
+        
         Usuario savedUser = usuarioRepository.save(usuario);
-
+        
+        // Generar y enviar código de verificación
         String codigo = String.format("%06d", new Random().nextInt(999999));
         registrationTokens.put(request.getCorreo(), codigo);
         emailService.enviarCodigoVerificacion(request.getCorreo(), codigo);
-
+        
+        log.info("Usuario registrado (pendiente verif): {}. Codigo: {}", request.getCorreo(), codigo);
+        
         return savedUser;
     }
 
@@ -134,9 +129,10 @@ public class UsuarioService {
             Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
             if (usuarioOpt.isPresent()) {
                 Usuario usuario = usuarioOpt.get();
-                usuario.setEstado(1);
+                usuario.setEstado(1); // Activar usuario
                 usuarioRepository.save(usuario);
                 registrationTokens.remove(correo);
+                log.info("Usuario verificado y activado: {}", correo);
                 return true;
             }
         }
@@ -151,14 +147,9 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
-
-        // --- CORRECCIÓN AQUÍ ---
         if (request.getTipoUsuario() != null) {
-            TipoUsuario tipo = new TipoUsuario();
-            tipo.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
-            usuario.setTipoUsuario(tipo);
+            usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
         }
-
         usuario.setDescripcion(request.getDescripcion());
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEstado(1);
@@ -173,14 +164,9 @@ public class UsuarioService {
             usuario.setNombreUsuario(request.getNombreUsuario());
             usuario.setCorreo(request.getCorreo());
             usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
-
-            // --- CORRECCIÓN AQUÍ ---
             if (request.getTipoUsuario() != null) {
-                TipoUsuario tipo = new TipoUsuario();
-                tipo.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
-                usuario.setTipoUsuario(tipo);
+                usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
             }
-
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);
         });

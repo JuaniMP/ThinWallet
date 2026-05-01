@@ -31,9 +31,8 @@ public class Usuario {
     @Column(name = "contrasena_hash")
     private String contrasenaHash;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_tipo_usuario")
-    private TipoUsuario tipoUsuario; // Este nombre debe ser exacto
+    @Column(name = "id_tipo_usuario")
+    private Long idTipoUsuario;
 
     @Column(name = "token_reclamo")
     private String tokenReclamo;
