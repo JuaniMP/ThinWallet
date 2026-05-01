@@ -49,7 +49,7 @@ export function Verify() {
     <div className="auth-page">
       <div className="grid-overlay" />
 
-      <main style={{ width: '100%', maxWidth: '448px', position: 'relative', zIndex: 1 }}>
+      <main className="verify-main">
         <div className="auth-brand">
           <h1>THIN WALLET</h1>
           <p>Verificación de Identidad / Registro</p>
@@ -83,19 +83,18 @@ export function Verify() {
             </Button>
           </form>
 
-          <div style={{ marginTop: '32px', textAlign: 'center' }}>
-            <p style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+          <div className="verify-actions">
+            <p className="verify-resend-text">
               ¿No recibiste el código?{' '}
               <button 
                 type="button"
-                className="auth-links" 
-                style={{ background: 'none', border: 'none', cursor: 'pointer', decoration: 'underline' }}
+                className="auth-links verify-resend-button" 
                 onClick={() => alert('Funcionalidad de reenvío próximamente')}
               >
                 Reenviar código
               </button>
             </p>
-            <div style={{ marginTop: '16px' }}>
+            <div className="verify-login-link">
               <Link to="/login" className="auth-links">
                 Volver al inicio de sesión
               </Link>
@@ -106,7 +105,7 @@ export function Verify() {
         <div className="auth-footer">
           <div className="auth-footer-divider">
             <div className="line" />
-            <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>shield_lock</span>
+            <span className="material-symbols-outlined verify-shield-icon">shield_lock</span>
             <div className="line" />
           </div>
           <p>

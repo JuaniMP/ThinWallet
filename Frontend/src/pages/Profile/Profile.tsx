@@ -26,28 +26,22 @@ export function Profile() {
         {/* Hero Profile */}
         <div className="profile-hero neo-shadow">
           <div className="profile-avatar">
-            <div style={{
-              width: '100%', height: '100%',
-              background: 'var(--accent)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 900, color: 'var(--primary)', fontSize: '3rem',
-              fontFamily: 'var(--font-headline)'
-            }}>
+            <div className="profile-avatar-initial">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
           </div>
           <div className="profile-info">
             <h2>{user?.name || 'Usuario'}</h2>
-            <p className="email">{user?.email || 'email@ejemplo.com'}</p>
+            <p className="email">{user?.email || user?.correo || 'email@ejemplo.com'}</p>
             <div className="member-badge">
               Miembro desde: Enero 2024
             </div>
           </div>
           <div className="profile-actions">
-            <button className="btn btn-primary neo-shadow-hover neo-shadow-active" style={{ fontSize: '0.875rem' }}>
+            <button className="btn btn-primary neo-shadow-hover neo-shadow-active profile-action-button">
               Editar Perfil
             </button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.875rem' }} onClick={logout}>
+            <button className="btn btn-secondary profile-action-button" onClick={logout}>
               Cerrar Sesión
             </button>
           </div>
@@ -72,7 +66,7 @@ export function Profile() {
                 <p className="row-label">{item.label}</p>
                 <p className="row-desc">{item.desc}</p>
               </div>
-              <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>{item.icon}</span>
+              <span className="material-symbols-outlined profile-icon">{item.icon}</span>
             </div>
           ))}
         </div>
@@ -83,7 +77,7 @@ export function Profile() {
           {activityItems.map((item) => (
             <div key={item.name} className="activity-item">
               <div className="activity-icon">
-                <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>{item.icon}</span>
+                <span className="material-symbols-outlined profile-icon">{item.icon}</span>
               </div>
               <div className="activity-info">
                 <p className="activity-name">{item.name}</p>
@@ -92,7 +86,7 @@ export function Profile() {
               <p className="activity-amount">{item.amount}</p>
             </div>
           ))}
-          <button className="btn btn-secondary" style={{ marginTop: '24px', fontSize: '0.75rem', letterSpacing: '0.1em' }}>
+          <button className="btn btn-secondary profile-archive-button">
             Ver Archivo Completo
           </button>
         </div>

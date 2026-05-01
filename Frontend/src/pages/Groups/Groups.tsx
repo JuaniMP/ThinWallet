@@ -1,112 +1,400 @@
+// Frontend/src/pages/Groups/Groups.tsx
+
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { circleService } from '../../services/circuloGastoService';
+import type { CirculoGasto, TipoCirculo } from '../../types';
 import { Layout } from '../../components/layout/Layout';
 
-const mockDebts = [
-  { id: 1, from: 'Carlos M.', to: 'Ana G.', amount: '$45.00', type: 'liquida' },
-  { id: 2, from: 'Tú', to: 'Luis P.', amount: '$120.00', type: 'liquida' },
-  { id: 3, from: 'Elena R.', to: 'Ti', amount: '$85.50', type: 'recibe' },
-  { id: 4, from: 'Sofía V.', to: 'Ana G.', amount: '$12.00', type: 'liquida' },
-];
-
-const mockTimeline = [
-  { id: 1, title: 'Cena en Shibuya', payer: 'Ana G.', amount: '$210.00', time: 'Hace 2 horas', icon: 'restaurant', isPrimary: true },
-  { id: 2, title: 'Japan Rail Pass', payer: 'Luis P.', amount: '$540.00', time: 'Ayer, 18:45', icon: 'train', isPrimary: false },
-  { id: 3, title: 'Reserva Hotel Shinjuku', payer: 'Ti', amount: '$450.00', time: 'Ayer, 09:20', icon: 'hotel', isPrimary: false },
-  { id: 4, title: 'Café Temático Gatos', payer: 'Elena R.', amount: '$50.00', time: '20 Oct, 16:30', icon: 'local_cafe', isPrimary: false, opacity: 0.6 },
-];
-
 export function Groups() {
+  const { user } = useAuth();
+  const [circles, setCircles] = useState<CirculoGasto[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingCircles, setLoadingCircles] = useState(false);
+  const [tipoCirculos, setTipoCirculos] = useState<TipoCirculo[]>([]);
+  const [tokenCreado, setTokenCreado] = useState<string | null>(null);
+  
+  // Estado del formulario
+  const [nombre, setNombre] = useState('');
+  const [tipo, setTipo] = useState('');
+  const [invitados, setInvitados] = useState(['']);
+
+  const openCreateModal = () => {
+    setNombre('');
+    setTipo('');
+    setInvitados(['']);
+    setShowModal(true);
+  };
+
+  const tipoCirculoOptions = tipoCirculos.filter((tipoCirculo) => tipoCirculo.nombre !== 'Individual');
+
+  const totalGuests = useMemo(
+    () => circles.reduce((total, circle) => total + (circle.nombresInvitados?.length ?? 0), 0),
+    [circles]
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadTipoCirculos = async () => {
+      // Solo cargar tipos de círulo si no es usuario fantasma
+      if (user?.tipoUsuario === 3) {
+        return;
+      }
+
+      try {
+        const allTipoCirculos = await circleService.getAllTipoCirculos();
+
+        if (!isActive) {
+          return;
+        }
+
+        setTipoCirculos(allTipoCirculos);
+
+      } catch (error) {
+        console.error('Error cargando tipos de círculo', error);
+        if (isActive) {
+          setTipoCirculos([]);
+        }
+      }
+    };
+
+    const loadCircles = async () => {
+      if (!user?.idUsuario) {
+        if (isActive) {
+          setCircles([]);
+        }
+        return;
+      }
+
+      setLoadingCircles(true);
+      try {
+        let circulosResultado: CirculoGasto[] = [];
+        
+        // Si es usuario fantasma (invitado), obtener círculos donde es miembro
+        if (user.tipoUsuario === 3) {
+          circulosResultado = await circleService.getCirclesAsMember(user.idUsuario);
+        } else {
+          // Si no, obtener sus círculos creados
+          const allCircles = await circleService.getAllCircles();
+          circulosResultado = allCircles.filter((circle) => circle.idUsuarioCreador === user.idUsuario);
+        }
+
+        if (isActive) {
+          setCircles(circulosResultado);
+        }
+      } catch (error) {
+        console.error('Error cargando círculos', error);
+        if (isActive) {
+          setCircles([]);
+        }
+      } finally {
+        if (isActive) {
+          setLoadingCircles(false);
+        }
+      }
+    };
+
+    void loadTipoCirculos();
+    void loadCircles();
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.idUsuario]);
+
+  const handleAddGuestInput = () => setInvitados([...invitados, '']);
+
+  const handleCreate = async () => {
+    if (!nombre || !tipo || !user) return;
+    setLoading(true);
+    try {
+      const response = await circleService.createCircle({
+        nombre,
+        tipoCirculo: tipo,
+        idUsuarioCreador: user.idUsuario,
+        nombresInvitados: invitados.filter(n => n.trim() !== '')
+      });
+      
+      // Capturar el token si viene en la respuesta
+      if (response && typeof response === 'object' && 'tokenInvitacion' in response) {
+        const token = response.tokenInvitacion as string;
+        setTokenCreado(token);
+        // Guardar en localStorage como token del usuario
+        localStorage.setItem('user-token', token);
+      }
+      
+      setCircles([...circles, response]);
+      setShowModal(false);
+      setNombre('');
+      setTipo('');
+      setInvitados(['']);
+    } catch (error) {
+      console.error("Error creando círculo", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="groups-page">
-        {/* Hero Section */}
-        <section className="groups-hero">
-          <div className="hero-main neo-shadow">
-            <p className="hero-label">Círculo Activo</p>
-            <h2 className="hero-title">VIAJE A TOKIO</h2>
+        <section className="groups-hero neo-shadow">
+          <div className="hero-main">
+            <p className="hero-label">Gestión compartida</p>
+            <h1 className="hero-title">
+              {user?.tipoUsuario === 3 ? 'Tus círculos invitados' : 'Tus círculos de gasto'}
+            </h1>
+            <p className="hero-copy">
+              {user?.tipoUsuario === 3
+                ? 'Visualiza los círculos a los que has sido invitado y participa en la gestión de gastos compartidos.'
+                : 'Crea espacios para viajes, hogar o amigos con una vista clara, simple y más cercana al resto de la app.'}
+            </p>
             <div className="hero-meta">
-              <span className="material-symbols-outlined">group</span>
-              <span>8 Miembros</span>
+              <span>{circles.length} círculos {user?.tipoUsuario === 3 ? 'disponibles' : 'activos'}</span>
+              {user?.tipoUsuario !== 3 && (
+                <>
+                  <span>·</span>
+                  <span>{totalGuests} invitados</span>
+                </>
+              )}
             </div>
           </div>
-          
-          <div className="hero-balance neo-shadow">
-            <p className="balance-label">Balance Total del Grupo</p>
-            <p className="balance-amount">$1,250.00</p>
-            <button className="btn btn-primary" style={{ marginTop: '24px', fontSize: '0.875rem' }}>
-              Registrar Gasto
-            </button>
+
+          <div className="hero-balance">
+            <p className="balance-label">Estado actual</p>
+            <div className="balance-amount">{circles.length}</div>
+            <p className="balance-detail">
+              {user?.tipoUsuario === 3
+                ? circles.length > 0
+                  ? 'Selecciona uno para ver detalles'
+                  : 'Sin círculos por el momento'
+                : circles.length > 0
+                  ? 'Listos para revisar y administrar.'
+                  : 'Crea tu primer círculo para empezar.'}
+            </p>
           </div>
         </section>
 
-        {/* Content Grid */}
-        <div className="groups-content">
-          {/* Matriz de Liquidación */}
-          <div className="matriz-section">
-            <div className="matriz-card neo-shadow bg-surface-container">
-              <div className="matriz-header">
-                <h3>Matriz de Liquidación</h3>
-                <span className="header-tag">Debts & Credits</span>
+        <section className="groups-content">
+          <div className="matriz-card neo-shadow">
+            <div className="matriz-header">
+              <div>
+                <p className="header-tag">Tus grupos</p>
+                <h3>{user?.tipoUsuario === 3 ? 'Círculos disponibles' : 'Circulos creados'}</h3>
               </div>
-              
+              {user?.tipoUsuario !== 3 && (
+                <button onClick={openCreateModal} className="matriz-cta-btn">
+                  + Crear
+                </button>
+              )}
+            </div>
+
+            {loadingCircles ? (
+              <p className="empty-state">Cargando círculos...</p>
+            ) : circles.length === 0 ? (
+              <div className="groups-empty-state">
+                <div className="groups-empty-mark">CG</div>
+                <h4>{user?.tipoUsuario === 3 ? 'Sin invitaciones' : 'Sin círculos todavía'}</h4>
+                <p>
+                  {user?.tipoUsuario === 3
+                    ? 'Aún no has sido invitado a ningún círculo de gasto.'
+                    : 'Empieza con un grupo para dividir gastos y mantener todo más ordenado.'}
+                </p>
+              </div>
+            ) : (
               <div className="matriz-grid">
-                {mockDebts.map((item) => (
-                  <div key={item.id} className="matriz-item bg-white neo-shadow-sm">
+                {circles.map((circle) => (
+                  <div key={circle.idCirculoGasto} className="matriz-item">
                     <div className="matriz-info">
-                      <div className="avatar">
-                        <span className="material-symbols-outlined">person</span>
-                      </div>
+                      <div className="avatar">{circle.nombre.charAt(0).toUpperCase()}</div>
                       <div>
-                        <p className="name">{item.from}</p>
-                        <p className="action">{item.type === 'liquida' ? 'le debe a' : 'te debe a'}</p>
-                        <p className="name">{item.to}</p>
+                        <div className="name">{circle.nombre}</div>
+                        <div className="action">
+                          {circle.tipoCirculo} · {circle.nombresInvitados?.length ?? 0} invitados
+                        </div>
                       </div>
                     </div>
                     <div className="matriz-amount">
-                      <p className={`amount ${item.type === 'liquida' ? 'error' : 'primary'}`}>{item.amount}</p>
-                      <button className="action-btn">{item.type === 'liquida' ? 'Liquidar' : 'Recordar'}</button>
+                      <div className="amount primary">Activo</div>
+                      <Link to={`/grupos/${circle.idCirculoGasto}`} className="action-btn">
+                        Ver círculo
+                      </Link>
                     </div>
                   </div>
                 ))}
               </div>
+            )}
+          </div>
 
-              {/* Banner Image */}
-              <div className="banner-img" style={{ marginTop: '32px' }}>
-                <img 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjQRQKkovzVe2KUFB-ASz4AwGN1d3FxcRSF1epfHFTRUHRlGkQtBucejMoP7lRIjmiNpmk6NllmxpMJllpvYzpy29Tue730f98DoBfO49MNPBOmP4sCxLIKkfjcSA-oxLU9F5HHhEiU38W_F2ssQGx7CPe0fdOpeNbf2V0gixlrJ80KpV58esygb2MiG9VoxzVKxCdHqzt5gdWOkwreQ-6EDq0r7t7M0OQCBlvaKZ6veLqVbK5Q12uyUi5gvQdj5iK_9o5o55IxjE" 
-                  alt="Tokio Destination" 
-                />
+          {user?.tipoUsuario !== 3 && (
+            <aside className="timeline-card neo-shadow">
+              <h3 className="timeline-title">Cómo funciona</h3>
+              <div className="timeline-list">
+                <div className="timeline-item">
+                  <div className="timeline-icon primary">
+                    <span className="material-symbols-outlined">add</span>
+                  </div>
+                  <div className="timeline-content">
+                    <div className="title">1. Crea un círculo</div>
+                    <div className="payer">Ponle nombre y define el tipo.</div>
+                    <div className="amount">Viaje, hogar o amigos</div>
+                  </div>
+                </div>
+
+                <div className="timeline-item">
+                  <div className="timeline-icon secondary">
+                    <span className="material-symbols-outlined">group_add</span>
+                  </div>
+                  <div className="timeline-content">
+                    <div className="title">2. Agrega invitados</div>
+                    <div className="payer">Comparte el grupo con las personas correctas.</div>
+                    <div className="amount">Todos quedan dentro de un mismo contexto</div>
+                  </div>
+                </div>
+
+                <div className="timeline-item">
+                  <div className="timeline-icon secondary">
+                    <span className="material-symbols-outlined">receipt_long</span>
+                  </div>
+                  <div className="timeline-content">
+                    <div className="title">3. Divide gastos</div>
+                    <div className="payer">Revisa deudas, aportes y transacciones.</div>
+                    <div className="amount">Menos ruido, más control</div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          )}
+        </section>
+
+        {showModal && user?.tipoUsuario !== 3 && (
+          <div className="modal-backdrop" onClick={() => setShowModal(false)}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content neo-shadow">
+                <div className="modal-header">
+                  <h1>Nuevo círculo</h1>
+                  <button type="button" className="close-btn" onClick={() => setShowModal(false)} aria-label="Cerrar modal">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="input-group">
+                    <label>Nombre del grupo</label>
+                    <input
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      placeholder="Ej: Viaje a la playa"
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label>Tipo</label>
+                    <select aria-label="Tipo de círculo" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                      <option value="" disabled>
+                        Selecciona un tipo
+                      </option>
+                      {tipoCirculoOptions.map((option) => (
+                        <option key={option.idTipoCirculo} value={option.nombre}>
+                          {option.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="input-group">
+                    <label>¿A quiénes invitamos?</label>
+                    {invitados.map((guestName, index) => (
+                      <input
+                        key={index}
+                        className="group-guest-input"
+                        placeholder={`Nombre del invitado ${index + 1}`}
+                        value={guestName}
+                        onChange={(e) => {
+                          const newInv = [...invitados];
+                          newInv[index] = e.target.value;
+                          setInvitados(newInv);
+                        }}
+                      />
+                    ))}
+                    <button type="button" onClick={handleAddGuestInput} className="group-add-guest-btn">
+                      + Agregar otro invitado
+                    </button>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <div className="group-modal-actions">
+                    <button type="button" onClick={() => setShowModal(false)} className="group-cancel-btn">
+                      Cancelar
+                    </button>
+                    <button type="button" onClick={handleCreate} disabled={loading || !nombre.trim() || !tipo} className="submit-btn neo-shadow">
+                      {loading ? 'Creando...' : 'Crear círculo'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Timeline Sidebar */}
-          <div className="timeline-sidebar">
-            <div className="timeline-card neo-shadow bg-surface-container-low">
-              <h3 className="timeline-title">Actividad Reciente</h3>
-              
-              <div className="timeline-list">
-                {mockTimeline.map((item) => (
-                  <div key={item.id} className="timeline-item" style={{ opacity: item.opacity || 1 }}>
-                    <div className={`timeline-icon ${item.isPrimary ? 'primary' : 'secondary'}`}>
-                      <span className="material-symbols-outlined">{item.icon}</span>
-                    </div>
-                    <div className="timeline-content">
-                      <p className="title">{item.title}</p>
-                      <p className="payer">Pagado por {item.payer}</p>
-                      <p className="amount">{item.amount}</p>
-                      <p className="time">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
+      {tokenCreado && (
+        <div className="modal-backdrop" onClick={() => setTokenCreado(null)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content neo-shadow">
+              <div className="modal-header">
+                <h1>Token de invitación</h1>
+                <button type="button" className="close-btn" onClick={() => setTokenCreado(null)} aria-label="Cerrar modal">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
               </div>
 
-              <button className="btn btn-secondary" style={{ marginTop: '32px', fontSize: '0.75rem' }}>
-                Ver todo el historial
-              </button>
+              <div className="modal-body">
+                <div className="input-group">
+                  <label>Comparte este token con los invitados</label>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      value={tokenCreado}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px solid #d4a574',
+                        fontFamily: 'monospace',
+                        flex: 1
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(tokenCreado);
+                        alert('Token copiado');
+                      }}
+                      className="submit-btn neo-shadow"
+                      style={{ padding: '12px 20px' }}
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" onClick={() => setTokenCreado(null)} className="submit-btn neo-shadow">
+                  Listo
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </Layout>
   );
 }
+
+export default Groups;

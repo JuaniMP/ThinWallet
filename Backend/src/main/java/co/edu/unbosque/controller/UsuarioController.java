@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -74,6 +75,17 @@ public class UsuarioController {
                     return ResponseEntity.ok(usuario);
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
+    }
+
+    @PostMapping("/login-token")
+    public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> request) {
+        String tokenInvitacion = request.get("tokenInvitacion");
+        if (tokenInvitacion == null || tokenInvitacion.isEmpty()) {
+            return ResponseEntity.badRequest().body("Token requerido");
+        }
+        return usuarioService.loginWithToken(tokenInvitacion)
+                .<ResponseEntity<?>>map(usuario -> ResponseEntity.ok(usuario))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado"));
     }
 
     @PostMapping("/verify")
