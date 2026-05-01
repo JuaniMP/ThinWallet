@@ -1,7 +1,9 @@
 package co.edu.unbosque.service;
 
 import co.edu.unbosque.entity.Usuario;
+import co.edu.unbosque.entity.TipoUsuario;
 import co.edu.unbosque.repository.UsuarioRepository;
+import co.edu.unbosque.repository.TipoUsuarioRepository;
 import co.edu.unbosque.request.LoginRequest;
 import co.edu.unbosque.request.RegisterRequest;
 import co.edu.unbosque.request.UsuarioRequest;
@@ -24,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final TipoUsuarioRepository tipoUsuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenHashingService tokenHashingService;
@@ -106,7 +109,10 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasena()));
-        usuario.setIdTipoUsuario(2L); // ID 2 para Cliente
+        // ID 2 para Cliente
+        TipoUsuario tipoCliente = tipoUsuarioRepository.findById(2L)
+                .orElseThrow(() -> new RuntimeException("Tipo de usuario 'Cliente' no existe"));
+        usuario.setTipoUsuario(tipoCliente);
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEstado(0); // 0 para Pendiente de verificación
         
@@ -148,7 +154,10 @@ public class UsuarioService {
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
         if (request.getTipoUsuario() != null) {
-            usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+            Long tipoId = Long.parseLong(request.getTipoUsuario());
+            TipoUsuario tipo = tipoUsuarioRepository.findById(tipoId)
+                    .orElseThrow(() -> new RuntimeException("Tipo de usuario con ID " + tipoId + " no existe"));
+            usuario.setTipoUsuario(tipo);
         }
         usuario.setDescripcion(request.getDescripcion());
         usuario.setFechaRegistro(LocalDateTime.now());
@@ -165,7 +174,10 @@ public class UsuarioService {
             usuario.setCorreo(request.getCorreo());
             usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
             if (request.getTipoUsuario() != null) {
-                usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+                Long tipoId = Long.parseLong(request.getTipoUsuario());
+                TipoUsuario tipo = tipoUsuarioRepository.findById(tipoId)
+                        .orElseThrow(() -> new RuntimeException("Tipo de usuario con ID " + tipoId + " no existe"));
+                usuario.setTipoUsuario(tipo);
             }
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);

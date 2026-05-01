@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Slf4j
@@ -162,10 +161,7 @@ public class CirculoGastoService {
             invitado.setNombreCompleto((usuario.getNombres() + " " + usuario.getApellidos()).trim());
             invitado.setCorreo(usuario.getCorreo());
 
-            String tipoUsuarioNombre = null;
-            if (usuario.getTipoUsuario() != null) {
-                tipoUsuarioNombre = usuario.getTipoUsuario().getNombre();
-            }
+            String tipoUsuarioNombre = resolverNombreTipoUsuario(usuario);
             invitado.setTipoUsuario(tipoUsuarioNombre);
 
             boolean esFantasma = tipoUsuarioNombre != null && "FANTASMA".equalsIgnoreCase(tipoUsuarioNombre);
@@ -205,12 +201,20 @@ public class CirculoGastoService {
         return token;
     }
 
+    private String resolverNombreTipoUsuario(Usuario usuario) {
+        if (usuario.getTipoUsuario() == null) {
+            return null;
+        }
+        return usuario.getTipoUsuario().getNombre();
+    }
+
     /**
      * Valida regla de negocio: usuarios normales DEBEN tener contrasena_hash y correo
      * Usuarios fantasma pueden tener NULL en estos campos
      */
     private void validarUsuarioNormal(Usuario usuario) {
-        if (usuario.getTipoUsuario() != null && !"FANTASMA".equals(usuario.getTipoUsuario().getNombre())) {
+        String tipoUsuarioNombre = resolverNombreTipoUsuario(usuario);
+        if (tipoUsuarioNombre != null && !"FANTASMA".equals(tipoUsuarioNombre)) {
             if (usuario.getContrasenaHash() == null || usuario.getContrasenaHash().isBlank()) {
                 throw new RuntimeException("Regla de negocio: Usuarios normales DEBEN tener contraseña");
             }
