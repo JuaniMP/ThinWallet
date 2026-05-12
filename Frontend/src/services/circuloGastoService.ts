@@ -1,61 +1,75 @@
 import { api } from "./api";
-import type { CirculoGasto, CirculoDetalle, TipoCirculo } from "../types";
+import type { CirculoDetalle, CirculoGasto, TipoCirculo } from "../types";
 
-const BASE = "/circulos-gasto";
-const TIPOS_BASE = "/tipos-circulo";
-
-const FALLBACK_TIPOS: TipoCirculo[] = [
-  { idTipoCirculo: 1, nombre: "PERSONAL" },
-  { idTipoCirculo: 2, nombre: "GRUPAL" },
-  { idTipoCirculo: 3, nombre: "EMPRESARIAL" },
+const CIRCULOS_GASTO_BASE = "/circulos-gasto";
+const TIPOS_CIRCULO_BASE = "/tipos-circulo";
+const FALLBACK_TIPOS_CIRCULO: TipoCirculo[] = [
+  { idTipoCirculo: 1, nombre: "Familiar" },
+  { idTipoCirculo: 3, nombre: "Amigos" },
+  { idTipoCirculo: 4, nombre: "Pareja" },
 ];
 
 export const circleService = {
-  getAllCircles: () => api.get<CirculoGasto[]>(BASE),
-
-  getCirclesByUser: (idUsuario: number) =>
-    api.get<CirculoGasto[]>(`${BASE}/usuario/${idUsuario}`),
-
-  getCirclesAsMember: (idUsuario: number) =>
-    api.get<CirculoGasto[]>(`${BASE}/miembro/${idUsuario}`),
-
-  getCircleDetail: (idCirculoGasto: number) =>
-    api.get<CirculoDetalle>(`${BASE}/${idCirculoGasto}/detalle`),
-
-  getCircleById: (id: number) => api.get<CirculoGasto>(`${BASE}/${id}`),
-
-  createCircle: (data: {
+  // Crear círculo con invitados fantasmas
+  createCircle: async (data: {
     nombre: string;
-    tipoCirculo?: string;
-    idTipoCirculo?: number;
+    tipoCirculo: string;
     idUsuarioCreador: number;
+    nombresInvitados: string[];
     monedaBase?: string;
-    presupuestoGrupal?: number | null;
-    nombresInvitados?: string[];
-    permiteMesadas?: boolean;
-    permiteSimplificacionDeudas?: boolean;
-  }) => api.post<Record<string, unknown>>(BASE, data),
+  }) => {
+    return api.post<CirculoGasto>(CIRCULOS_GASTO_BASE, data);
+  },
 
-  joinCircle: (token: string, idUsuario: number) =>
-    api.post<CirculoGasto>(`${BASE}/unirse`, { token, idUsuario }),
+  // Obtener todos los círculos
+  getAllCircles: async () => {
+    return api.get<CirculoGasto[]>(CIRCULOS_GASTO_BASE);
+  },
 
-  getCircleByToken: (token: string) =>
-    api.get<CirculoGasto>(`${BASE}/invitacion/${token}`),
+  // Obtener círculos donde el usuario es invitado (miembro)
+  getCirclesAsMember: async (idUsuario: number) => {
+    return api.get<CirculoGasto[]>(
+      `${CIRCULOS_GASTO_BASE}/miembro/${idUsuario}`,
+    );
+  },
 
-  inviteRegisteredUser: (circleId: number, idUsuario: number) =>
-    api.post<CirculoDetalle>(`${BASE}/${circleId}/invitar-registrado`, {
+  getCircleDetail: async (idCirculoGasto: number) => {
+    return api.get<CirculoDetalle>(
+      `${CIRCULOS_GASTO_BASE}/${idCirculoGasto}/detalle`,
+    );
+  },
+
+  getCirclesByUser: async (idUsuario: number) => {
+    return api.get<CirculoGasto[]>(
+      `${CIRCULOS_GASTO_BASE}/usuario/${idUsuario}`,
+    );
+  },
+
+  joinCircle: async (token: string, idUsuario: number) => {
+    return api.post<CirculoGasto>(`${CIRCULOS_GASTO_BASE}/unirse`, {
+      tokenInvitacion: token,
       idUsuario,
-    }),
+    });
+  },
 
-  deleteCircle: (id: number) => api.delete<void>(`${BASE}/${id}`),
-
-  getAllTipoCirculos: async (): Promise<TipoCirculo[]> => {
+  getAllTipoCirculos: async () => {
     try {
-      const tipos = await api.get<TipoCirculo[]>(TIPOS_BASE);
-      if (Array.isArray(tipos) && tipos.length > 0) return tipos;
-    } catch {
-      // fall through to fallback
+      const tiposCirculo = await api.get<TipoCirculo[]>(TIPOS_CIRCULO_BASE);
+
+      if (Array.isArray(tiposCirculo) && tiposCirculo.length > 0) {
+        return tiposCirculo;
+      }
+
+      console.warn(
+        `El endpoint ${TIPOS_CIRCULO_BASE} devolvió una lista vacía`,
+      );
+    } catch (error) {
+      console.warn(
+        `No se pudo cargar tipos de círculo desde ${TIPOS_CIRCULO_BASE}`,
+        error,
+      );
     }
-    return FALLBACK_TIPOS;
+
+    return FALLBACK_TIPOS_CIRCULO;
   },
 };

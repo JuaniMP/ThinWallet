@@ -24,11 +24,11 @@ public class Usuario {
     @Column(name = "nombre_usuario", unique = true)
     private String nombreUsuario;
 
-    @Column(name = "correo", unique = true, nullable = false)
+    @Column(name = "correo", unique = true)
     private String correo;
 
     @JsonIgnore
-    @Column(name = "contrasena_hash", nullable = false)
+    @Column(name = "contrasena_hash")
     private String contrasenaHash;
 
     @Column(name = "id_tipo_usuario")
@@ -36,6 +36,9 @@ public class Usuario {
 
     @Column(name = "token_reclamo")
     private String tokenReclamo;
+
+    @Transient
+    private String tokenReclamoOriginal; // Token sin hashear (solo se devuelve al crear)
 
     @Column(name = "descripcion")
     private String descripcion;
