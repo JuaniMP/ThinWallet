@@ -26,7 +26,7 @@ public class CirculoGasto {
     private String tokenInvitacion;
 
     @Transient
-    private String tokenInvitacionOriginal; // Token sin hashear (solo en memoria para respuesta)
+    private String tokenInvitacionOriginal;
 
     @Column(name = "id_tipo_circulo")
     private Long idTipoCirculo;

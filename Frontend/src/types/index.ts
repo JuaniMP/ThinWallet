@@ -1,13 +1,17 @@
 export interface User {
-  id?: string; // For some local mock maps
+  id?: string;
   idUsuario: number;
   nombres: string;
   apellidos: string;
-  correo?: string; // Optional para usuarios fantasma
-  email?: string;
-  nombreUsuario?: string;
-  name?: string; // For compatibility with some layouts
-  tipoUsuario?: number; // 1=Admin, 2=User, 3=Fantasma (invitado)
+  correo: string;
+  nombreUsuario: string;
+  descripcion?: string;
+  fechaRegistro?: string;
+  estado?: number;
+  idTipoUsuario?: number;
+  tipoUsuario?: number;
+  tokenReclamo?: string;
+  name?: string;
 }
 
 export interface LoginRequest {
@@ -28,11 +32,44 @@ export interface Transaction {
   userId: string;
   amount: number;
   description: string;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   categoryId: string;
   date: string;
   createdAt: string;
   idTipoMovimiento?: number;
+}
+
+export interface CreateTransactionRequest {
+  nombre: string;
+  montoOriginal: number;
+  tipoMovimiento?: string;
+  idUsuario: number;
+  idCategoria?: number;
+  idTipoMovimiento?: number;
+  idCirculoGasto?: number;
+  monedaOriginal?: string;
+  contexto?: string;
+}
+
+export interface Transaccion {
+  idTransaccion: number;
+  nombre: string;
+  montoOriginal: number;
+  monedaOriginal?: string;
+  tasaCambio?: number;
+  tipoMovimiento?: string;
+  tipoCategoria?: string;
+  modalidadDivision?: string;
+  contexto?: string;
+  idUsuario?: number;
+  idCirculoGasto?: number;
+  idCategoria?: number;
+  idTipoMovimiento?: number;
+}
+
+export interface TipoMovimiento {
+  idTipoMovimiento: number;
+  nombre: string;
 }
 
 export interface Balance {
@@ -42,68 +79,146 @@ export interface Balance {
 }
 
 export interface TransactionFilters {
-  type?: 'income' | 'expense';
+  type?: "income" | "expense";
   categoryId?: string;
   page?: number;
   limit?: number;
 }
 
-export interface CreateTransactionRequest {
-  nombre: string;
-  montoOriginal: number;
-  tipoMovimiento: string;
-  idUsuario: number;
-  idCategoria?: number;
-  idTipoMovimiento: number;
-}
-
-export type PaginatedResponse<T> = T[];
-
-export interface Category {
-  idCategoria: number;
-  nombre: string;
-  tipoCategoria?: string | null;
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface SaldoResponse {
   saldoTotal: number;
 }
 
-export interface CirculoGasto {
-  idCirculoGasto: number;
+export interface Category {
+  idCategoria: number;
   nombre: string;
-  tipoCirculo: string;
-  idUsuarioCreador: number;
-  nombresInvitados?: string[];
-  monedaBase?: string;
-}
-
-export interface CirculoInvitadoDetalle {
-  idUsuario: number;
-  nombreCompleto: string;
-  tipoUsuario?: string | null;
-  tokenInvitacionPersonal?: string | null;
-  correo?: string | null;
-}
-
-export interface CirculoDetalle {
-  idCirculoGasto: number;
-  nombre: string;
-  tipoCirculo?: string | null;
-  monedaBase?: string | null;
-  tokenInvitacion?: string | null;
-  presupuestoGrupal?: number | null;
-  permiteMesadas?: boolean | null;
-  permiteSimplificacionDeudas?: boolean | null;
-  idUsuarioCreador: number;
-  fechaCreacion?: string | null;
-  estado?: number | null;
-  totalMiembros: number;
-  totalInvitados: number;
-  invitados: CirculoInvitadoDetalle[];
+  tipoCategoria?: string;
+  descripcion?: string;
+  estado?: number;
 }
 
 export interface TipoCirculo {
   idTipoCirculo: number;
   nombre: string;
+}
+
+export interface CirculoGasto {
+  idCirculoGasto: number;
+  nombre: string;
+  monedaBase?: string;
+  tokenInvitacion?: string;
+  tipoCirculo?: string;
+  idTipoCirculo?: number;
+  presupuestoGrupal?: number;
+  permiteMesadas?: boolean;
+  permiteSimplificacionDeudas?: boolean;
+  idUsuarioCreador?: number;
+  fechaCreacion?: string;
+  estado?: string;
+  nombresInvitados?: string[];
+}
+
+export interface CirculoInvitado {
+  idUsuario: number;
+  nombreCompleto: string;
+  correo?: string;
+  tipoUsuario?: string;
+  rolUsuario?: string;
+  tokenInvitacionPersonal?: string;
+}
+
+export interface CirculoDetalle {
+  idCirculoGasto: number;
+  nombre: string;
+  tipoCirculo?: string;
+  monedaBase?: string;
+  tokenInvitacion?: string;
+  presupuestoGrupal?: number;
+  permiteMesadas?: boolean;
+  permiteSimplificacionDeudas?: boolean;
+  idUsuarioCreador?: number;
+  nombreCreador?: string;
+  correoCreador?: string;
+  fechaCreacion?: string;
+  estado?: string | number;
+  totalMiembros: number;
+  totalInvitados: number;
+  invitados: CirculoInvitado[];
+}
+
+export interface Notificacion {
+  id: string;
+  idUsuarioDestino: number;
+  titulo: string;
+  mensaje: string;
+  tipo: string;
+  idCirculoGasto?: number;
+  nombreCirculo?: string;
+  leida: boolean;
+  fechaCreacion: string;
+}
+
+export interface UsuarioCirculo {
+  idUsuarioCirculo: number;
+  idUsuario: number;
+  idCirculoGasto: number;
+  rolUsuario?: string;
+  fechaIngreso?: string;
+}
+
+export interface UsuarioBusqueda {
+  idUsuario: number;
+  nombreCompleto: string;
+  correo: string;
+  nombreUsuario: string;
+}
+
+export interface Deuda {
+  idDeuda: number;
+  monto: number;
+  metodoPagoSugerido?: string;
+  porcentajeDivision?: number;
+  estadoPago?: string;
+  fechaCreacion?: string;
+  fechaConfirmada?: string;
+  fechaPago?: string;
+  idTransaccion?: number;
+  idUsuarioDeudor?: number;
+  idUsuarioAcreedor?: number;
+}
+
+export interface Gasto {
+  idGasto: number;
+  nombre: string;
+  valor: number;
+  periodicidad?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  idUsuarioCreador?: number;
+  idCirculoGasto?: number;
+  idCategoria?: number;
+}
+
+export interface GastoRequest {
+  nombre: string;
+  valor: number;
+  periodicidad?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  idUsuarioCreador: number;
+  idCirculoGasto?: number;
+  idCategoria?: number;
+}
+
+export interface UsuarioGasto {
+  idUsuarioGasto: number;
+  idUsuario: number;
+  idGasto: number;
 }

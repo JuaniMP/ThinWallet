@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { api } from '../../services/api';
+import { useState, useEffect } from "react";
+import { api } from "../../services/api";
 
 interface BackendCategoria {
   idCategoria: number;
@@ -8,8 +8,8 @@ interface BackendCategoria {
 }
 
 interface CategorySelectProps {
-  type: 'DEPOSITO' | 'RETIRO';
-  value: number | '';
+  type: "DEPOSITO" | "RETIRO";
+  value: number | "";
   onChange: (categoryId: number) => void;
 }
 
@@ -19,14 +19,17 @@ export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await api.get<BackendCategoria[]>('/categorias');
+        const response = await api.get<BackendCategoria[]>("/categorias");
         // El backend retorna un Array, filtramos por el tipo de movimiento o si es genérico
         const filtered = (Array.isArray(response) ? response : []).filter(
-          (cat) => !cat.tipoCategoria || cat.tipoCategoria === type || cat.tipoCategoria === 'AMBOS'
+          (cat) =>
+            !cat.tipoCategoria ||
+            cat.tipoCategoria === type ||
+            cat.tipoCategoria === "AMBOS",
         );
         setCategories(filtered);
       } catch (err) {
-        console.error('Failed to fetch categories:', err);
+        console.error("Failed to fetch categories:", err);
       }
     };
     fetchCategories();
@@ -35,12 +38,14 @@ export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
   return (
     <div className="input-group">
       <label>Categoría</label>
-      <select 
-        value={value} 
-        onChange={(e) => onChange(Number(e.target.value))} 
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
         required
       >
-        <option value="" disabled>Seleccionar categoría</option>
+        <option value="" disabled>
+          Seleccionar categoría
+        </option>
         {categories.map((cat) => (
           <option key={cat.idCategoria} value={cat.idCategoria}>
             {cat.nombre}

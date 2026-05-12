@@ -1,4 +1,13 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "ApiError";
+  }
+}
 
 interface RequestOptions {
   method?: string;
@@ -8,21 +17,21 @@ interface RequestOptions {
 
 class ApiService {
   private getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, headers = {} } = options;
+    const { method = "GET", body, headers = {} } = options;
 
     const token = this.getToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const config: RequestInit = {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...headers,
       },
     };
@@ -46,7 +55,7 @@ class ApiService {
       } catch {
         // ignore text error
       }
-      throw new Error(errorMessage);
+      throw new ApiError(response.status, errorMessage);
     }
 
     const text = await response.text();
@@ -65,15 +74,15 @@ class ApiService {
   }
 
   post<T>(endpoint: string, body: unknown): Promise<T> {
-    return this.request<T>(endpoint, { method: 'POST', body });
+    return this.request<T>(endpoint, { method: "POST", body });
   }
 
   put<T>(endpoint: string, body: unknown): Promise<T> {
-    return this.request<T>(endpoint, { method: 'PUT', body });
+    return this.request<T>(endpoint, { method: "PUT", body });
   }
 
   delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 }
 

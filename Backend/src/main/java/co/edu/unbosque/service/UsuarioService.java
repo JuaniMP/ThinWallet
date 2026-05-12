@@ -1,5 +1,6 @@
 package co.edu.unbosque.service;
 
+import co.edu.unbosque.dto.UsuarioBusquedaResponse;
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.entity.TipoUsuario;
 import co.edu.unbosque.repository.UsuarioRepository;
@@ -10,6 +11,7 @@ import co.edu.unbosque.request.UsuarioRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,9 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenHashingService tokenHashingService;
+
+    @Autowired(required = false)
+    private AuditoriaSistemaService auditoriaService;
 
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
     private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
@@ -60,12 +65,27 @@ public class UsuarioService {
                 .filter(usuario -> passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash()));
     }
 
+    public void reenviarVerificacion(String correo) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
+        if (usuarioOpt.isEmpty()) {
+            throw new RuntimeException("No existe un usuario con ese correo electrónico");
+        }
+        Usuario usuario = usuarioOpt.get();
+        if (usuario.getEstado() == 1) {
+            throw new RuntimeException("El usuario ya está verificado");
+        }
+        String codigo = String.format("%06d", new Random().nextInt(999999));
+        registrationTokens.put(correo, codigo);
+        emailService.enviarCodigoVerificacion(correo, codigo);
+        log.info("Codigo de verificacion reenviado para {}: {}", correo, codigo);
+    }
+
     @Transactional(readOnly = true)
     public Optional<Usuario> loginWithToken(String tokenReclamo) {
         // Obtener todos los usuarios para validar contra tokens hasheados en BD
         List<Usuario> todosUsuarios = usuarioRepository.findAll();
         for (Usuario usuario : todosUsuarios) {
-            if (usuario.getTokenReclamo() != null && 
+            if (usuario.getTokenReclamo() != null &&
                 tokenHashingService.validateToken(tokenReclamo, usuario.getTokenReclamo())) {
                 return Optional.of(usuario);
             }
@@ -98,6 +118,12 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("No existe un usuario con ese correo electrónico"));
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
+                    "CAMBIO_CONTRASENA", null, "{\"correo\":\"" + correo + "\"}");
+        }
+
         resetTokens.remove(correo);
     }
 
@@ -115,16 +141,21 @@ public class UsuarioService {
         usuario.setTipoUsuario(tipoCliente);
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEstado(0); // 0 para Pendiente de verificación
-        
+
         Usuario savedUser = usuarioRepository.save(usuario);
-        
+
         // Generar y enviar código de verificación
         String codigo = String.format("%06d", new Random().nextInt(999999));
         registrationTokens.put(request.getCorreo(), codigo);
         emailService.enviarCodigoVerificacion(request.getCorreo(), codigo);
-        
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(savedUser.getIdUsuario(), "usuario", savedUser.getIdUsuario(),
+                    "REGISTRO", null, "{\"correo\":\"" + savedUser.getCorreo() + "\"}");
+        }
+
         log.info("Usuario registrado (pendiente verif): {}. Codigo: {}", request.getCorreo(), codigo);
-        
+
         return savedUser;
     }
 
@@ -138,6 +169,10 @@ public class UsuarioService {
                 usuario.setEstado(1); // Activar usuario
                 usuarioRepository.save(usuario);
                 registrationTokens.remove(correo);
+                if (auditoriaService != null) {
+                    auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
+                            "VERIFICACION_CORREO", "{\"estado\":0}", "{\"estado\":1}");
+                }
                 log.info("Usuario verificado y activado: {}", correo);
                 return true;
             }
@@ -182,6 +217,67 @@ public class UsuarioService {
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);
         });
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioBusquedaResponse> buscarUsuariosRegistrados(String q, Long excludeId) {
+        String query = q == null ? "" : q.toLowerCase().trim();
+        return usuarioRepository.findAll().stream()
+                .filter(u -> u.getEstado() == 1 && (u.getTipoUsuario() == null || u.getTipoUsuario().getIdTipoUsuario() != 3))
+                .filter(u -> excludeId == null || !u.getIdUsuario().equals(excludeId))
+                .filter(u -> u.getCorreo() != null && u.getCorreo().toLowerCase().contains(query)
+                        || u.getNombreUsuario() != null && u.getNombreUsuario().toLowerCase().contains(query)
+                        || u.getNombres() != null && u.getNombres().toLowerCase().contains(query))
+                .limit(10)
+                .map(u -> new UsuarioBusquedaResponse(
+                        u.getIdUsuario(),
+                        (u.getNombres() + " " + (u.getApellidos() != null ? u.getApellidos() : "")).trim(),
+                        u.getCorreo(),
+                        u.getNombreUsuario()))
+                .toList();
+    }
+
+    /**
+     * Reclamación de perfil: convierte una cuenta fantasma (tipo FANTASMA)
+     * en una cuenta real usando el tokenReclamo del usuario fantasma.
+     */
+    @Transactional
+    public Usuario reclamarPerfil(String tokenReclamo, String nombres, String apellidos,
+                                   String nombreUsuario, String correo, String contrasena) {
+        Usuario fantasma = usuarioRepository.findAll().stream()
+                .filter(u -> tokenReclamo.equals(u.getTokenReclamo()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("TOKEN_INVALIDO"));
+
+        if (usuarioRepository.findByCorreo(correo)
+                .filter(u -> !u.getIdUsuario().equals(fantasma.getIdUsuario()))
+                .isPresent()) {
+            throw new RuntimeException("CORREO_EN_USO");
+        }
+        if (usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .filter(u -> !u.getIdUsuario().equals(fantasma.getIdUsuario()))
+                .isPresent()) {
+            throw new RuntimeException("NOMBRE_EN_USO");
+        }
+
+        TipoUsuario tipoCliente = tipoUsuarioRepository.findById(2L)
+                .orElseThrow(() -> new RuntimeException("Tipo de usuario 'Cliente' no existe"));
+
+        fantasma.setNombres(nombres);
+        fantasma.setApellidos(apellidos);
+        fantasma.setNombreUsuario(nombreUsuario);
+        fantasma.setCorreo(correo);
+        fantasma.setContrasenaHash(passwordEncoder.encode(contrasena));
+        fantasma.setTipoUsuario(tipoCliente);
+        fantasma.setEstado(1);
+        fantasma.setTokenReclamo(null);
+
+        Usuario reclamado = usuarioRepository.save(fantasma);
+        if (auditoriaService != null) {
+            auditoriaService.registrar(reclamado.getIdUsuario(), "usuario", reclamado.getIdUsuario(),
+                    "RECLAMACION_PERFIL", "{\"tipo\":\"FANTASMA\"}", "{\"tipo\":\"CLIENTE\",\"correo\":\"" + correo + "\"}");
+        }
+        return reclamado;
     }
 
     @Transactional
