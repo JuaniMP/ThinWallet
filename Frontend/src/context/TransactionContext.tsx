@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { Transaction, TransactionFilters } from '../types';
-import { api } from '../services/api';
+import { createContext, useContext, useState, type ReactNode } from "react";
+import type { Transaction, TransactionFilters } from "../types";
+import { api } from "../services/api";
 
 interface BackendTransaccion {
   idTransaccion: number;
@@ -25,8 +25,8 @@ function mapToFrontend(t: BackendTransaccion): Transaction {
     userId: String(t.idUsuario),
     amount: t.montoOriginal * (t.tasaCambio ?? 1),
     description: t.nombre,
-    type: t.tipoCategoria === 'DEPOSITO' ? 'income' : 'expense',
-    categoryId: t.idCategoria ? String(t.idCategoria) : '',
+    type: t.tipoCategoria === "DEPOSITO" ? "income" : "expense",
+    categoryId: t.idCategoria ? String(t.idCategoria) : "",
     date: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     idTipoMovimiento: t.idTipoMovimiento ?? 1,
@@ -35,7 +35,7 @@ function mapToFrontend(t: BackendTransaccion): Transaction {
 
 function getStoredUserId(): number | null {
   try {
-    const stored = localStorage.getItem('user');
+    const stored = localStorage.getItem("user");
     if (!stored) return null;
     const user = JSON.parse(stored);
     return user.idUsuario ?? null;
@@ -62,7 +62,9 @@ interface TransactionContextType {
   deleteTransaction: (id: string) => Promise<void>;
 }
 
-const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
+const TransactionContext = createContext<TransactionContextType | undefined>(
+  undefined,
+);
 
 export function TransactionProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -74,13 +76,16 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     const idUsuario = getStoredUserId();
     if (!idUsuario) return;
     try {
-      const response = await api.get<{ saldoTotal: number }>(`/usuarios/${idUsuario}/saldo`);
+      const response = await api.get<{ saldoTotal: number }>(
+        `/usuarios/${idUsuario}/saldo`,
+      );
       setSaldoTotal(response.saldoTotal ?? 0);
     } catch {
       // keep existing value on error
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchTransactions = async (_filters?: TransactionFilters) => {
     setIsLoading(true);
     setError(null);
@@ -88,13 +93,15 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       const idUsuario = getStoredUserId();
       const endpoint = idUsuario
         ? `/transacciones/usuario/${idUsuario}`
-        : '/transacciones';
+        : "/transacciones";
 
       const response = await api.get<BackendTransaccion[]>(endpoint);
-      const mapped = (Array.isArray(response) ? response : []).map(mapToFrontend);
+      const mapped = (Array.isArray(response) ? response : []).map(
+        mapToFrontend,
+      );
       setTransactions(mapped);
     } catch (err) {
-      console.error('Error fetching transactions:', err);
+      console.error("Error fetching transactions:", err);
       setTransactions([]);
     } finally {
       setIsLoading(false);
@@ -112,11 +119,13 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      await api.post<BackendTransaccion>('/transacciones', data);
+      await api.post<BackendTransaccion>("/transacciones", data);
       await fetchTransactions();
       await fetchSaldo();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear transacción');
+      setError(
+        err instanceof Error ? err.message : "Error al crear transacción",
+      );
       throw err;
     } finally {
       setIsLoading(false);
@@ -131,7 +140,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       await fetchTransactions();
       await fetchSaldo();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al eliminar transacción');
+      setError(
+        err instanceof Error ? err.message : "Error al eliminar transacción",
+      );
       throw err;
     } finally {
       setIsLoading(false);
@@ -156,10 +167,13 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTransactions() {
   const context = useContext(TransactionContext);
   if (context === undefined) {
-    throw new Error('useTransactions must be used within a TransactionProvider');
+    throw new Error(
+      "useTransactions must be used within a TransactionProvider",
+    );
   }
   return context;
 }

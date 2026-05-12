@@ -10,6 +10,7 @@ export interface User {
   estado?: number;
   idTipoUsuario?: number;
   tipoUsuario?: number;
+  tokenReclamo?: string;
   name?: string;
 }
 
@@ -31,7 +32,7 @@ export interface Transaction {
   userId: string;
   amount: number;
   description: string;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   categoryId: string;
   date: string;
   createdAt: string;
@@ -78,7 +79,7 @@ export interface Balance {
 }
 
 export interface TransactionFilters {
-  type?: 'income' | 'expense';
+  type?: "income" | "expense";
   categoryId?: string;
   page?: number;
   limit?: number;
@@ -191,4 +192,33 @@ export interface Deuda {
   idTransaccion?: number;
   idUsuarioDeudor?: number;
   idUsuarioAcreedor?: number;
+}
+
+export interface Gasto {
+  idGasto: number;
+  nombre: string;
+  valor: number;
+  periodicidad?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  idUsuarioCreador?: number;
+  idCirculoGasto?: number;
+  idCategoria?: number;
+}
+
+export interface GastoRequest {
+  nombre: string;
+  valor: number;
+  periodicidad?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  idUsuarioCreador: number;
+  idCirculoGasto?: number;
+  idCategoria?: number;
+}
+
+export interface UsuarioGasto {
+  idUsuarioGasto: number;
+  idUsuario: number;
+  idGasto: number;
 }

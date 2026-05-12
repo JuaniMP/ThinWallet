@@ -37,6 +37,12 @@ public class CirculoGastoService {
     @Autowired(required = false)
     private NotificacionService notificacionService;
 
+    @Autowired(required = false)
+    private ActividadCirculoService actividadCirculoService;
+
+    @Autowired(required = false)
+    private AuditoriaSistemaService auditoriaService;
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void populateTipos(List<CirculoGasto> lista) {
@@ -216,6 +222,12 @@ public class CirculoGastoService {
             crearInvitadosYVincular(request.getNombresInvitados(), saved);
         }
 
+        if (auditoriaService != null) {
+            auditoriaService.registrar(saved.getIdUsuarioCreador(), "circulo_gasto", saved.getIdCirculoGasto(),
+                    "INSERT", null,
+                    "{\"nombre\":\"" + saved.getNombre() + "\",\"moneda\":\"" + saved.getMonedaBase() + "\"}");
+        }
+
         populateTipo(saved);
         return saved;
     }
@@ -306,14 +318,64 @@ public class CirculoGastoService {
             }
         }
 
+        if (auditoriaService != null) {
+            auditoriaService.registrar(idUsuario, "usuario_circulo", idCirculo,
+                    "INVITAR_USUARIO", null,
+                    "{\"id_circulo\":" + idCirculo + ",\"id_usuario\":" + idUsuario + "}");
+        }
+
+        if (actividadCirculoService != null) {
+            actividadCirculoService.registrarEvento(idCirculo, "MIEMBRO_INVITADO", idUsuario,
+                    Map.of("rol", "MIEMBRO"));
+        }
+
+        populateTipo(circulo);
+        return mapearDetalle(circulo);
+    }
+
+    @Transactional
+    public CirculoDetalleResponse expulsarMiembro(Long idCirculo, Long idUsuario) {
+        CirculoGasto circulo = circuloGastoRepository.findById(idCirculo)
+                .orElseThrow(() -> new IllegalArgumentException("CIRCULO_NO_ENCONTRADO"));
+
+        if (idUsuario.equals(circulo.getIdUsuarioCreador())) {
+            throw new IllegalStateException("No se puede expulsar al creador del círculo");
+        }
+
+        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByIdCirculoGasto(idCirculo);
+        UsuarioCirculo vinculo = vinculaciones.stream()
+                .filter(uc -> uc.getIdUsuario().equals(idUsuario))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("USUARIO_NO_ES_MIEMBRO"));
+
+        usuarioCirculoRepository.deleteById(vinculo.getIdUsuarioCirculo());
+        log.info("Usuario {} expulsado del circulo {}", idUsuario, idCirculo);
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(idUsuario, "usuario_circulo", idCirculo,
+                    "EXPULSAR_MIEMBRO",
+                    "{\"rol\":\"" + (vinculo.getRolUsuario() != null ? vinculo.getRolUsuario() : "MIEMBRO") + "\"}", null);
+        }
+
+        if (actividadCirculoService != null) {
+            actividadCirculoService.registrarEvento(idCirculo, "MIEMBRO_EXPULSADO", idUsuario,
+                    Map.of("rol_anterior", vinculo.getRolUsuario() != null ? vinculo.getRolUsuario() : "MIEMBRO"));
+        }
+
         populateTipo(circulo);
         return mapearDetalle(circulo);
     }
 
     @Transactional
     public void delete(Long id) {
-        usuarioCirculoRepository.findByIdCirculoGasto(id)
-                .forEach(uc -> usuarioCirculoRepository.deleteById(uc.getIdUsuarioCirculo()));
-        circuloGastoRepository.deleteById(id);
+        circuloGastoRepository.findById(id).ifPresent(c -> {
+            usuarioCirculoRepository.findByIdCirculoGasto(id)
+                    .forEach(uc -> usuarioCirculoRepository.deleteById(uc.getIdUsuarioCirculo()));
+            circuloGastoRepository.deleteById(id);
+            if (auditoriaService != null) {
+                auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DELETE",
+                        "{\"nombre\":\"" + c.getNombre() + "\"}", null);
+            }
+        });
     }
 }

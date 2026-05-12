@@ -224,6 +224,27 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado");
     }
 
+    /**
+     * Reclamación de perfil: convierte cuenta fantasma en cuenta real.
+     * Body: { tokenReclamo, nombres, apellidos, nombreUsuario, correo, contrasena }
+     */
+    @PostMapping("/reclamar-perfil")
+    public ResponseEntity<?> reclamarPerfil(@RequestBody Map<String, String> body) {
+        try {
+            Usuario usuario = usuarioService.reclamarPerfil(
+                    body.get("tokenReclamo"),
+                    body.get("nombres"),
+                    body.get("apellidos"),
+                    body.get("nombreUsuario"),
+                    body.get("correo"),
+                    body.get("contrasena")
+            );
+            return ResponseEntity.ok(usuario);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping
     public ResponseEntity<Usuario> create(@Valid @RequestBody UsuarioRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.create(request));

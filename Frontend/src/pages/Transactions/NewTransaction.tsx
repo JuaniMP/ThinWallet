@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { useTransactions } from '../../context/TransactionContext';
-import { TransactionForm } from '../../components/transaction/TransactionForm';
-import { Layout } from '../../components/layout/Layout';
+import { useNavigate } from "react-router-dom";
+import { useTransactions } from "../../context/TransactionContext";
+import { TransactionForm } from "../../components/transaction/TransactionForm";
+import { Layout } from "../../components/layout/Layout";
 
 export function NewTransaction() {
   const { createTransaction, isLoading, error } = useTransactions();
@@ -16,7 +16,7 @@ export function NewTransaction() {
     idTipoMovimiento: number;
   }) => {
     await createTransaction(data);
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (

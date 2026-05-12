@@ -1,13 +1,13 @@
-import { api } from './api';
-import type { CirculoGasto, CirculoDetalle, TipoCirculo } from '../types';
+import { api } from "./api";
+import type { CirculoGasto, CirculoDetalle, TipoCirculo } from "../types";
 
-const BASE = '/circulos-gasto';
-const TIPOS_BASE = '/tipos-circulo';
+const BASE = "/circulos-gasto";
+const TIPOS_BASE = "/tipos-circulo";
 
 const FALLBACK_TIPOS: TipoCirculo[] = [
-  { idTipoCirculo: 1, nombre: 'PERSONAL' },
-  { idTipoCirculo: 2, nombre: 'GRUPAL' },
-  { idTipoCirculo: 3, nombre: 'EMPRESARIAL' },
+  { idTipoCirculo: 1, nombre: "PERSONAL" },
+  { idTipoCirculo: 2, nombre: "GRUPAL" },
+  { idTipoCirculo: 3, nombre: "EMPRESARIAL" },
 ];
 
 export const circleService = {
@@ -22,8 +22,7 @@ export const circleService = {
   getCircleDetail: (idCirculoGasto: number) =>
     api.get<CirculoDetalle>(`${BASE}/${idCirculoGasto}/detalle`),
 
-  getCircleById: (id: number) =>
-    api.get<CirculoGasto>(`${BASE}/${id}`),
+  getCircleById: (id: number) => api.get<CirculoGasto>(`${BASE}/${id}`),
 
   createCircle: (data: {
     nombre: string;
@@ -44,10 +43,11 @@ export const circleService = {
     api.get<CirculoGasto>(`${BASE}/invitacion/${token}`),
 
   inviteRegisteredUser: (circleId: number, idUsuario: number) =>
-    api.post<CirculoDetalle>(`${BASE}/${circleId}/invitar-registrado`, { idUsuario }),
+    api.post<CirculoDetalle>(`${BASE}/${circleId}/invitar-registrado`, {
+      idUsuario,
+    }),
 
-  deleteCircle: (id: number) =>
-    api.delete<void>(`${BASE}/${id}`),
+  deleteCircle: (id: number) => api.delete<void>(`${BASE}/${id}`),
 
   getAllTipoCirculos: async (): Promise<TipoCirculo[]> => {
     try {

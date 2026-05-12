@@ -9,9 +9,11 @@ import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.request.TransaccionRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +27,12 @@ public class TransaccionService {
     private final TransaccionRepository transaccionRepository;
     private final TipoMovimientoRepository tipoMovimientoRepository;
     private final CategoriaRepository categoriaRepository;
+
+    @Autowired(required = false)
+    private ActividadCirculoService actividadCirculoService;
+
+    @Autowired(required = false)
+    private AuditoriaSistemaService auditoriaService;
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -112,12 +120,31 @@ public class TransaccionService {
         transaccion.setIdTipoMovimiento(resolverIdTipoMovimiento(request));
         Transaccion saved = transaccionRepository.save(transaccion);
         populateTipo(saved);
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(saved.getIdUsuario(), "transaccion", saved.getIdTransaccion(),
+                    "INSERT", null,
+                    "{\"monto\":" + saved.getMontoOriginal() + ",\"tipo\":" + saved.getIdTipoMovimiento() + "}");
+        }
+
+        // Auditoría NoSQL: registrar evento en MongoDB
+        if (actividadCirculoService != null && saved.getIdCirculoGasto() != null) {
+            Map<String, Object> contexto = new HashMap<>();
+            contexto.put("monto", saved.getMontoOriginal());
+            contexto.put("moneda", saved.getMonedaOriginal());
+            contexto.put("modalidad", saved.getModalidadDivision());
+            actividadCirculoService.registrarEvento(
+                    saved.getIdCirculoGasto(), "TRANSACCION_REALIZADA",
+                    saved.getIdUsuario(), contexto);
+        }
+
         return saved;
     }
 
     @Transactional
     public Optional<Transaccion> update(Long id, TransaccionRequest request) {
         return transaccionRepository.findById(id).map(transaccion -> {
+            String anterior = "{\"monto\":" + transaccion.getMontoOriginal() + ",\"tipo\":" + transaccion.getIdTipoMovimiento() + "}";
             transaccion.setNombre(request.getNombre());
             transaccion.setMontoOriginal(request.getMontoOriginal());
             transaccion.setMonedaOriginal(request.getMonedaOriginal());
@@ -127,12 +154,23 @@ public class TransaccionService {
             transaccion.setIdTipoMovimiento(resolverIdTipoMovimiento(request));
             Transaccion saved = transaccionRepository.save(transaccion);
             populateTipo(saved);
+            if (auditoriaService != null) {
+                auditoriaService.registrar(saved.getIdUsuario(), "transaccion", saved.getIdTransaccion(),
+                        "UPDATE", anterior,
+                        "{\"monto\":" + saved.getMontoOriginal() + ",\"tipo\":" + saved.getIdTipoMovimiento() + "}");
+            }
             return saved;
         });
     }
 
     @Transactional
     public void delete(Long id) {
-        transaccionRepository.deleteById(id);
+        transaccionRepository.findById(id).ifPresent(t -> {
+            transaccionRepository.deleteById(id);
+            if (auditoriaService != null) {
+                auditoriaService.registrar(t.getIdUsuario(), "transaccion", id, "DELETE",
+                        "{\"monto\":" + t.getMontoOriginal() + "}", null);
+            }
+        });
     }
 }
