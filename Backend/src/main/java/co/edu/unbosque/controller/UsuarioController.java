@@ -99,6 +99,55 @@ public class UsuarioController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
     }
 
+    @PostMapping("/login-token")
+    public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> request) {
+        String tokenInvitacion = request.get("tokenInvitacion");
+        log.info("Intento de login con token: {}", tokenInvitacion);
+        if (tokenInvitacion == null || tokenInvitacion.isEmpty()) {
+            return ResponseEntity.badRequest().body("Token requerido");
+        }
+
+        // Intento 1: ¿Es un token personal de un usuario invitado (tokenReclamo)?
+        Optional<Usuario> usuarioOpt = usuarioService.loginWithToken(tokenInvitacion);
+        if (usuarioOpt.isPresent()) {
+            log.info("Token personal valido para usuario: {}", usuarioOpt.get().getCorreo());
+            return ResponseEntity.ok(usuarioOpt.get());
+        }
+
+        // Intento 2: ¿Es el token de un Círculo de Gasto?
+        Optional<CirculoGasto> circuloOpt = circuloGastoService.findByTokenInvitacion(tokenInvitacion);
+        if (circuloOpt.isPresent()) {
+            CirculoGasto circulo = circuloOpt.get();
+            log.info("Token de circulo detectado para el circulo: {}", circulo.getNombre());
+
+            // Si no hay invitados pendientes, creamos un nuevo invitado al vuelo
+            String sufijo = UUID.randomUUID().toString().substring(0, 6);
+
+            UsuarioRequest nuevoReq = new UsuarioRequest();
+            nuevoReq.setNombres("Invitado");
+            nuevoReq.setApellidos(circulo.getNombre() + " " + sufijo);
+            nuevoReq.setNombreUsuario("guest_" + sufijo);
+            nuevoReq.setCorreo("guest_" + sufijo + "@thinwallet.local");
+            nuevoReq.setContrasenaHash(sufijo); // Se hasheará en create
+            nuevoReq.setTipoUsuario("3"); // Invitado
+            nuevoReq.setDescripcion("Usuario generado por token de círculo");
+
+            Usuario nuevoInvitado = usuarioService.create(nuevoReq);
+
+            UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
+            ucReq.setIdUsuario(nuevoInvitado.getIdUsuario());
+            ucReq.setIdCirculoGasto(circulo.getIdCirculoGasto());
+            ucReq.setRolUsuario("INVITADO");
+            usuarioCirculoService.create(ucReq);
+
+            log.info("Nuevo invitado {} creado al vuelo por token de círculo", nuevoInvitado.getCorreo());
+            return ResponseEntity.ok(nuevoInvitado);
+        }
+
+        log.warn("Token invalido: {}", tokenInvitacion);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado");
+    }
+
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@Valid @RequestBody VerificarCodigoRequest request) {
         boolean verificado = usuarioService.verifyRegistration(request.getCorreo(), request.getCodigo());
@@ -147,81 +196,6 @@ public class UsuarioController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }
-
-
-    @PostMapping("/login-token")
-    public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> request) {
-        String tokenInvitacion = request.get("tokenInvitacion");
-        log.info("Intento de login con token: {}", tokenInvitacion);
-        if (tokenInvitacion == null || tokenInvitacion.isEmpty()) {
-            return ResponseEntity.badRequest().body("Token requerido");
-        }
-        
-        // Intento 1: ¿Es un token personal de un usuario invitado (tokenReclamo)?
-        Optional<Usuario> usuarioOpt = usuarioService.loginWithToken(tokenInvitacion);
-        if (usuarioOpt.isPresent()) {
-            log.info("Token personal valido para usuario: {}", usuarioOpt.get().getCorreo());
-            return ResponseEntity.ok(usuarioOpt.get());
-        }
-        
-        // Intento 2: ¿Es el token de un Círculo de Gasto?
-        Optional<CirculoGasto> circuloOpt = circuloGastoService.findByTokenInvitacion(tokenInvitacion);
-        if (circuloOpt.isPresent()) {
-            CirculoGasto circulo = circuloOpt.get();
-            log.info("Token de circulo detectado para el circulo: {}", circulo.getNombre());
-            
-            // Buscar si hay invitados pendientes (estado = 0) en este círculo
-            List<UsuarioCirculo> miembros = usuarioCirculoService.findByCirculoGasto(circulo.getIdCirculoGasto());
-            for (UsuarioCirculo uc : miembros) {
-                if ("INVITADO".equals(uc.getRolUsuario())) {
-                    Optional<Usuario> uOpt = usuarioService.findById(uc.getIdUsuario());
-                    if (uOpt.isPresent() && uOpt.get().getEstado() == 0) {
-                        Usuario invitadoPendiente = uOpt.get();
-                        
-                        // Activamos a este usuario para que no sea asignado de nuevo
-                        UsuarioRequest updateReq = new UsuarioRequest();
-                        updateReq.setNombres(invitadoPendiente.getNombres());
-                        updateReq.setApellidos(invitadoPendiente.getApellidos());
-                        updateReq.setNombreUsuario(invitadoPendiente.getNombreUsuario());
-                        updateReq.setCorreo(invitadoPendiente.getCorreo());
-                        updateReq.setContrasenaHash(invitadoPendiente.getContrasenaHash()); // Se mantendrá hash
-                        updateReq.setTipoUsuario(String.valueOf(invitadoPendiente.getIdTipoUsuario()));
-                        
-                        // La única forma de cambiar estado sin cambiar contraseña de forma limpia
-                        // Sería mejor hacer un método en Service, pero esto sirve para el workaround
-                        // Mejor crear un invitado nuevo si no podemos cambiar el estado facilmente
-                        break; // Fallback a crear uno nuevo
-                    }
-                }
-            }
-            
-            // Si no hay invitados pendientes, o para simplificar, creamos un nuevo invitado al vuelo
-            String sufijo = UUID.randomUUID().toString().substring(0, 6);
-            
-            UsuarioRequest nuevoReq = new UsuarioRequest();
-            nuevoReq.setNombres("Invitado");
-            nuevoReq.setApellidos(circulo.getNombre() + " " + sufijo);
-            nuevoReq.setNombreUsuario("guest_" + sufijo);
-            nuevoReq.setCorreo("guest_" + sufijo + "@thinwallet.local");
-            nuevoReq.setContrasenaHash(sufijo); // Se hasheará en create
-            nuevoReq.setTipoUsuario("3"); // Invitado
-            nuevoReq.setDescripcion("Usuario generado por token de círculo");
-            
-            Usuario nuevoInvitado = usuarioService.create(nuevoReq);
-            
-            UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
-            ucReq.setIdUsuario(nuevoInvitado.getIdUsuario());
-            ucReq.setIdCirculoGasto(circulo.getIdCirculoGasto());
-            ucReq.setRolUsuario("INVITADO");
-            usuarioCirculoService.create(ucReq);
-            
-            log.info("Nuevo invitado {} creado al vuelo por token de círculo", nuevoInvitado.getCorreo());
-            return ResponseEntity.ok(nuevoInvitado);
-        }
-        
-        log.warn("Token invalido: {}", tokenInvitacion);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado");
     }
 
     /**

@@ -4,10 +4,13 @@ import co.edu.unbosque.dto.CirculoDetalleResponse;
 import co.edu.unbosque.dto.CirculoInvitadoDetalleResponse;
 import co.edu.unbosque.entity.CirculoGasto;
 import co.edu.unbosque.entity.TipoCirculo;
+import co.edu.unbosque.entity.TipoUsuario;
 import co.edu.unbosque.entity.UsuarioCirculo;
+import co.edu.unbosque.entity.UsuarioCirculoId;
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.CirculoGastoRepository;
 import co.edu.unbosque.repository.TipoCirculoRepository;
+import co.edu.unbosque.repository.TipoUsuarioRepository;
 import co.edu.unbosque.repository.UsuarioCirculoRepository;
 import co.edu.unbosque.repository.UsuarioRepository;
 import co.edu.unbosque.request.CirculoGastoRequest;
@@ -31,6 +34,7 @@ public class CirculoGastoService {
     private final UsuarioCirculoRepository usuarioCirculoRepository;
     private final UsuarioCirculoService usuarioCirculoService;
     private final TipoCirculoRepository tipoCirculoRepository;
+    private final TipoUsuarioRepository tipoUsuarioRepository;
     private final UsuarioRepository usuarioRepository;
     private final TokenHashingService tokenHashingService;
 
@@ -74,21 +78,30 @@ public class CirculoGastoService {
         return null;
     }
 
+    private String resolverNombreTipoUsuario(Usuario usuario) {
+        if (usuario.getTipoUsuario() == null) {
+            return null;
+        }
+        return usuario.getTipoUsuario().getNombre();
+    }
+
     private CirculoDetalleResponse mapearDetalle(CirculoGasto circulo) {
-        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByIdCirculoGasto(circulo.getIdCirculoGasto());
+        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(circulo.getIdCirculoGasto());
 
         List<CirculoInvitadoDetalleResponse> invitados = vinculaciones.stream()
-                .filter(uc -> !uc.getIdUsuario().equals(circulo.getIdUsuarioCreador()))
+                .filter(uc -> !uc.getId().getIdUsuario().equals(circulo.getIdUsuarioCreador()))
                 .map(uc -> {
                     CirculoInvitadoDetalleResponse m = new CirculoInvitadoDetalleResponse();
-                    m.setIdUsuario(uc.getIdUsuario());
+                    m.setIdUsuario(uc.getId().getIdUsuario());
                     m.setRolUsuario(uc.getRolUsuario());
-                    usuarioRepository.findById(uc.getIdUsuario()).ifPresent(u -> {
+                    if (uc.getUsuario() != null) {
+                        Usuario u = uc.getUsuario();
                         m.setNombreCompleto((u.getNombres() + " " + u.getApellidos()).trim());
                         m.setCorreo(u.getCorreo());
                         m.setTokenInvitacionPersonal(u.getTokenReclamo());
-                        m.setTipoUsuario(u.getIdTipoUsuario() != null && u.getIdTipoUsuario() == 3 ? "FANTASMA" : "REGISTRADO");
-                    });
+                        String tipoNombre = resolverNombreTipoUsuario(u);
+                        m.setTipoUsuario(tipoNombre != null ? tipoNombre : "REGISTRADO");
+                    }
                     return m;
                 }).collect(Collectors.toList());
 
@@ -166,9 +179,9 @@ public class CirculoGastoService {
     public List<CirculoGasto> findAllByMiembro(Long idUsuario) {
         List<CirculoGasto> creados = circuloGastoRepository.findByIdUsuarioCreador(idUsuario);
 
-        List<Long> idsComoMiembro = usuarioCirculoRepository.findByIdUsuario(idUsuario)
+        List<Long> idsComoMiembro = usuarioCirculoRepository.findByUsuario_IdUsuario(idUsuario)
                 .stream()
-                .map(UsuarioCirculo::getIdCirculoGasto)
+                .map(uc -> uc.getId().getIdCirculoGasto())
                 .collect(Collectors.toList());
 
         List<CirculoGasto> unidos = idsComoMiembro.isEmpty()
@@ -190,6 +203,8 @@ public class CirculoGastoService {
 
     @Transactional
     public CirculoGasto create(CirculoGastoRequest request) {
+        log.info("Creando nuevo círculo de gasto: {}", request.getNombre());
+
         CirculoGasto circulo = new CirculoGasto();
         circulo.setNombre(request.getNombre());
         circulo.setMonedaBase(request.getMonedaBase() != null ? request.getMonedaBase() : "COP");
@@ -199,7 +214,7 @@ public class CirculoGastoService {
         circulo.setPermiteSimplificacionDeudas(request.getPermiteSimplificacionDeudas() != null ? request.getPermiteSimplificacionDeudas() : false);
         circulo.setIdUsuarioCreador(request.getIdUsuarioCreador());
         circulo.setFechaCreacion(LocalDateTime.now());
-        circulo.setEstado("ACTIVO");
+        circulo.setEstado(1);
 
         String tokenOriginal = (request.getTokenInvitacion() != null && !request.getTokenInvitacion().isBlank())
                 ? request.getTokenInvitacion()
@@ -233,6 +248,10 @@ public class CirculoGastoService {
     }
 
     private void crearInvitadosYVincular(List<String> nombres, CirculoGasto circulo) {
+        TipoUsuario tipoFantasma = tipoUsuarioRepository.findByNombre("FANTASMA")
+                .orElseGet(() -> tipoUsuarioRepository.findById(3L)
+                        .orElseThrow(() -> new RuntimeException("Tipo de usuario FANTASMA no encontrado")));
+
         for (String nombre : nombres) {
             if (nombre == null || nombre.isBlank()) continue;
 
@@ -247,7 +266,7 @@ public class CirculoGastoService {
             invitado.setCorreo("ghost_" + tokenReclamo + "@thinwallet.local");
             invitado.setContrasenaHash(tokenHashingService.hashToken(tokenHashingService.generateToken()));
             invitado.setTokenReclamo(tokenReclamo);
-            invitado.setIdTipoUsuario(3L);
+            invitado.setTipoUsuario(tipoFantasma);
             invitado.setEstado(0);
             invitado.setFechaRegistro(LocalDateTime.now());
 
@@ -287,12 +306,13 @@ public class CirculoGastoService {
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new IllegalArgumentException("USUARIO_NO_ENCONTRADO"));
 
-        if (usuario.getEstado() != 1 || (usuario.getIdTipoUsuario() != null && usuario.getIdTipoUsuario() == 3)) {
+        String tipoNombre = resolverNombreTipoUsuario(usuario);
+        if (usuario.getEstado() != 1 || "FANTASMA".equals(tipoNombre)) {
             throw new IllegalStateException("USUARIO_NO_VALIDO");
         }
 
-        List<UsuarioCirculo> miembros = usuarioCirculoRepository.findByIdCirculoGasto(idCirculo);
-        boolean yaMiembro = miembros.stream().anyMatch(m -> m.getIdUsuario().equals(idUsuario));
+        List<UsuarioCirculo> miembros = usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(idCirculo);
+        boolean yaMiembro = miembros.stream().anyMatch(m -> m.getId().getIdUsuario().equals(idUsuario));
         if (yaMiembro) {
             throw new IllegalStateException("YA_ES_MIEMBRO");
         }
@@ -342,13 +362,16 @@ public class CirculoGastoService {
             throw new IllegalStateException("No se puede expulsar al creador del círculo");
         }
 
-        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByIdCirculoGasto(idCirculo);
+        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(idCirculo);
         UsuarioCirculo vinculo = vinculaciones.stream()
-                .filter(uc -> uc.getIdUsuario().equals(idUsuario))
+                .filter(uc -> uc.getId().getIdUsuario().equals(idUsuario))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("USUARIO_NO_ES_MIEMBRO"));
 
-        usuarioCirculoRepository.deleteById(vinculo.getIdUsuarioCirculo());
+        UsuarioCirculoId vinculoId = new UsuarioCirculoId();
+        vinculoId.setIdUsuario(idUsuario);
+        vinculoId.setIdCirculoGasto(idCirculo);
+        usuarioCirculoRepository.deleteById(vinculoId);
         log.info("Usuario {} expulsado del circulo {}", idUsuario, idCirculo);
 
         if (auditoriaService != null) {
@@ -369,8 +392,7 @@ public class CirculoGastoService {
     @Transactional
     public void delete(Long id) {
         circuloGastoRepository.findById(id).ifPresent(c -> {
-            usuarioCirculoRepository.findByIdCirculoGasto(id)
-                    .forEach(uc -> usuarioCirculoRepository.deleteById(uc.getIdUsuarioCirculo()));
+            usuarioCirculoRepository.deleteByCirculoGastoId(id);
             circuloGastoRepository.deleteById(id);
             if (auditoriaService != null) {
                 auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DELETE",

@@ -38,7 +38,7 @@ public class CirculoGastoController {
     }
 
     @GetMapping("/{id}/detalle")
-    public ResponseEntity<CirculoDetalleResponse> getDetalle(@PathVariable Long id) {
+    public ResponseEntity<CirculoDetalleResponse> getDetalleById(@PathVariable Long id) {
         return circuloGastoService.findDetalleById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -80,7 +80,7 @@ public class CirculoGastoController {
                 "tokenInvitacion", circulo.getTokenInvitacionOriginal() != null
                         ? circulo.getTokenInvitacionOriginal()
                         : "No disponible",
-                "estado", circulo.getEstado() != null ? circulo.getEstado() : "ACTIVO"
+                "estado", circulo.getEstado() != null ? circulo.getEstado() : 1
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
@@ -91,7 +91,7 @@ public class CirculoGastoController {
         return circuloGastoService.findByTokenInvitacion(request.getToken())
                 .map(circulo -> {
                     List<UsuarioCirculo> miembros = usuarioCirculoService.findByCirculoGasto(circulo.getIdCirculoGasto());
-                    boolean yaMiembro = miembros.stream().anyMatch(m -> m.getIdUsuario().equals(request.getIdUsuario()));
+                    boolean yaMiembro = miembros.stream().anyMatch(m -> m.getId().getIdUsuario().equals(request.getIdUsuario()));
                     if (yaMiembro) {
                         return ResponseEntity.status(HttpStatus.CONFLICT).<Object>body("Ya eres miembro de este círculo");
                     }
