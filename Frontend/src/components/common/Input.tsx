@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes } from 'react';
+import { type InputHTMLAttributes } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -6,7 +6,14 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: string;
 }
 
-export function Input({ label, error, icon, className = '', id, ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  icon,
+  className = "",
+  id,
+  ...props
+}: InputProps) {
   const inputId = id || props.name;
   return (
     <div className={`input-group ${className}`}>
@@ -15,8 +22,8 @@ export function Input({ label, error, icon, className = '', id, ...props }: Inpu
         {icon && <span className="material-symbols-outlined">{icon}</span>}
         <input
           id={inputId}
-          className={error ? 'input-error' : ''}
-          style={!icon ? { paddingLeft: '16px' } : undefined}
+          className={error ? "input-error" : ""}
+          style={!icon ? { paddingLeft: "16px" } : undefined}
           {...props}
         />
       </div>
