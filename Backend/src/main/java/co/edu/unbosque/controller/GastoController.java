@@ -35,6 +35,23 @@ public class GastoController {
         return ResponseEntity.ok(gastoService.findByUsuarioCreador(idUsuarioCreador));
     }
 
+    @GetMapping("/circulo/{idCirculoGasto}")
+    public ResponseEntity<List<Gasto>> getByCirculo(@PathVariable Long idCirculoGasto) {
+        return ResponseEntity.ok(gastoService.findByCirculoGasto(idCirculoGasto));
+    }
+
+    /** Gastos programados (periodicidad != META) del usuario */
+    @GetMapping("/programados/usuario/{idUsuario}")
+    public ResponseEntity<List<Gasto>> getProgramadosByUsuario(@PathVariable Long idUsuario) {
+        return ResponseEntity.ok(gastoService.findProgramadosByUsuario(idUsuario));
+    }
+
+    /** Metas de ahorro del usuario */
+    @GetMapping("/metas/usuario/{idUsuario}")
+    public ResponseEntity<List<Gasto>> getMetasByUsuario(@PathVariable Long idUsuario) {
+        return ResponseEntity.ok(gastoService.findMetasByUsuario(idUsuario));
+    }
+
     @PostMapping
     public ResponseEntity<Gasto> create(@Valid @RequestBody GastoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(gastoService.create(request));

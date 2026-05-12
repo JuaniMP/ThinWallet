@@ -124,6 +124,17 @@ public class CirculoGastoController {
         }
     }
 
+    @DeleteMapping("/{idCirculo}/expulsar/{idUsuario}")
+    public ResponseEntity<?> expulsarMiembro(@PathVariable Long idCirculo, @PathVariable Long idUsuario) {
+        try {
+            return ResponseEntity.ok(circuloGastoService.expulsarMiembro(idCirculo, idUsuario));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<CirculoGasto> update(@PathVariable Long id, @Valid @RequestBody CirculoGastoRequest request) {
         return circuloGastoService.update(id, request)

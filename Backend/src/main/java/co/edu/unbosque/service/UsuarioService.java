@@ -9,6 +9,7 @@ import co.edu.unbosque.request.UsuarioRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,9 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenHashingService tokenHashingService;
+
+    @Autowired(required = false)
+    private AuditoriaSistemaService auditoriaService;
 
     // Almacena temporalmente los tokens de recuperacion: <Correo, Codigo>
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
@@ -110,6 +114,11 @@ public class UsuarioService {
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
 
+        if (auditoriaService != null) {
+            auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
+                    "CAMBIO_CONTRASENA", null, "{\"correo\":\"" + correo + "\"}");
+        }
+
         // Remover el token luego de usarlo para evitar re-uso
         resetTokens.remove(correo);
         log.info("Contrasena actualizada exitosamente para {}", correo);
@@ -128,14 +137,19 @@ public class UsuarioService {
         usuario.setEstado(0); // 0 para Pendiente de verificación
         
         Usuario savedUser = usuarioRepository.save(usuario);
-        
+
         // Generar y enviar código de verificación
         String codigo = String.format("%06d", new Random().nextInt(999999));
         registrationTokens.put(request.getCorreo(), codigo);
         emailService.enviarCodigoVerificacion(request.getCorreo(), codigo);
-        
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(savedUser.getIdUsuario(), "usuario", savedUser.getIdUsuario(),
+                    "REGISTRO", null, "{\"correo\":\"" + savedUser.getCorreo() + "\"}");
+        }
+
         log.info("Usuario registrado (pendiente verif): {}. Codigo: {}", request.getCorreo(), codigo);
-        
+
         return savedUser;
     }
 
@@ -149,6 +163,10 @@ public class UsuarioService {
                 usuario.setEstado(1); // Activar usuario
                 usuarioRepository.save(usuario);
                 registrationTokens.remove(correo);
+                if (auditoriaService != null) {
+                    auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
+                            "VERIFICACION_CORREO", "{\"estado\":0}", "{\"estado\":1}");
+                }
                 log.info("Usuario verificado y activado: {}", correo);
                 return true;
             }
@@ -217,6 +235,46 @@ public class UsuarioService {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Reclamación de perfil: convierte una cuenta fantasma (idTipoUsuario=3)
+     * en una cuenta real usando el tokenReclamo del usuario fantasma.
+     */
+    @Transactional
+    public Usuario reclamarPerfil(String tokenReclamo, String nombres, String apellidos,
+                                   String nombreUsuario, String correo, String contrasena) {
+        Usuario fantasma = usuarioRepository.findAll().stream()
+                .filter(u -> tokenReclamo.equals(u.getTokenReclamo()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("TOKEN_INVALIDO"));
+
+        if (usuarioRepository.findByCorreo(correo)
+                .filter(u -> !u.getIdUsuario().equals(fantasma.getIdUsuario()))
+                .isPresent()) {
+            throw new RuntimeException("CORREO_EN_USO");
+        }
+        if (usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .filter(u -> !u.getIdUsuario().equals(fantasma.getIdUsuario()))
+                .isPresent()) {
+            throw new RuntimeException("NOMBRE_EN_USO");
+        }
+
+        fantasma.setNombres(nombres);
+        fantasma.setApellidos(apellidos);
+        fantasma.setNombreUsuario(nombreUsuario);
+        fantasma.setCorreo(correo);
+        fantasma.setContrasenaHash(passwordEncoder.encode(contrasena));
+        fantasma.setIdTipoUsuario(2L);
+        fantasma.setEstado(1);
+        fantasma.setTokenReclamo(null);
+
+        Usuario reclamado = usuarioRepository.save(fantasma);
+        if (auditoriaService != null) {
+            auditoriaService.registrar(reclamado.getIdUsuario(), "usuario", reclamado.getIdUsuario(),
+                    "RECLAMACION_PERFIL", "{\"tipo\":3}", "{\"tipo\":2,\"correo\":\"" + correo + "\"}");
+        }
+        return reclamado;
     }
 
     @Transactional

@@ -1,55 +1,55 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { Button } from "../../components/common/Button";
+import { Input } from "../../components/common/Input";
 
 export function Register() {
-  const [nombres, setNombres] = useState('');
-  const [apellidos, setApellidos] = useState('');
-  const [nombreUsuario, setNombreUsuario] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nombres, setNombres] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [nombreUsuario, setNombreUsuario] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contrasena, setContrasena] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (contrasena !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError("Las contraseñas no coinciden");
       return;
     }
 
     if (contrasena.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
     if (!acceptedTerms) {
-      setError('Debes aceptar los términos y condiciones');
+      setError("Debes aceptar los términos y condiciones");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await register({ 
-        nombres, 
-        apellidos, 
-        nombreUsuario, 
-        correo, 
-        contrasena 
+      await register({
+        nombres,
+        apellidos,
+        nombreUsuario,
+        correo,
+        contrasena,
       });
-      navigate('/verify');
+      navigate("/verify");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear cuenta');
+      setError(err instanceof Error ? err.message : "Error al crear cuenta");
     } finally {
       setIsLoading(false);
     }
@@ -60,17 +60,31 @@ export function Register() {
       <main className="register-layout neo-shadow">
         {/* Left Side: Branding (Desktop) */}
         <section className="register-brand-panel">
-          <div style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ position: "relative", zIndex: 10 }}>
             <div className="brand-header">
-              <span className="material-symbols-outlined" style={{ fontSize: '2.25rem' }}>account_balance</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "2.25rem" }}
+              >
+                account_balance
+              </span>
               <h1>THIN WALLET</h1>
             </div>
             <div className="hero-text">
-              <h2>THE<br />BOTANICAL<br />ARCHIVIST.</h2>
-              <p>Organiza tus activos digitales con la precisión de un herbario real. Estructura, seguridad y crecimiento orgánico.</p>
+              <h2>
+                THE
+                <br />
+                BOTANICAL
+                <br />
+                ARCHIVIST.
+              </h2>
+              <p>
+                Organiza tus activos digitales con la precisión de un herbario
+                real. Estructura, seguridad y crecimiento orgánico.
+              </p>
             </div>
           </div>
-          <div style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ position: "relative", zIndex: 10 }}>
             <div className="version-badge">
               <p>Version 2.0.4 - 2024</p>
             </div>
@@ -176,8 +190,7 @@ export function Register() {
           {/* Footer */}
           <div className="register-footer">
             <p>
-              ¿Ya tienes cuenta?{' '}
-              <Link to="/login">Inicia sesión</Link>
+              ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
             </p>
           </div>
         </section>

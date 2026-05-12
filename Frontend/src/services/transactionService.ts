@@ -1,9 +1,14 @@
-import { api } from './api';
-import type { CreateTransactionRequest, SaldoResponse, Transaccion, TipoMovimiento } from '../types';
+import { api } from "./api";
+import type {
+  CreateTransactionRequest,
+  SaldoResponse,
+  Transaccion,
+  TipoMovimiento,
+} from "../types";
 
 const FALLBACK_TIPOS: TipoMovimiento[] = [
-  { idTipoMovimiento: 1, nombre: 'DEPOSITO' },
-  { idTipoMovimiento: 2, nombre: 'RETIRO' },
+  { idTipoMovimiento: 1, nombre: "DEPOSITO" },
+  { idTipoMovimiento: 2, nombre: "RETIRO" },
 ];
 
 export const transactionService = {
@@ -17,7 +22,7 @@ export const transactionService = {
 
   async getTiposMovimiento(): Promise<TipoMovimiento[]> {
     try {
-      const tipos = await api.get<TipoMovimiento[]>('/tipos-movimiento');
+      const tipos = await api.get<TipoMovimiento[]>("/tipos-movimiento");
       if (Array.isArray(tipos) && tipos.length > 0) return tipos;
     } catch {
       // fallback
@@ -26,7 +31,7 @@ export const transactionService = {
   },
 
   async create(data: CreateTransactionRequest): Promise<Transaccion> {
-    return api.post<Transaccion>('/transacciones', data);
+    return api.post<Transaccion>("/transacciones", data);
   },
 
   async delete(id: string): Promise<void> {
