@@ -2,7 +2,9 @@ package co.edu.unbosque.service;
 
 import co.edu.unbosque.dto.UsuarioBusquedaResponse;
 import co.edu.unbosque.entity.Usuario;
+import co.edu.unbosque.entity.TipoUsuario;
 import co.edu.unbosque.repository.UsuarioRepository;
+import co.edu.unbosque.repository.TipoUsuarioRepository;
 import co.edu.unbosque.request.LoginRequest;
 import co.edu.unbosque.request.RegisterRequest;
 import co.edu.unbosque.request.UsuarioRequest;
@@ -26,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final TipoUsuarioRepository tipoUsuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenHashingService tokenHashingService;
@@ -33,10 +36,7 @@ public class UsuarioService {
     @Autowired(required = false)
     private AuditoriaSistemaService auditoriaService;
 
-    // Almacena temporalmente los tokens de recuperacion: <Correo, Codigo>
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
-
-    // Almacena temporalmente los tokens de verificacion de registro: <Correo, Codigo>
     private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
 
     @Transactional(readOnly = true)
@@ -80,19 +80,26 @@ public class UsuarioService {
         log.info("Codigo de verificacion reenviado para {}: {}", correo, codigo);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Usuario> loginWithToken(String tokenReclamo) {
+        // Obtener todos los usuarios para validar contra tokens hasheados en BD
+        List<Usuario> todosUsuarios = usuarioRepository.findAll();
+        for (Usuario usuario : todosUsuarios) {
+            if (usuario.getTokenReclamo() != null &&
+                tokenHashingService.validateToken(tokenReclamo, usuario.getTokenReclamo())) {
+                return Optional.of(usuario);
+            }
+        }
+        return Optional.empty();
+    }
+
     public void solicitarRecuperacionPassword(String correo) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("No existe un usuario con ese correo electrónico");
         }
-        
-        // Generar codigo aleatorio de 6 digitos
         String codigo = String.format("%06d", new Random().nextInt(999999));
-        
-        // Guardar token en memoria
         resetTokens.put(correo, codigo);
-        
-        // Enviar correo
         emailService.enviarCodigoRecuperacion(correo, codigo);
         log.info("Codigo de recuperacion generado para {}: {}", correo, codigo);
     }
@@ -107,10 +114,8 @@ public class UsuarioService {
         if (!validarCodigoRecuperacion(correo, codigo)) {
             throw new RuntimeException("El codigo de recuperacion es incorrecto o ha expirado");
         }
-
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("No existe un usuario con ese correo electrónico"));
-
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
 
@@ -119,9 +124,7 @@ public class UsuarioService {
                     "CAMBIO_CONTRASENA", null, "{\"correo\":\"" + correo + "\"}");
         }
 
-        // Remover el token luego de usarlo para evitar re-uso
         resetTokens.remove(correo);
-        log.info("Contrasena actualizada exitosamente para {}", correo);
     }
 
     @Transactional
@@ -132,10 +135,13 @@ public class UsuarioService {
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasena()));
-        usuario.setIdTipoUsuario(2L); // ID 2 para Cliente
+        // ID 2 para Cliente
+        TipoUsuario tipoCliente = tipoUsuarioRepository.findById(2L)
+                .orElseThrow(() -> new RuntimeException("Tipo de usuario 'Cliente' no existe"));
+        usuario.setTipoUsuario(tipoCliente);
         usuario.setFechaRegistro(LocalDateTime.now());
         usuario.setEstado(0); // 0 para Pendiente de verificación
-        
+
         Usuario savedUser = usuarioRepository.save(usuario);
 
         // Generar y enviar código de verificación
@@ -183,7 +189,10 @@ public class UsuarioService {
         usuario.setCorreo(request.getCorreo());
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
         if (request.getTipoUsuario() != null) {
-            usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+            Long tipoId = Long.parseLong(request.getTipoUsuario());
+            TipoUsuario tipo = tipoUsuarioRepository.findById(tipoId)
+                    .orElseThrow(() -> new RuntimeException("Tipo de usuario con ID " + tipoId + " no existe"));
+            usuario.setTipoUsuario(tipo);
         }
         usuario.setDescripcion(request.getDescripcion());
         usuario.setFechaRegistro(LocalDateTime.now());
@@ -200,7 +209,10 @@ public class UsuarioService {
             usuario.setCorreo(request.getCorreo());
             usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaHash()));
             if (request.getTipoUsuario() != null) {
-                usuario.setIdTipoUsuario(Long.parseLong(request.getTipoUsuario()));
+                Long tipoId = Long.parseLong(request.getTipoUsuario());
+                TipoUsuario tipo = tipoUsuarioRepository.findById(tipoId)
+                        .orElseThrow(() -> new RuntimeException("Tipo de usuario con ID " + tipoId + " no existe"));
+                usuario.setTipoUsuario(tipo);
             }
             usuario.setDescripcion(request.getDescripcion());
             return usuarioRepository.save(usuario);
@@ -211,7 +223,7 @@ public class UsuarioService {
     public List<UsuarioBusquedaResponse> buscarUsuariosRegistrados(String q, Long excludeId) {
         String query = q == null ? "" : q.toLowerCase().trim();
         return usuarioRepository.findAll().stream()
-                .filter(u -> u.getEstado() == 1 && (u.getIdTipoUsuario() == null || u.getIdTipoUsuario() != 3))
+                .filter(u -> u.getEstado() == 1 && (u.getTipoUsuario() == null || u.getTipoUsuario().getIdTipoUsuario() != 3))
                 .filter(u -> excludeId == null || !u.getIdUsuario().equals(excludeId))
                 .filter(u -> u.getCorreo() != null && u.getCorreo().toLowerCase().contains(query)
                         || u.getNombreUsuario() != null && u.getNombreUsuario().toLowerCase().contains(query)
@@ -225,20 +237,8 @@ public class UsuarioService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Usuario> loginWithToken(String tokenReclamo) {
-        List<Usuario> todos = usuarioRepository.findAll();
-        for (Usuario usuario : todos) {
-            if (usuario.getTokenReclamo() != null &&
-                    usuario.getTokenReclamo().equals(tokenReclamo)) {
-                return Optional.of(usuario);
-            }
-        }
-        return Optional.empty();
-    }
-
     /**
-     * Reclamación de perfil: convierte una cuenta fantasma (idTipoUsuario=3)
+     * Reclamación de perfil: convierte una cuenta fantasma (tipo FANTASMA)
      * en una cuenta real usando el tokenReclamo del usuario fantasma.
      */
     @Transactional
@@ -260,19 +260,22 @@ public class UsuarioService {
             throw new RuntimeException("NOMBRE_EN_USO");
         }
 
+        TipoUsuario tipoCliente = tipoUsuarioRepository.findById(2L)
+                .orElseThrow(() -> new RuntimeException("Tipo de usuario 'Cliente' no existe"));
+
         fantasma.setNombres(nombres);
         fantasma.setApellidos(apellidos);
         fantasma.setNombreUsuario(nombreUsuario);
         fantasma.setCorreo(correo);
         fantasma.setContrasenaHash(passwordEncoder.encode(contrasena));
-        fantasma.setIdTipoUsuario(2L);
+        fantasma.setTipoUsuario(tipoCliente);
         fantasma.setEstado(1);
         fantasma.setTokenReclamo(null);
 
         Usuario reclamado = usuarioRepository.save(fantasma);
         if (auditoriaService != null) {
             auditoriaService.registrar(reclamado.getIdUsuario(), "usuario", reclamado.getIdUsuario(),
-                    "RECLAMACION_PERFIL", "{\"tipo\":3}", "{\"tipo\":2,\"correo\":\"" + correo + "\"}");
+                    "RECLAMACION_PERFIL", "{\"tipo\":\"FANTASMA\"}", "{\"tipo\":\"CLIENTE\",\"correo\":\"" + correo + "\"}");
         }
         return reclamado;
     }

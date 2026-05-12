@@ -2,8 +2,9 @@ package co.edu.unbosque.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "circulo_gasto")
@@ -27,11 +28,9 @@ public class CirculoGasto {
     @Transient
     private String tokenInvitacionOriginal;
 
-    // FK a tipo_circulo — columna real en la BD
     @Column(name = "id_tipo_circulo")
     private Long idTipoCirculo;
 
-    // Campo de conveniencia: poblado por el servicio, no persiste en BD
     @Transient
     private String tipoCirculo;
 
@@ -51,5 +50,5 @@ public class CirculoGasto {
     private LocalDateTime fechaCreacion;
 
     @Column(name = "estado")
-    private String estado;
+    private Integer estado;
 }
