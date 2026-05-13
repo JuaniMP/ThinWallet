@@ -29,6 +29,8 @@ public class Transaccion {
     @Transient
     private String tipoMovimiento;
 
+    @Transient
+    private String tipoCategoria;
 
     @Column(name = "modalidad_division")
     private String modalidadDivision;

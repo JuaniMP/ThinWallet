@@ -17,6 +17,8 @@ public class CirculoDetalleResponse {
     private Boolean permiteMesadas;
     private Boolean permiteSimplificacionDeudas;
     private Long idUsuarioCreador;
+    private String nombreCreador;
+    private String correoCreador;
     private LocalDateTime fechaCreacion;
     private Integer estado;
     private int totalMiembros;

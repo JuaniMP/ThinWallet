@@ -59,4 +59,23 @@ public class AuditoriaSistemaService {
     public void delete(Long id) {
         auditoriaRepository.deleteById(id);
     }
+
+    /** Método conveniente para registrar un evento desde cualquier servicio. */
+    @Transactional
+    public void registrar(Long idUsuario, String tabla, Long registroId,
+                          String accion, String valoresAnteriores, String valoresNuevos) {
+        try {
+            AuditoriaSistema a = new AuditoriaSistema();
+            a.setIdUsuario(idUsuario);
+            a.setTablaAfectada(tabla);
+            a.setRegistroId(registroId);
+            a.setAccion(accion);
+            a.setValoresAnteriores(valoresAnteriores);
+            a.setValoresNuevos(valoresNuevos);
+            a.setFechaAccion(LocalDateTime.now());
+            auditoriaRepository.save(a);
+        } catch (Exception e) {
+            log.warn("Auditoría no pudo registrarse [{}/{}]: {}", tabla, registroId, e.getMessage());
+        }
+    }
 }

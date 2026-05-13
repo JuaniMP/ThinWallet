@@ -5,25 +5,25 @@ import co.edu.unbosque.dto.CirculoInvitadoDetalleResponse;
 import co.edu.unbosque.entity.CirculoGasto;
 import co.edu.unbosque.entity.TipoCirculo;
 import co.edu.unbosque.entity.TipoUsuario;
-import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.entity.UsuarioCirculo;
 import co.edu.unbosque.entity.UsuarioCirculoId;
+import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.CirculoGastoRepository;
 import co.edu.unbosque.repository.TipoCirculoRepository;
 import co.edu.unbosque.repository.TipoUsuarioRepository;
 import co.edu.unbosque.repository.UsuarioCirculoRepository;
 import co.edu.unbosque.repository.UsuarioRepository;
 import co.edu.unbosque.request.CirculoGastoRequest;
+import co.edu.unbosque.request.UsuarioCirculoRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -31,148 +31,79 @@ import java.util.UUID;
 public class CirculoGastoService {
 
     private final CirculoGastoRepository circuloGastoRepository;
-    private final UsuarioRepository usuarioRepository;
     private final UsuarioCirculoRepository usuarioCirculoRepository;
-    private final TipoUsuarioRepository tipoUsuarioRepository;
+    private final UsuarioCirculoService usuarioCirculoService;
     private final TipoCirculoRepository tipoCirculoRepository;
+    private final TipoUsuarioRepository tipoUsuarioRepository;
+    private final UsuarioRepository usuarioRepository;
     private final TokenHashingService tokenHashingService;
 
-    @Transactional(readOnly = true)
-    public List<CirculoGasto> findAll() {
-        return circuloGastoRepository.findAll()
-                .stream()
-                .map(this::enriquecerTipoCirculo)
-                .toList();
-    }
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
 
-    @Transactional(readOnly = true)
-    public Optional<CirculoGasto> findById(Long id) {
-        return circuloGastoRepository.findById(id).map(this::enriquecerTipoCirculo);
-    }
+    @Autowired(required = false)
+    private ActividadCirculoService actividadCirculoService;
 
-    @Transactional(readOnly = true)
-    public Optional<CirculoDetalleResponse> findDetalleById(Long id) {
-        return circuloGastoRepository.findById(id)
-                .map(this::enriquecerTipoCirculo)
-                .map(this::mapearDetalle);
-    }
+    @Autowired(required = false)
+    private AuditoriaSistemaService auditoriaService;
 
-    @Transactional(readOnly = true)
-    public Optional<CirculoGasto> findByTokenInvitacion(String tokenInvitacion) {
-        // Obtener todos los círculos para validar contra tokens hasheados en BD
-        List<CirculoGasto> todosCirculos = circuloGastoRepository.findAll();
-        for (CirculoGasto circulo : todosCirculos) {
-            if (circulo.getTokenInvitacion() != null && 
-                tokenHashingService.validateToken(tokenInvitacion, circulo.getTokenInvitacion())) {
-                return Optional.of(enriquecerTipoCirculo(circulo));
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private void populateTipos(List<CirculoGasto> lista) {
+        Map<Long, String> tipos = tipoCirculoRepository.findAll().stream()
+                .collect(Collectors.toMap(TipoCirculo::getIdTipoCirculo, TipoCirculo::getNombre));
+        lista.forEach(c -> {
+            if (c.getIdTipoCirculo() != null) {
+                c.setTipoCirculo(tipos.getOrDefault(c.getIdTipoCirculo(), "PERSONAL"));
             }
-        }
-        return Optional.empty();
+        });
     }
 
-    @Transactional(readOnly = true)
-    public List<CirculoGasto> findByMiembro(Long idUsuario) {
-        // Obtener todas las vinculaciones del usuario a círculos
-        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByUsuario_IdUsuario(idUsuario);
-        
-        // Mapear a CirculoGasto y enriquecer con tipoCirculo
-        return vinculaciones.stream()
-                .map(UsuarioCirculo::getCirculoGasto)
-                .map(this::enriquecerTipoCirculo)
-                .toList();
-    }
-
-    @Transactional
-    public CirculoGasto create(CirculoGastoRequest request) {
-        log.info("Creando nuevo círculo de gasto: {}", request.getNombre());
-
-        CirculoGasto circulo = new CirculoGasto();
-        circulo.setNombre(request.getNombre());
-        circulo.setMonedaBase(request.getMonedaBase() != null ? request.getMonedaBase() : "COP");
-        circulo.setIdTipoCirculo(resolverIdTipoCirculo(request));
-        circulo.setPresupuestoGrupal(request.getPresupuestoGrupal());
-        circulo.setPermiteMesadas(request.getPermiteMesadas());
-        circulo.setPermiteSimplificacionDeudas(request.getPermiteSimplificacionDeudas());
-        circulo.setIdUsuarioCreador(request.getIdUsuarioCreador());
-        circulo.setFechaCreacion(LocalDateTime.now());
-        circulo.setEstado(1);
-        
-        // Generar token
-        String tokenOriginal;
-        if (request.getTokenInvitacion() != null && !request.getTokenInvitacion().isBlank()) {
-            tokenOriginal = request.getTokenInvitacion();
-        } else {
-            tokenOriginal = tokenHashingService.generateToken();
+    private void populateTipo(CirculoGasto c) {
+        if (c.getIdTipoCirculo() != null) {
+            tipoCirculoRepository.findById(c.getIdTipoCirculo())
+                    .ifPresent(t -> c.setTipoCirculo(t.getNombre()));
         }
-        
-        // Guardar token hasheado en BD (seguro para validar)
-        circulo.setTokenInvitacion(tokenHashingService.hashToken(tokenOriginal));
-        // Guardar token original para mostrar en frontend
-        circulo.setTokenInvitacionOriginal(tokenOriginal);
-
-        CirculoGasto circuloGuardado = circuloGastoRepository.save(circulo);
-
-        vincularUsuarioAlCirculo(request.getIdUsuarioCreador(), circuloGuardado);
-
-        if (request.getNombresInvitados() != null && !request.getNombresInvitados().isEmpty()) {
-            crearInvitadosFantasmas(request.getNombresInvitados(), circuloGuardado);
-        }
-
-        return enriquecerTipoCirculo(circuloGuardado);
     }
 
     private Long resolverIdTipoCirculo(CirculoGastoRequest request) {
         if (request.getIdTipoCirculo() != null) {
-            boolean existe = tipoCirculoRepository.existsById(request.getIdTipoCirculo());
-            if (!existe) {
-                throw new RuntimeException("Tipo de círculo no existe con id: " + request.getIdTipoCirculo());
-            }
             return request.getIdTipoCirculo();
         }
-
         if (request.getTipoCirculo() != null && !request.getTipoCirculo().isBlank()) {
-            TipoCirculo tipo = tipoCirculoRepository.findByNombre(request.getTipoCirculo())
-                    .orElseThrow(() -> new RuntimeException("Tipo de círculo no existe con nombre: " + request.getTipoCirculo()));
-            return tipo.getIdTipoCirculo();
+            return tipoCirculoRepository.findByNombre(request.getTipoCirculo())
+                    .map(TipoCirculo::getIdTipoCirculo)
+                    .orElse(null);
         }
-
-        throw new RuntimeException("Debes enviar idTipoCirculo o tipoCirculo");
+        return null;
     }
 
-    private CirculoGasto enriquecerTipoCirculo(CirculoGasto circulo) {
-        if (circulo.getIdTipoCirculo() != null) {
-            tipoCirculoRepository.findById(circulo.getIdTipoCirculo())
-                    .ifPresent(tipo -> circulo.setTipoCirculo(tipo.getNombre()));
+    private String resolverNombreTipoUsuario(Usuario usuario) {
+        if (usuario.getTipoUsuario() == null) {
+            return null;
         }
-        return circulo;
+        return usuario.getTipoUsuario().getNombre();
     }
 
     private CirculoDetalleResponse mapearDetalle(CirculoGasto circulo) {
         List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(circulo.getIdCirculoGasto());
-        List<CirculoInvitadoDetalleResponse> invitados = new ArrayList<>();
 
-        for (UsuarioCirculo vinculacion : vinculaciones) {
-            Usuario usuario = vinculacion.getUsuario();
-            if (usuario == null || usuario.getIdUsuario().equals(circulo.getIdUsuarioCreador())) {
-                continue;
-            }
-
-            CirculoInvitadoDetalleResponse invitado = new CirculoInvitadoDetalleResponse();
-            invitado.setIdUsuario(usuario.getIdUsuario());
-            invitado.setNombreCompleto((usuario.getNombres() + " " + usuario.getApellidos()).trim());
-            invitado.setCorreo(usuario.getCorreo());
-
-            String tipoUsuarioNombre = null;
-            if (usuario.getTipoUsuario() != null) {
-                tipoUsuarioNombre = usuario.getTipoUsuario().getNombre();
-            }
-            invitado.setTipoUsuario(tipoUsuarioNombre);
-
-            boolean esFantasma = tipoUsuarioNombre != null && "FANTASMA".equalsIgnoreCase(tipoUsuarioNombre);
-            invitado.setTokenInvitacionPersonal(esFantasma ? usuario.getTokenReclamo() : null);
-
-            invitados.add(invitado);
-        }
+        List<CirculoInvitadoDetalleResponse> invitados = vinculaciones.stream()
+                .filter(uc -> !uc.getId().getIdUsuario().equals(circulo.getIdUsuarioCreador()))
+                .map(uc -> {
+                    CirculoInvitadoDetalleResponse m = new CirculoInvitadoDetalleResponse();
+                    m.setIdUsuario(uc.getId().getIdUsuario());
+                    m.setRolUsuario(uc.getRolUsuario());
+                    if (uc.getUsuario() != null) {
+                        Usuario u = uc.getUsuario();
+                        m.setNombreCompleto((u.getNombres() + " " + u.getApellidos()).trim());
+                        m.setCorreo(u.getCorreo());
+                        m.setTokenInvitacionPersonal(u.getTokenReclamo());
+                        String tipoNombre = resolverNombreTipoUsuario(u);
+                        m.setTipoUsuario(tipoNombre != null ? tipoNombre : "REGISTRADO");
+                    }
+                    return m;
+                }).collect(Collectors.toList());
 
         CirculoDetalleResponse detalle = new CirculoDetalleResponse();
         detalle.setIdCirculoGasto(circulo.getIdCirculoGasto());
@@ -184,110 +115,289 @@ public class CirculoGastoService {
         detalle.setPermiteMesadas(circulo.getPermiteMesadas());
         detalle.setPermiteSimplificacionDeudas(circulo.getPermiteSimplificacionDeudas());
         detalle.setIdUsuarioCreador(circulo.getIdUsuarioCreador());
+        if (circulo.getIdUsuarioCreador() != null) {
+            usuarioRepository.findById(circulo.getIdUsuarioCreador()).ifPresent(creador -> {
+                detalle.setNombreCreador((creador.getNombres() + " " + creador.getApellidos()).trim());
+                detalle.setCorreoCreador(creador.getCorreo());
+            });
+        }
         detalle.setFechaCreacion(circulo.getFechaCreacion());
         detalle.setEstado(circulo.getEstado());
         detalle.setTotalMiembros(vinculaciones.size());
         detalle.setTotalInvitados(invitados.size());
         detalle.setInvitados(invitados);
-
         return detalle;
     }
 
-    private String generarTokenInvitacionUnico() {
-        String token = tokenHashingService.generateToken();
-        log.info("Token de invitación generado");
-        return token;
+    // ── Queries ───────────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<CirculoGasto> findAll() {
+        List<CirculoGasto> lista = circuloGastoRepository.findAll();
+        populateTipos(lista);
+        return lista;
     }
 
-    private String generarTokenReclamoUnico() {
-        String token = tokenHashingService.generateToken();
-        log.info("Token de reclamo generado");
-        return token;
+    @Transactional(readOnly = true)
+    public Optional<CirculoGasto> findById(Long id) {
+        return circuloGastoRepository.findById(id).map(c -> { populateTipo(c); return c; });
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<CirculoDetalleResponse> findDetalleById(Long id) {
+        return circuloGastoRepository.findById(id)
+                .map(c -> { populateTipo(c); return c; })
+                .map(this::mapearDetalle);
     }
 
     /**
-     * Valida regla de negocio: usuarios normales DEBEN tener contrasena_hash y correo
-     * Usuarios fantasma pueden tener NULL en estos campos
+     * Busca un círculo validando el token presentado contra el hash almacenado.
+     * Necesario porque el token se guarda hasheado en BD.
      */
-    private void validarUsuarioNormal(Usuario usuario) {
-        if (usuario.getTipoUsuario() != null && !"FANTASMA".equals(usuario.getTipoUsuario().getNombre())) {
-            if (usuario.getContrasenaHash() == null || usuario.getContrasenaHash().isBlank()) {
-                throw new RuntimeException("Regla de negocio: Usuarios normales DEBEN tener contraseña");
-            }
-            if (usuario.getCorreo() == null || usuario.getCorreo().isBlank()) {
-                throw new RuntimeException("Regla de negocio: Usuarios normales DEBEN tener correo");
+    @Transactional(readOnly = true)
+    public Optional<CirculoGasto> findByTokenInvitacion(String tokenPresentado) {
+        List<CirculoGasto> todos = circuloGastoRepository.findAll();
+        for (CirculoGasto c : todos) {
+            if (c.getTokenInvitacion() != null &&
+                    tokenHashingService.validateToken(tokenPresentado, c.getTokenInvitacion())) {
+                populateTipo(c);
+                return Optional.of(c);
             }
         }
+        return Optional.empty();
     }
 
-    private void crearInvitadosFantasmas(List<String> nombres, CirculoGasto circulo) {
+    @Transactional(readOnly = true)
+    public List<CirculoGasto> findByUsuarioCreador(Long idUsuarioCreador) {
+        List<CirculoGasto> lista = circuloGastoRepository.findByIdUsuarioCreador(idUsuarioCreador);
+        populateTipos(lista);
+        return lista;
+    }
+
+    /** Devuelve todos los círculos donde el usuario es creador O miembro. */
+    @Transactional(readOnly = true)
+    public List<CirculoGasto> findAllByMiembro(Long idUsuario) {
+        List<CirculoGasto> creados = circuloGastoRepository.findByIdUsuarioCreador(idUsuario);
+
+        List<Long> idsComoMiembro = usuarioCirculoRepository.findByUsuario_IdUsuario(idUsuario)
+                .stream()
+                .map(uc -> uc.getId().getIdCirculoGasto())
+                .collect(Collectors.toList());
+
+        List<CirculoGasto> unidos = idsComoMiembro.isEmpty()
+                ? new ArrayList<>()
+                : circuloGastoRepository.findAllById(idsComoMiembro);
+
+        List<CirculoGasto> todos = new ArrayList<>(creados);
+        for (CirculoGasto c : unidos) {
+            if (todos.stream().noneMatch(x -> x.getIdCirculoGasto().equals(c.getIdCirculoGasto()))) {
+                todos.add(c);
+            }
+        }
+
+        populateTipos(todos);
+        return todos;
+    }
+
+    // ── Mutations ─────────────────────────────────────────────────────────────
+
+    @Transactional
+    public CirculoGasto create(CirculoGastoRequest request) {
+        log.info("Creando nuevo círculo de gasto: {}", request.getNombre());
+
+        CirculoGasto circulo = new CirculoGasto();
+        circulo.setNombre(request.getNombre());
+        circulo.setMonedaBase(request.getMonedaBase() != null ? request.getMonedaBase() : "COP");
+        circulo.setIdTipoCirculo(resolverIdTipoCirculo(request));
+        circulo.setPresupuestoGrupal(request.getPresupuestoGrupal());
+        circulo.setPermiteMesadas(request.getPermiteMesadas() != null ? request.getPermiteMesadas() : false);
+        circulo.setPermiteSimplificacionDeudas(request.getPermiteSimplificacionDeudas() != null ? request.getPermiteSimplificacionDeudas() : false);
+        circulo.setIdUsuarioCreador(request.getIdUsuarioCreador());
+        circulo.setFechaCreacion(LocalDateTime.now());
+        circulo.setEstado(1);
+
+        String tokenOriginal = (request.getTokenInvitacion() != null && !request.getTokenInvitacion().isBlank())
+                ? request.getTokenInvitacion()
+                : tokenHashingService.generateToken();
+
+        circulo.setTokenInvitacion(tokenHashingService.hashToken(tokenOriginal));
+        circulo.setTokenInvitacionOriginal(tokenOriginal);
+
+        CirculoGasto saved = circuloGastoRepository.save(circulo);
+
+        if (request.getIdUsuarioCreador() != null) {
+            UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
+            ucReq.setIdUsuario(request.getIdUsuarioCreador());
+            ucReq.setIdCirculoGasto(saved.getIdCirculoGasto());
+            ucReq.setRolUsuario("ADMIN");
+            usuarioCirculoService.create(ucReq);
+        }
+
+        if (request.getNombresInvitados() != null) {
+            crearInvitadosYVincular(request.getNombresInvitados(), saved);
+        }
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(saved.getIdUsuarioCreador(), "circulo_gasto", saved.getIdCirculoGasto(),
+                    "INSERT", null,
+                    "{\"nombre\":\"" + saved.getNombre() + "\",\"moneda\":\"" + saved.getMonedaBase() + "\"}");
+        }
+
+        populateTipo(saved);
+        return saved;
+    }
+
+    private void crearInvitadosYVincular(List<String> nombres, CirculoGasto circulo) {
         TipoUsuario tipoFantasma = tipoUsuarioRepository.findByNombre("FANTASMA")
-                .orElseThrow(() -> new RuntimeException("Error: El tipo 'FANTASMA' no existe en la base de datos."));
+                .orElseGet(() -> tipoUsuarioRepository.findById(3L)
+                        .orElseThrow(() -> new RuntimeException("Tipo de usuario FANTASMA no encontrado")));
 
         for (String nombre : nombres) {
-            Usuario fantasma = new Usuario();
-            
-            // Dividir el nombre en nombres y apellidos
+            if (nombre == null || nombre.isBlank()) continue;
+
             String[] partes = nombre.trim().split("\\s+", 2);
-            fantasma.setNombres(partes[0]);
-            fantasma.setApellidos(partes.length > 1 ? partes[1] : partes[0]);
-            
-            fantasma.setTipoUsuario(tipoFantasma);
-            
-            // Generar token de reclamo
-            String tokenReclamoOriginal = tokenHashingService.generateToken();
-            // Guardar hasheado en BD para validación
-            fantasma.setTokenReclamo(tokenHashingService.hashToken(tokenReclamoOriginal));
-            // Guardar original para mostrar en frontend
-            fantasma.setTokenReclamoOriginal(tokenReclamoOriginal);
-            
-            fantasma.setEstado(1);
-            fantasma.setFechaRegistro(LocalDateTime.now());
-            // Usuarios fantasma no tienen contraseña ni correo (NULL por regla de negocio)
-            fantasma.setContrasenaHash(null);
-            fantasma.setCorreo(null);
+            String tokenReclamo = tokenHashingService.generateToken();
+            String sufijo = UUID.randomUUID().toString().substring(0, 6);
 
-            Usuario fantasmaGuardado = usuarioRepository.save(fantasma);
-            vincularUsuarioAlCirculo(fantasmaGuardado.getIdUsuario(), circulo);
+            Usuario invitado = new Usuario();
+            invitado.setNombres(partes[0]);
+            invitado.setApellidos(partes.length > 1 ? partes[1] : partes[0]);
+            invitado.setNombreUsuario("ghost_" + sufijo);
+            invitado.setCorreo("ghost_" + tokenReclamo + "@thinwallet.local");
+            invitado.setContrasenaHash(tokenHashingService.hashToken(tokenHashingService.generateToken()));
+            invitado.setTokenReclamo(tokenReclamo);
+            invitado.setTipoUsuario(tipoFantasma);
+            invitado.setEstado(0);
+            invitado.setFechaRegistro(LocalDateTime.now());
 
-            log.info("Usuario Fantasma '{}' creado con Token hasheado en BD", nombre);
+            Usuario guardado = usuarioRepository.save(invitado);
+
+            UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
+            ucReq.setIdUsuario(guardado.getIdUsuario());
+            ucReq.setIdCirculoGasto(circulo.getIdCirculoGasto());
+            ucReq.setRolUsuario("INVITADO");
+            usuarioCirculoService.create(ucReq);
+
+            log.info("Invitado '{}' creado y vinculado al círculo {}", nombre, circulo.getIdCirculoGasto());
         }
-    }
-
-    private void vincularUsuarioAlCirculo(Long idUsuario, CirculoGasto circulo) {
-        Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuario));
-
-        UsuarioCirculo vinculacion = new UsuarioCirculo();
-        UsuarioCirculoId idVinculacion = new UsuarioCirculoId();
-        idVinculacion.setIdUsuario(idUsuario);
-        idVinculacion.setIdCirculoGasto(circulo.getIdCirculoGasto());
-        vinculacion.setId(idVinculacion);
-        vinculacion.setUsuario(usuario);
-        vinculacion.setCirculoGasto(circulo);
-        vinculacion.setFechaIngreso(LocalDateTime.now());
-
-        usuarioCirculoRepository.save(vinculacion);
     }
 
     @Transactional
     public Optional<CirculoGasto> update(Long id, CirculoGastoRequest request) {
         return circuloGastoRepository.findById(id).map(circulo -> {
             circulo.setNombre(request.getNombre());
-            circulo.setMonedaBase(request.getMonedaBase());
-            circulo.setIdTipoCirculo(resolverIdTipoCirculo(request));
-            circulo.setPresupuestoGrupal(request.getPresupuestoGrupal());
-            circulo.setPermiteMesadas(request.getPermiteMesadas());
-            circulo.setPermiteSimplificacionDeudas(request.getPermiteSimplificacionDeudas());
-
-            CirculoGasto actualizado = circuloGastoRepository.save(circulo);
-            return enriquecerTipoCirculo(actualizado);
+            if (request.getMonedaBase() != null) circulo.setMonedaBase(request.getMonedaBase());
+            Long nuevoTipo = resolverIdTipoCirculo(request);
+            if (nuevoTipo != null) circulo.setIdTipoCirculo(nuevoTipo);
+            if (request.getPresupuestoGrupal() != null) circulo.setPresupuestoGrupal(request.getPresupuestoGrupal());
+            if (request.getPermiteMesadas() != null) circulo.setPermiteMesadas(request.getPermiteMesadas());
+            if (request.getPermiteSimplificacionDeudas() != null) circulo.setPermiteSimplificacionDeudas(request.getPermiteSimplificacionDeudas());
+            CirculoGasto saved = circuloGastoRepository.save(circulo);
+            populateTipo(saved);
+            return saved;
         });
     }
 
     @Transactional
+    public CirculoDetalleResponse invitarUsuarioRegistrado(Long idCirculo, Long idUsuario) {
+        CirculoGasto circulo = circuloGastoRepository.findById(idCirculo)
+                .orElseThrow(() -> new IllegalArgumentException("CIRCULO_NO_ENCONTRADO"));
+
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("USUARIO_NO_ENCONTRADO"));
+
+        String tipoNombre = resolverNombreTipoUsuario(usuario);
+        if (usuario.getEstado() != 1 || "FANTASMA".equals(tipoNombre)) {
+            throw new IllegalStateException("USUARIO_NO_VALIDO");
+        }
+
+        List<UsuarioCirculo> miembros = usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(idCirculo);
+        boolean yaMiembro = miembros.stream().anyMatch(m -> m.getId().getIdUsuario().equals(idUsuario));
+        if (yaMiembro) {
+            throw new IllegalStateException("YA_ES_MIEMBRO");
+        }
+
+        UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
+        ucReq.setIdUsuario(idUsuario);
+        ucReq.setIdCirculoGasto(idCirculo);
+        ucReq.setRolUsuario("MIEMBRO");
+        usuarioCirculoService.create(ucReq);
+
+        if (notificacionService != null) {
+            try {
+                notificacionService.crear(
+                        idUsuario,
+                        "Te invitaron a un círculo",
+                        "Fuiste invitado al círculo \"" + circulo.getNombre() + "\"",
+                        "INVITACION_CIRCULO",
+                        idCirculo,
+                        circulo.getNombre()
+                );
+            } catch (Exception e) {
+                log.warn("No se pudo crear notificacion para usuario {}: {}", idUsuario, e.getMessage());
+            }
+        }
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(idUsuario, "usuario_circulo", idCirculo,
+                    "INVITAR_USUARIO", null,
+                    "{\"id_circulo\":" + idCirculo + ",\"id_usuario\":" + idUsuario + "}");
+        }
+
+        if (actividadCirculoService != null) {
+            actividadCirculoService.registrarEvento(idCirculo, "MIEMBRO_INVITADO", idUsuario,
+                    Map.of("rol", "MIEMBRO"));
+        }
+
+        populateTipo(circulo);
+        return mapearDetalle(circulo);
+    }
+
+    @Transactional
+    public CirculoDetalleResponse expulsarMiembro(Long idCirculo, Long idUsuario) {
+        CirculoGasto circulo = circuloGastoRepository.findById(idCirculo)
+                .orElseThrow(() -> new IllegalArgumentException("CIRCULO_NO_ENCONTRADO"));
+
+        if (idUsuario.equals(circulo.getIdUsuarioCreador())) {
+            throw new IllegalStateException("No se puede expulsar al creador del círculo");
+        }
+
+        List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(idCirculo);
+        UsuarioCirculo vinculo = vinculaciones.stream()
+                .filter(uc -> uc.getId().getIdUsuario().equals(idUsuario))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("USUARIO_NO_ES_MIEMBRO"));
+
+        UsuarioCirculoId vinculoId = new UsuarioCirculoId();
+        vinculoId.setIdUsuario(idUsuario);
+        vinculoId.setIdCirculoGasto(idCirculo);
+        usuarioCirculoRepository.deleteById(vinculoId);
+        log.info("Usuario {} expulsado del circulo {}", idUsuario, idCirculo);
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(idUsuario, "usuario_circulo", idCirculo,
+                    "EXPULSAR_MIEMBRO",
+                    "{\"rol\":\"" + (vinculo.getRolUsuario() != null ? vinculo.getRolUsuario() : "MIEMBRO") + "\"}", null);
+        }
+
+        if (actividadCirculoService != null) {
+            actividadCirculoService.registrarEvento(idCirculo, "MIEMBRO_EXPULSADO", idUsuario,
+                    Map.of("rol_anterior", vinculo.getRolUsuario() != null ? vinculo.getRolUsuario() : "MIEMBRO"));
+        }
+
+        populateTipo(circulo);
+        return mapearDetalle(circulo);
+    }
+
+    @Transactional
     public void delete(Long id) {
-        usuarioCirculoRepository.deleteByCirculoGastoId(id);
-        circuloGastoRepository.deleteById(id);
+        circuloGastoRepository.findById(id).ifPresent(c -> {
+            usuarioCirculoRepository.deleteByCirculoGastoId(id);
+            circuloGastoRepository.deleteById(id);
+            if (auditoriaService != null) {
+                auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DELETE",
+                        "{\"nombre\":\"" + c.getNombre() + "\"}", null);
+            }
+        });
     }
 }

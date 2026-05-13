@@ -31,8 +31,9 @@ public class Usuario {
     @Column(name = "contrasena_hash")
     private String contrasenaHash;
 
-    @Column(name = "id_tipo_usuario")
-    private Long idTipoUsuario;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tipo_usuario", referencedColumnName = "id_tipo_usuario")
+    private TipoUsuario tipoUsuario;
 
     @Column(name = "token_reclamo")
     private String tokenReclamo;
