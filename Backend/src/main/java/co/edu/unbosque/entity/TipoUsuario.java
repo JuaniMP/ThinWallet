@@ -1,11 +1,13 @@
 package co.edu.unbosque.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Table(name = "tipo_usuario")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class TipoUsuario {
 
     @Id

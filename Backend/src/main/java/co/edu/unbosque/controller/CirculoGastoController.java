@@ -5,7 +5,6 @@ import co.edu.unbosque.entity.CirculoGasto;
 import co.edu.unbosque.entity.UsuarioCirculo;
 import co.edu.unbosque.request.CirculoGastoRequest;
 import co.edu.unbosque.request.UnirseCirculoRequest;
-import co.edu.unbosque.request.UsuarioCirculoRequest;
 import co.edu.unbosque.service.CirculoGastoService;
 import co.edu.unbosque.service.UsuarioCirculoService;
 import jakarta.validation.Valid;
@@ -80,7 +79,7 @@ public class CirculoGastoController {
                 "tokenInvitacion", circulo.getTokenInvitacionOriginal() != null
                         ? circulo.getTokenInvitacionOriginal()
                         : "No disponible",
-                "estado", circulo.getEstado() != null ? circulo.getEstado() : 1
+                "estado", circulo.getEstado() != null ? circulo.getEstado() : "ACTIVO"
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
@@ -88,21 +87,13 @@ public class CirculoGastoController {
 
     @PostMapping("/unirse")
     public ResponseEntity<?> unirse(@Valid @RequestBody UnirseCirculoRequest request) {
-        return circuloGastoService.findByTokenInvitacion(request.getToken())
-                .map(circulo -> {
-                    List<UsuarioCirculo> miembros = usuarioCirculoService.findByCirculoGasto(circulo.getIdCirculoGasto());
-                    boolean yaMiembro = miembros.stream().anyMatch(m -> m.getId().getIdUsuario().equals(request.getIdUsuario()));
-                    if (yaMiembro) {
-                        return ResponseEntity.status(HttpStatus.CONFLICT).<Object>body("Ya eres miembro de este círculo");
-                    }
-                    UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
-                    ucReq.setIdUsuario(request.getIdUsuario());
-                    ucReq.setIdCirculoGasto(circulo.getIdCirculoGasto());
-                    ucReq.setRolUsuario("MIEMBRO");
-                    usuarioCirculoService.create(ucReq);
-                    return ResponseEntity.ok(circulo);
-                })
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token de invitación inválido"));
+        try {
+            return ResponseEntity.ok(circuloGastoService.unirseConToken(request.getToken(), request.getIdUsuario()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token de invitación inválido");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Ya eres miembro de este círculo");
+        }
     }
 
     @PostMapping("/{id}/invitar-registrado")

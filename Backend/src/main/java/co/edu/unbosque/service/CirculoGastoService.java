@@ -214,7 +214,7 @@ public class CirculoGastoService {
         circulo.setPermiteSimplificacionDeudas(request.getPermiteSimplificacionDeudas() != null ? request.getPermiteSimplificacionDeudas() : false);
         circulo.setIdUsuarioCreador(request.getIdUsuarioCreador());
         circulo.setFechaCreacion(LocalDateTime.now());
-        circulo.setEstado(1);
+        circulo.setEstado("ACTIVO");
 
         String tokenOriginal = (request.getTokenInvitacion() != null && !request.getTokenInvitacion().isBlank())
                 ? request.getTokenInvitacion()
@@ -241,6 +241,17 @@ public class CirculoGastoService {
             auditoriaService.registrar(saved.getIdUsuarioCreador(), "circulo_gasto", saved.getIdCirculoGasto(),
                     "INSERT", null,
                     "{\"nombre\":\"" + saved.getNombre() + "\",\"moneda\":\"" + saved.getMonedaBase() + "\"}");
+        }
+
+        if (actividadCirculoService != null) {
+            try {
+                actividadCirculoService.registrarEvento(
+                        saved.getIdCirculoGasto(), "CIRCULO_CREADO",
+                        saved.getIdUsuarioCreador(),
+                        Map.of("nombre", saved.getNombre(), "moneda", saved.getMonedaBase()));
+            } catch (Exception e) {
+                log.warn("MongoDB audit fallo para CIRCULO_CREADO {}: {}", saved.getIdCirculoGasto(), e.getMessage());
+            }
         }
 
         populateTipo(saved);
@@ -398,6 +409,51 @@ public class CirculoGastoService {
                 auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DELETE",
                         "{\"nombre\":\"" + c.getNombre() + "\"}", null);
             }
+            if (actividadCirculoService != null) {
+                try {
+                    actividadCirculoService.registrarEvento(id, "CIRCULO_ELIMINADO",
+                            c.getIdUsuarioCreador(),
+                            Map.of("nombre", c.getNombre()));
+                } catch (Exception e) {
+                    log.warn("MongoDB audit fallo para CIRCULO_ELIMINADO {}: {}", id, e.getMessage());
+                }
+            }
         });
+    }
+
+    @Transactional
+    public CirculoGasto unirseConToken(String token, Long idUsuario) {
+        CirculoGasto circulo = findByTokenInvitacion(token)
+                .orElseThrow(() -> new IllegalArgumentException("TOKEN_INVALIDO"));
+
+        List<UsuarioCirculo> miembros = usuarioCirculoRepository
+                .findByCirculoGasto_IdCirculoGasto(circulo.getIdCirculoGasto());
+        boolean yaMiembro = miembros.stream().anyMatch(m -> m.getId().getIdUsuario().equals(idUsuario));
+        if (yaMiembro) {
+            throw new IllegalStateException("YA_ES_MIEMBRO");
+        }
+
+        UsuarioCirculoRequest ucReq = new UsuarioCirculoRequest();
+        ucReq.setIdUsuario(idUsuario);
+        ucReq.setIdCirculoGasto(circulo.getIdCirculoGasto());
+        ucReq.setRolUsuario("MIEMBRO");
+        usuarioCirculoService.create(ucReq);
+
+        if (auditoriaService != null) {
+            auditoriaService.registrar(idUsuario, "usuario_circulo", circulo.getIdCirculoGasto(),
+                    "UNIRSE_CIRCULO", null,
+                    "{\"id_circulo\":" + circulo.getIdCirculoGasto() + ",\"id_usuario\":" + idUsuario + "}");
+        }
+
+        if (actividadCirculoService != null) {
+            try {
+                actividadCirculoService.registrarEvento(circulo.getIdCirculoGasto(), "MIEMBRO_UNIDO",
+                        idUsuario, Map.of("rol", "MIEMBRO"));
+            } catch (Exception e) {
+                log.warn("MongoDB audit fallo para MIEMBRO_UNIDO circulo {}: {}", circulo.getIdCirculoGasto(), e.getMessage());
+            }
+        }
+
+        return circulo;
     }
 }

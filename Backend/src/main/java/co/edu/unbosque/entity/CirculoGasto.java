@@ -50,5 +50,5 @@ public class CirculoGasto {
     private LocalDateTime fechaCreacion;
 
     @Column(name = "estado")
-    private Integer estado;
+    private String estado;
 }

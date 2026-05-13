@@ -20,7 +20,7 @@ public class CirculoDetalleResponse {
     private String nombreCreador;
     private String correoCreador;
     private LocalDateTime fechaCreacion;
-    private Integer estado;
+    private String estado;
     private int totalMiembros;
     private int totalInvitados;
     private List<CirculoInvitadoDetalleResponse> invitados;
