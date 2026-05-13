@@ -2,30 +2,66 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Layout } from "../../components/layout/Layout";
 import { circleService } from "../../services/circuloGastoService";
-import type { CirculoDetalle } from "../../types";
+import { transactionService } from "../../services/transactionService";
+import { categoryService } from "../../services/categoryService";
+import { useAuth } from "../../context/AuthContext";
+import type { CirculoDetalle, Transaccion, Category } from "../../types";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80";
 
-interface HistoryItem {
-  id: string;
-  date: string;
-  title: string;
-  description: string;
-  amount: string;
-  type: "income" | "expense";
-}
+const fmt = (v: number) =>
+  v.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
 export function CircleDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [detail, setDetail] = useState<CirculoDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [imageUrl, setImageUrl] = useState(FALLBACK_IMAGE);
   const [draftImage, setDraftImage] = useState(FALLBACK_IMAGE);
   const [editingImage, setEditingImage] = useState(false);
-  const [history] = useState<HistoryItem[]>([]);
+  const [history, setHistory] = useState<Transaccion[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [tokenFromStorage, setTokenFromStorage] = useState<string | null>(null);
+
+  // Modal registrar gasto
+  const [showGastoModal, setShowGastoModal] = useState(false);
+  const [gastoForm, setGastoForm] = useState({ nombre: "", monto: "", idCategoria: "" });
+  const [gastoError, setGastoError] = useState("");
+  const [gastoSaving, setGastoSaving] = useState(false);
+
+  const handleRegistrarGasto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const monto = parseFloat(gastoForm.monto);
+    if (!gastoForm.nombre.trim() || isNaN(monto) || monto <= 0) {
+      setGastoError("Nombre y monto son requeridos");
+      return;
+    }
+    if (!user?.idUsuario) return;
+    setGastoSaving(true);
+    setGastoError("");
+    try {
+      await transactionService.create({
+        nombre: gastoForm.nombre.trim(),
+        montoOriginal: monto,
+        idUsuario: user.idUsuario,
+        idCirculoGasto: Number(id),
+        idCategoria: gastoForm.idCategoria ? Number(gastoForm.idCategoria) : undefined,
+        idTipoMovimiento: 2,
+      });
+      setGastoForm({ nombre: "", monto: "", idCategoria: "" });
+      setShowGastoModal(false);
+      // Reload history
+      const txs = await transactionService.getByCirculo(Number(id));
+      setHistory(Array.isArray(txs) ? txs : []);
+    } catch (err: unknown) {
+      setGastoError(err instanceof Error ? err.message : "Error al registrar gasto");
+    } finally {
+      setGastoSaving(false);
+    }
+  };
 
   useEffect(() => {
     const circleId = Number(id);
@@ -50,8 +86,14 @@ export function CircleDetail() {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await circleService.getCircleDetail(circleId);
+        const [data, txs, cats] = await Promise.all([
+          circleService.getCircleDetail(circleId),
+          transactionService.getByCirculo(circleId).catch(() => []),
+          categoryService.getAll().catch(() => []),
+        ]);
         setDetail(data);
+        setHistory(Array.isArray(txs) ? txs : []);
+        setCategories(Array.isArray(cats) ? cats : []);
       } catch (loadError) {
         console.error("Error cargando detalle del círculo", loadError);
         setError("No se pudo cargar el círculo.");
@@ -63,16 +105,12 @@ export function CircleDetail() {
     void load();
   }, [id]);
 
-  const presupuesto = useMemo(() => {
-    if (!detail?.presupuestoGrupal) {
-      return "$0.00";
-    }
-    return Number(detail.presupuestoGrupal).toLocaleString("en-US", {
-      style: "currency",
-      currency: detail.monedaBase || "USD",
-      minimumFractionDigits: 2,
-    });
-  }, [detail]);
+  const totalGastos = useMemo(
+    () => history.reduce((s, t) => s + (Number(t.montoOriginal) || 0), 0),
+    [history],
+  );
+
+  const presupuesto = fmt(totalGastos);
 
   const handleSaveImage = () => {
     if (!detail || !draftImage.trim()) {
@@ -194,7 +232,7 @@ export function CircleDetail() {
                 </div>
                 <div>
                   <span>Estado</span>
-                  <strong>{detail.estado === 1 ? "Activo" : "Inactivo"}</strong>
+                  <strong>{detail.estado === "ACTIVO" || detail.estado === 1 || detail.estado === "1" ? "Activo" : "Inactivo"}</strong>
                 </div>
                 <div>
                   <span>Mesadas</span>
@@ -222,29 +260,33 @@ export function CircleDetail() {
             {/* HISTORY SECTION */}
             <section className="circle-history-panel neo-shadow">
               <div className="panel-header">
-                <h3>Historial</h3>
+                <h3>Historial de Gastos</h3>
                 <span className="history-icon">⏱</span>
               </div>
               {history.length === 0 ? (
                 <div className="history-empty">
-                  <p>No hay historial aún</p>
+                  <p>No hay gastos registrados aún</p>
                 </div>
               ) : (
                 <div className="history-timeline">
-                  {history.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`history-item history-${item.type}`}
-                    >
-                      <div className="history-line"></div>
-                      <div className="history-content">
-                        <div className="history-time">{item.date}</div>
-                        <div className="history-title">{item.title}</div>
-                        <div className="history-desc">{item.description}</div>
-                        <div className="history-amount">{item.amount}</div>
+                  {history.slice(0, 10).map((item) => {
+                    const cat = categories.find((c) => c.idCategoria === item.idCategoria);
+                    return (
+                      <div key={item.idTransaccion} className="history-item history-expense">
+                        <div className="history-line" />
+                        <div className="history-content">
+                          <div className="history-time">
+                            {item.contexto
+                              ? new Date(item.contexto).toLocaleDateString("es-CO")
+                              : "—"}
+                          </div>
+                          <div className="history-title">{item.nombre}</div>
+                          <div className="history-desc">{cat?.nombre ?? item.tipoCategoria ?? "Sin categoría"}</div>
+                          <div className="history-amount">{fmt(Number(item.montoOriginal))}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -252,10 +294,14 @@ export function CircleDetail() {
             {/* BALANCE & ACTIONS */}
             <section className="circle-actions-panel neo-shadow">
               <div className="balance-box">
-                <span className="balance-label">Balance total del grupo</span>
+                <span className="balance-label">Total gastos del grupo</span>
                 <strong className="balance-value">{presupuesto}</strong>
               </div>
-              <button className="btn btn-primary" type="button">
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => { setGastoForm({ nombre: "", monto: "", idCategoria: "" }); setGastoError(""); setShowGastoModal(true); }}
+              >
                 Registrar gasto
               </button>
             </section>
@@ -337,6 +383,60 @@ export function CircleDetail() {
           </>
         )}
       </div>
+
+      {/* Modal registrar gasto */}
+      {showGastoModal && (
+        <div className="modal-overlay" onClick={() => setShowGastoModal(false)}>
+          <div className="modal-card neo-shadow" onClick={(e) => e.stopPropagation()}>
+            <h3>Registrar Gasto en Círculo</h3>
+            <form onSubmit={(e) => void handleRegistrarGasto(e)}>
+              <label>
+                Nombre del gasto
+                <input
+                  type="text"
+                  value={gastoForm.nombre}
+                  onChange={(e) => setGastoForm((f) => ({ ...f, nombre: e.target.value }))}
+                  placeholder="Ej: Cena, Transporte..."
+                  required
+                />
+              </label>
+              <label>
+                Monto (COP)
+                <input
+                  type="number"
+                  min={1}
+                  value={gastoForm.monto}
+                  onChange={(e) => setGastoForm((f) => ({ ...f, monto: e.target.value }))}
+                  required
+                />
+              </label>
+              {categories.length > 0 && (
+                <label>
+                  Categoría
+                  <select
+                    value={gastoForm.idCategoria}
+                    onChange={(e) => setGastoForm((f) => ({ ...f, idCategoria: e.target.value }))}
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.idCategoria} value={c.idCategoria}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {gastoError && <p className="error-msg">{gastoError}</p>}
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowGastoModal(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-primary" disabled={gastoSaving}>
+                  {gastoSaving ? "Guardando..." : "Registrar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

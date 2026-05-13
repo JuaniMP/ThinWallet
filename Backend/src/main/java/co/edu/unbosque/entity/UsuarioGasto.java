@@ -8,14 +8,25 @@ import lombok.Data;
 @Data
 public class UsuarioGasto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_usuario_gasto")
-    private Long idUsuarioGasto;
+    @EmbeddedId
+    private UsuarioGastoId id;
 
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    // Helpers de acceso directo usados por GastoService
+    public Long getIdUsuario() {
+        return id != null ? id.getIdUsuario() : null;
+    }
 
-    @Column(name = "id_gasto")
-    private Long idGasto;
+    public Long getIdGasto() {
+        return id != null ? id.getIdGasto() : null;
+    }
+
+    public void setIdUsuario(Long idUsuario) {
+        if (id == null) id = new UsuarioGastoId();
+        id.setIdUsuario(idUsuario);
+    }
+
+    public void setIdGasto(Long idGasto) {
+        if (id == null) id = new UsuarioGastoId();
+        id.setIdGasto(idGasto);
+    }
 }

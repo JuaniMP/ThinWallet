@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { authService } from "../../services/authService";
@@ -14,6 +14,94 @@ export function Profile() {
   const [loadingSaldo, setLoadingSaldo] = useState(!!authUser?.idUsuario);
 
   const isGhost = authUser?.idTipoUsuario === 3;
+
+  const [idCopied, setIdCopied] = useState(false);
+  const handleCopyId = () => {
+    if (profileData?.idUsuario) {
+      void navigator.clipboard.writeText(String(profileData.idUsuario));
+      setIdCopied(true);
+      setTimeout(() => setIdCopied(false), 2000);
+    }
+  };
+
+  const [showCambiarPass, setShowCambiarPass] = useState(false);
+  const [passForm, setPassForm] = useState({
+    contrasenaActual: "",
+    nuevaContrasena: "",
+    confirmar: "",
+  });
+  const [passError, setPassError] = useState("");
+  const [passOk, setPassOk] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
+  const passFormRef = useRef<HTMLFormElement>(null);
+
+  const handleCambiarPass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError("");
+    if (passForm.nuevaContrasena !== passForm.confirmar) {
+      setPassError("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    if (passForm.nuevaContrasena.length < 6) {
+      setPassError("La nueva contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    if (!authUser?.idUsuario) return;
+    setPassLoading(true);
+    try {
+      await authService.cambiarContrasenaAutenticado(
+        authUser.idUsuario,
+        passForm.contrasenaActual,
+        passForm.nuevaContrasena,
+      );
+      setPassOk(true);
+      setPassForm({ contrasenaActual: "", nuevaContrasena: "", confirmar: "" });
+      setShowCambiarPass(false);
+    } catch (err: unknown) {
+      setPassError(err instanceof Error ? err.message : "Error al cambiar la contraseña");
+    } finally {
+      setPassLoading(false);
+    }
+  };
+
+  const [showEditPerfil, setShowEditPerfil] = useState(false);
+  const [editForm, setEditForm] = useState({
+    nombres: profileData?.nombres ?? "",
+    apellidos: profileData?.apellidos ?? "",
+    nombreUsuario: profileData?.nombreUsuario ?? "",
+    descripcion: profileData?.descripcion ?? "",
+  });
+  const [editError, setEditError] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openEditPerfil = () => {
+    setEditForm({
+      nombres: profileData?.nombres ?? "",
+      apellidos: profileData?.apellidos ?? "",
+      nombreUsuario: profileData?.nombreUsuario ?? "",
+      descripcion: profileData?.descripcion ?? "",
+    });
+    setEditError("");
+    setShowEditPerfil(true);
+  };
+
+  const handleEditPerfil = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authUser?.idUsuario) return;
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const updated = await authService.updatePerfil(authUser.idUsuario, editForm);
+      setProfileData(updated);
+      if (setUser) setUser(updated);
+      setShowEditPerfil(false);
+    } catch (err: unknown) {
+      setEditError(err instanceof Error ? err.message : "Error al actualizar perfil");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const [showReclamar, setShowReclamar] = useState(false);
   const [reclamarForm, setReclamarForm] = useState({
     nombres: authUser?.nombres ?? "",
@@ -168,6 +256,7 @@ export function Profile() {
             <button
               className="btn btn-primary neo-shadow-hover neo-shadow-active"
               style={{ fontSize: "0.875rem" }}
+              onClick={openEditPerfil}
             >
               Editar Perfil
             </button>
@@ -345,9 +434,114 @@ export function Profile() {
           </div>
         </div>
 
+        {/* ID de usuario */}
+        <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
+          <h4>Tu ID de Usuario</h4>
+          <div className="section-row" style={{ alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ color: "var(--primary)", fontSize: "1.5rem" }}
+              >
+                key
+              </span>
+              <div>
+                <p className="row-label" style={{ fontFamily: "monospace", fontSize: "1.1rem", letterSpacing: 2 }}>
+                  {loadingProfile ? "..." : (profileData?.idUsuario ?? "—")}
+                </p>
+                <p className="row-desc">Comparte este ID para que otros te agreguen como acreedor en deudas</p>
+              </div>
+            </div>
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: "0.8rem", padding: "6px 12px", minWidth: 80 }}
+              onClick={handleCopyId}
+              disabled={loadingProfile}
+            >
+              {idCopied ? "¡Copiado!" : "Copiar"}
+            </button>
+          </div>
+        </div>
+
         {/* Security Section */}
         <div className="profile-section bg-white">
           <h4>Seguridad & Privacidad</h4>
+
+          {/* Cambiar contraseña */}
+          <div className="section-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", cursor: "pointer" }}
+              onClick={() => { setShowCambiarPass((v) => !v); setPassError(""); setPassOk(false); }}
+            >
+              <div>
+                <p className="row-label">Cambiar Contraseña</p>
+                <p className="row-desc">Actualiza tu contraseña de acceso</p>
+              </div>
+              <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>
+                {showCambiarPass ? "expand_less" : "lock_reset"}
+              </span>
+            </div>
+            {passOk && (
+              <p style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.85rem" }}>
+                ¡Contraseña actualizada exitosamente!
+              </p>
+            )}
+            {showCambiarPass && (
+              <form
+                ref={passFormRef}
+                onSubmit={(e) => void handleCambiarPass(e)}
+                style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}
+              >
+                <label style={{ fontSize: "0.85rem" }}>
+                  Contraseña actual
+                  <input
+                    type="password"
+                    value={passForm.contrasenaActual}
+                    onChange={(e) => setPassForm((f) => ({ ...f, contrasenaActual: e.target.value }))}
+                    required
+                    autoComplete="current-password"
+                  />
+                </label>
+                <label style={{ fontSize: "0.85rem" }}>
+                  Nueva contraseña
+                  <input
+                    type="password"
+                    value={passForm.nuevaContrasena}
+                    onChange={(e) => setPassForm((f) => ({ ...f, nuevaContrasena: e.target.value }))}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label style={{ fontSize: "0.85rem" }}>
+                  Confirmar nueva contraseña
+                  <input
+                    type="password"
+                    value={passForm.confirmar}
+                    onChange={(e) => setPassForm((f) => ({ ...f, confirmar: e.target.value }))}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </label>
+                {passError && <p className="error-msg">{passError}</p>}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="submit" className="btn btn-primary" disabled={passLoading} style={{ fontSize: "0.85rem" }}>
+                    {passLoading ? "Guardando..." : "Guardar contraseña"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: "0.85rem" }}
+                    onClick={() => { setShowCambiarPass(false); setPassError(""); }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
           {securityItems.map((item) => (
             <div key={item.label} className="section-row">
               <div>
@@ -364,6 +558,61 @@ export function Profile() {
           ))}
         </div>
       </div>
+
+      {/* Modal Editar Perfil */}
+      {showEditPerfil && (
+        <div className="modal-overlay" onClick={() => setShowEditPerfil(false)}>
+          <div className="modal-card neo-shadow" onClick={(e) => e.stopPropagation()}>
+            <h3>Editar Perfil</h3>
+            <form onSubmit={(e) => void handleEditPerfil(e)}>
+              <label>
+                Nombres
+                <input
+                  type="text"
+                  value={editForm.nombres}
+                  onChange={(e) => setEditForm((f) => ({ ...f, nombres: e.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                Apellidos
+                <input
+                  type="text"
+                  value={editForm.apellidos}
+                  onChange={(e) => setEditForm((f) => ({ ...f, apellidos: e.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                Nombre de usuario
+                <input
+                  type="text"
+                  value={editForm.nombreUsuario}
+                  onChange={(e) => setEditForm((f) => ({ ...f, nombreUsuario: e.target.value }))}
+                />
+              </label>
+              <label>
+                Descripción (opcional)
+                <input
+                  type="text"
+                  value={editForm.descripcion}
+                  onChange={(e) => setEditForm((f) => ({ ...f, descripcion: e.target.value }))}
+                  placeholder="Una breve descripción tuya"
+                />
+              </label>
+              {editError && <p className="error-msg">{editError}</p>}
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowEditPerfil(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-primary" disabled={editSaving}>
+                  {editSaving ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

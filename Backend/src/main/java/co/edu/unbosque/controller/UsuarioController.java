@@ -198,6 +198,30 @@ public class UsuarioController {
         }
     }
 
+    @PatchMapping("/{id}/perfil")
+    public ResponseEntity<?> updatePerfil(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return usuarioService.updatePerfil(
+                id,
+                body.get("nombres"),
+                body.get("apellidos"),
+                body.get("nombreUsuario"),
+                body.get("descripcion"))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/cambiar-contrasena")
+    public ResponseEntity<?> cambiarContrasenaAutenticado(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            usuarioService.cambiarContrasenaAutenticado(id, body.get("contrasenaActual"), body.get("nuevaContrasena"));
+            return ResponseEntity.ok("Contraseña actualizada exitosamente");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     /**
      * Reclamación de perfil: convierte cuenta fantasma en cuenta real.
      * Body: { tokenReclamo, nombres, apellidos, nombreUsuario, correo, contrasena }

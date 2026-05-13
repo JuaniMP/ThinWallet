@@ -1,7 +1,9 @@
 package co.edu.unbosque.service;
 
 import co.edu.unbosque.entity.Gasto;
+import co.edu.unbosque.entity.UsuarioGasto;
 import co.edu.unbosque.repository.GastoRepository;
+import co.edu.unbosque.repository.UsuarioGastoRepository;
 import co.edu.unbosque.request.GastoRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import java.util.Optional;
 public class GastoService {
 
     private final GastoRepository gastoRepository;
+    private final UsuarioGastoRepository usuarioGastoRepository;
 
     @Autowired(required = false)
     private ActividadCirculoService actividadCirculoService;
@@ -74,6 +77,14 @@ public class GastoService {
         gasto.setIdCategoria(request.getIdCategoria());
         Gasto saved = gastoRepository.save(gasto);
 
+        // Vincular creador en usuario_gasto
+        if (saved.getIdUsuarioCreador() != null) {
+            UsuarioGasto ug = new UsuarioGasto();
+            ug.setIdUsuario(saved.getIdUsuarioCreador());
+            ug.setIdGasto(saved.getIdGasto());
+            usuarioGastoRepository.save(ug);
+        }
+
         if (auditoriaService != null) {
             auditoriaService.registrar(saved.getIdUsuarioCreador(), "gasto", saved.getIdGasto(),
                     "INSERT", null,
@@ -122,6 +133,9 @@ public class GastoService {
     @Transactional
     public void delete(Long id) {
         gastoRepository.findById(id).ifPresent(g -> {
+            // Eliminar vínculos en usuario_gasto antes de borrar el gasto
+            List<UsuarioGasto> vinculos = usuarioGastoRepository.findByIdGasto(id);
+            usuarioGastoRepository.deleteAll(vinculos);
             gastoRepository.deleteById(id);
             if (auditoriaService != null) {
                 auditoriaService.registrar(g.getIdUsuarioCreador(), "gasto", id, "DELETE",
