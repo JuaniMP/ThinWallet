@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/deudas")
@@ -41,8 +42,12 @@ public class DeudaController {
     }
 
     @PostMapping
-    public ResponseEntity<Deuda> create(@Valid @RequestBody DeudaRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(deudaService.create(request));
+    public ResponseEntity<?> create(@Valid @RequestBody DeudaRequest request) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(deudaService.create(request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
@@ -57,6 +62,19 @@ public class DeudaController {
         return deudaService.confirmarPago(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/rechazar")
+    public ResponseEntity<?> rechazarPago(@PathVariable Long id,
+                                          @RequestBody(required = false) Map<String, String> body) {
+        String motivo = (body != null) ? body.get("motivo") : null;
+        try {
+            return deudaService.rechazarPago(id, motivo)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

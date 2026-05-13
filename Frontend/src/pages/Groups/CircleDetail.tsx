@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Layout } from '../../components/layout/Layout';
-import { circleService } from '../../services/circuloGastoService';
-import type { CirculoDetalle } from '../../types';
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { Layout } from "../../components/layout/Layout";
+import { circleService } from "../../services/circuloGastoService";
+import type { CirculoDetalle } from "../../types";
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80';
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80";
 
 interface HistoryItem {
   id: string;
@@ -12,14 +13,14 @@ interface HistoryItem {
   title: string;
   description: string;
   amount: string;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
 }
 
 export function CircleDetail() {
   const { id } = useParams();
   const [detail, setDetail] = useState<CirculoDetalle | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [imageUrl, setImageUrl] = useState(FALLBACK_IMAGE);
   const [draftImage, setDraftImage] = useState(FALLBACK_IMAGE);
   const [editingImage, setEditingImage] = useState(false);
@@ -29,7 +30,7 @@ export function CircleDetail() {
   useEffect(() => {
     const circleId = Number(id);
     if (!Number.isFinite(circleId) || circleId <= 0) {
-      setError('ID de círculo inválido.');
+      setError("ID de círculo inválido.");
       setLoading(false);
       return;
     }
@@ -41,7 +42,7 @@ export function CircleDetail() {
     }
 
     // Recuperar token del usuario desde localStorage
-    const savedToken = localStorage.getItem('user-token');
+    const savedToken = localStorage.getItem("user-token");
     if (savedToken) {
       setTokenFromStorage(savedToken);
     }
@@ -52,8 +53,8 @@ export function CircleDetail() {
         const data = await circleService.getCircleDetail(circleId);
         setDetail(data);
       } catch (loadError) {
-        console.error('Error cargando detalle del círculo', loadError);
-        setError('No se pudo cargar el círculo.');
+        console.error("Error cargando detalle del círculo", loadError);
+        setError("No se pudo cargar el círculo.");
       } finally {
         setLoading(false);
       }
@@ -64,11 +65,11 @@ export function CircleDetail() {
 
   const presupuesto = useMemo(() => {
     if (!detail?.presupuestoGrupal) {
-      return '$0.00';
+      return "$0.00";
     }
-    return Number(detail.presupuestoGrupal).toLocaleString('en-US', {
-      style: 'currency',
-      currency: detail.monedaBase || 'USD',
+    return Number(detail.presupuestoGrupal).toLocaleString("en-US", {
+      style: "currency",
+      currency: detail.monedaBase || "USD",
       minimumFractionDigits: 2,
     });
   }, [detail]);
@@ -95,16 +96,16 @@ export function CircleDetail() {
         {loading ? (
           <p className="empty-state">Cargando círculo...</p>
         ) : error || !detail ? (
-          <p className="empty-state">{error || 'No se encontró el círculo.'}</p>
+          <p className="empty-state">{error || "No se encontró el círculo."}</p>
         ) : (
           <>
             {/* HERO SECTION WITH IMAGE */}
             <section className="circle-hero-section">
               <div className="circle-hero-image-container">
-                <img 
-                  className="circle-hero-image" 
-                  src={imageUrl} 
-                  alt={`Portada de ${detail.nombre}`} 
+                <img
+                  className="circle-hero-image"
+                  src={imageUrl}
+                  alt={`Portada de ${detail.nombre}`}
                 />
                 <button
                   type="button"
@@ -122,7 +123,11 @@ export function CircleDetail() {
                       onChange={(event) => setDraftImage(event.target.value)}
                       placeholder="Pega URL de imagen"
                     />
-                    <button type="button" className="btn btn-primary" onClick={handleSaveImage}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSaveImage}
+                    >
                       Guardar
                     </button>
                   </div>
@@ -130,10 +135,14 @@ export function CircleDetail() {
               </div>
 
               <div className="circle-hero-info neo-shadow">
-                <h1 className="circle-hero-title">{(detail.nombre || 'Círculo sin nombre').toUpperCase()}</h1>
+                <h1 className="circle-hero-title">
+                  {(detail.nombre || "Círculo sin nombre").toUpperCase()}
+                </h1>
                 <div className="circle-hero-meta">
                   <span className="circle-status">Activo</span>
-                  <span className="circle-type">{detail.tipoCirculo || 'Sin tipo'}</span>
+                  <span className="circle-type">
+                    {detail.tipoCirculo || "Sin tipo"}
+                  </span>
                 </div>
               </div>
             </section>
@@ -146,17 +155,26 @@ export function CircleDetail() {
               </div>
               <div className="circle-metric-card neo-shadow">
                 <span className="metric-label">Invitados</span>
-                <strong className="metric-value">{detail.totalInvitados}</strong>
+                <strong className="metric-value">
+                  {detail.totalInvitados}
+                </strong>
               </div>
               <div className="circle-metric-card neo-shadow">
                 <span className="metric-label">Creado</span>
                 <strong className="metric-value">
-                  {detail.fechaCreacion ? new Date(detail.fechaCreacion).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : 'N/A'}
+                  {detail.fechaCreacion
+                    ? new Date(detail.fechaCreacion).toLocaleDateString(
+                        "es-CO",
+                        { day: "2-digit", month: "2-digit" },
+                      )
+                    : "N/A"}
                 </strong>
               </div>
               <div className="circle-metric-card neo-shadow">
                 <span className="metric-label">Moneda</span>
-                <strong className="metric-value">{detail.monedaBase || 'USD'}</strong>
+                <strong className="metric-value">
+                  {detail.monedaBase || "USD"}
+                </strong>
               </div>
             </section>
 
@@ -168,27 +186,35 @@ export function CircleDetail() {
               <div className="attrs-grid">
                 <div>
                   <span>Tipo</span>
-                  <strong>{detail.tipoCirculo || 'Sin tipo'}</strong>
+                  <strong>{detail.tipoCirculo || "Sin tipo"}</strong>
                 </div>
                 <div>
                   <span>Moneda</span>
-                  <strong>{detail.monedaBase || 'USD'}</strong>
+                  <strong>{detail.monedaBase || "USD"}</strong>
                 </div>
                 <div>
                   <span>Estado</span>
-                  <strong>{detail.estado === 1 ? 'Activo' : 'Inactivo'}</strong>
+                  <strong>{detail.estado === 1 ? "Activo" : "Inactivo"}</strong>
                 </div>
                 <div>
                   <span>Mesadas</span>
-                  <strong>{detail.permiteMesadas ? 'Sí' : 'No'}</strong>
+                  <strong>{detail.permiteMesadas ? "Sí" : "No"}</strong>
                 </div>
                 <div>
                   <span>Simplificación</span>
-                  <strong>{detail.permiteSimplificacionDeudas ? 'Sí' : 'No'}</strong>
+                  <strong>
+                    {detail.permiteSimplificacionDeudas ? "Sí" : "No"}
+                  </strong>
                 </div>
                 <div>
                   <span>Creado</span>
-                  <strong>{detail.fechaCreacion ? new Date(detail.fechaCreacion).toLocaleDateString('es-CO') : 'N/A'}</strong>
+                  <strong>
+                    {detail.fechaCreacion
+                      ? new Date(detail.fechaCreacion).toLocaleDateString(
+                          "es-CO",
+                        )
+                      : "N/A"}
+                  </strong>
                 </div>
               </div>
             </section>
@@ -206,7 +232,10 @@ export function CircleDetail() {
               ) : (
                 <div className="history-timeline">
                   {history.map((item) => (
-                    <div key={item.id} className={`history-item history-${item.type}`}>
+                    <div
+                      key={item.id}
+                      className={`history-item history-${item.type}`}
+                    >
                       <div className="history-line"></div>
                       <div className="history-content">
                         <div className="history-time">{item.date}</div>
@@ -239,39 +268,47 @@ export function CircleDetail() {
               </div>
 
               {detail.invitados.length === 0 && !tokenFromStorage ? (
-                <p className="empty-state">Aún no hay invitados en este círculo.</p>
+                <p className="empty-state">
+                  Aún no hay invitados en este círculo.
+                </p>
               ) : (
                 <div className="guest-token-grid">
                   {/* Token como primer item - entrada del usuario */}
                   {tokenFromStorage && (
                     <article className="guest-token-item">
                       <h4>Tu entrada</h4>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                        <input 
-                          type="text" 
-                          value={tokenFromStorage} 
-                          readOnly 
-                          style={{ 
-                            flex: 1, 
-                            padding: '8px', 
-                            border: '1px solid var(--border-color)', 
-                            borderRadius: '4px',
-                            fontFamily: 'monospace',
-                            fontSize: '12px',
-                            wordBreak: 'break-all'
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <input
+                          type="text"
+                          value={tokenFromStorage}
+                          readOnly
+                          style={{
+                            flex: 1,
+                            padding: "8px",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "4px",
+                            fontFamily: "monospace",
+                            fontSize: "12px",
+                            wordBreak: "break-all",
                           }}
                         />
-                        <button 
-                          type="button" 
-                          className="matriz-cta-btn" 
+                        <button
+                          type="button"
+                          className="matriz-cta-btn"
                           onClick={() => {
                             if (tokenFromStorage) {
                               navigator.clipboard.writeText(tokenFromStorage);
-                              alert('Token copiado al portapapeles');
+                              alert("Token copiado al portapapeles");
                             }
                           }}
                           title="Copiar token"
-                          style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}
+                          style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
                         >
                           Copiar
                         </button>
@@ -281,10 +318,17 @@ export function CircleDetail() {
 
                   {/* Invitados debajo del token */}
                   {detail.invitados.map((invitado) => (
-                    <article key={invitado.idUsuario} className="guest-token-item">
+                    <article
+                      key={invitado.idUsuario}
+                      className="guest-token-item"
+                    >
                       <h4>{invitado.nombreCompleto}</h4>
-                      <p className="guest-type">Tipo: {invitado.tipoUsuario || 'N/A'}</p>
-                      {invitado.correo && <p className="guest-email">{invitado.correo}</p>}
+                      <p className="guest-type">
+                        Tipo: {invitado.tipoUsuario || "N/A"}
+                      </p>
+                      {invitado.correo && (
+                        <p className="guest-email">{invitado.correo}</p>
+                      )}
                     </article>
                   ))}
                 </div>
