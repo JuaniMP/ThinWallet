@@ -137,3 +137,11 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Maven
+Backend/target/
+Backend/*.classpath
+Backend/*.project
+Backend/.settings/
+Backend/.idea/
+Backend/*.iml
