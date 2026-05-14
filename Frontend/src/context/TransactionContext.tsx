@@ -51,6 +51,7 @@ interface TransactionContextType {
   error: string | null;
   fetchTransactions: (filters?: TransactionFilters) => Promise<void>;
   fetchSaldo: () => Promise<void>;
+  setSaldo: (saldo: number) => void;
   createTransaction: (data: {
     nombre: string;
     montoOriginal: number;
@@ -158,6 +159,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         error,
         fetchTransactions,
         fetchSaldo,
+        setSaldo: setSaldoTotal,
         createTransaction,
         deleteTransaction,
       }}

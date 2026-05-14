@@ -34,6 +34,9 @@ public class TransaccionService {
     @Autowired(required = false)
     private AuditoriaSistemaService auditoriaService;
 
+    @Autowired(required = false)
+    private SseEventBus eventBus;
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void populateTipos(List<Transaccion> lista) {
@@ -143,6 +146,8 @@ public class TransaccionService {
                     saved.getIdUsuario(), contexto);
         }
 
+        if (eventBus != null) eventBus.publicarSaldo(saved.getIdUsuario());
+
         return saved;
     }
 
@@ -164,6 +169,7 @@ public class TransaccionService {
                         "UPDATE", anterior,
                         "{\"monto\":" + saved.getMontoOriginal() + ",\"tipo\":" + saved.getIdTipoMovimiento() + "}");
             }
+            if (eventBus != null) eventBus.publicarSaldo(saved.getIdUsuario());
             return saved;
         });
     }
@@ -176,6 +182,7 @@ public class TransaccionService {
                 auditoriaService.registrar(t.getIdUsuario(), "transaccion", id, "DELETE",
                         "{\"monto\":" + t.getMontoOriginal() + "}", null);
             }
+            if (eventBus != null) eventBus.publicarSaldo(t.getIdUsuario());
         });
     }
 }

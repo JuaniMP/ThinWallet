@@ -3,6 +3,10 @@ import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { gastoService } from "../../services/gastoService";
 import { categoryService } from "../../services/categoryService";
+import {
+  coachService,
+  type CoachRecomendacionResponse,
+} from "../../services/coachService";
 import type { Gasto, GastoRequest, Category } from "../../types";
 
 const fmt = (v: number) =>
@@ -25,6 +29,31 @@ export function Goals() {
   const [editTarget, setEditTarget] = useState<Gasto | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [coach, setCoach] = useState<CoachRecomendacionResponse | null>(null);
+  const [coachIngreso, setCoachIngreso] = useState<string>("");
+  const [coachLoading, setCoachLoading] = useState(false);
+
+  const cargarCoach = async (ingresoMensual?: number) => {
+    if (!user?.idUsuario) return;
+    setCoachLoading(true);
+    try {
+      const data = await coachService.getRecomendacion(
+        user.idUsuario,
+        ingresoMensual,
+      );
+      setCoach(data);
+    } catch {
+      setCoach(null);
+    } finally {
+      setCoachLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void cargarCoach();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.idUsuario]);
 
   const emptyForm = (defaultCat?: number): GastoRequest => ({
     nombre: "",
@@ -146,6 +175,119 @@ export function Goals() {
             <span className="material-symbols-outlined">add</span>
             Nueva Meta
           </button>
+        </div>
+
+        <div
+          className="neo-shadow"
+          style={{ padding: 20, marginBottom: 24, background: "var(--surface)" }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ color: "var(--primary)" }}
+            >
+              psychology
+            </span>
+            <h3 style={{ margin: 0 }}>Coach Financiero · 50/30/20</h3>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-end",
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <label style={{ flex: 1, minWidth: 200 }}>
+              Ingreso mensual (COP)
+              <input
+                type="number"
+                value={coachIngreso}
+                onChange={(e) => setCoachIngreso(e.target.value)}
+                placeholder="Ej: 2500000"
+                style={{ width: "100%" }}
+              />
+            </label>
+            <button
+              className="btn-secondary"
+              onClick={() =>
+                void cargarCoach(
+                  coachIngreso ? Number(coachIngreso) : undefined,
+                )
+              }
+              disabled={coachLoading}
+            >
+              {coachLoading ? "Calculando…" : "Actualizar"}
+            </button>
+          </div>
+
+          {coach && coach.ingresoMensual > 0 ? (
+            <>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                <CoachStat
+                  label="Necesidades (50%)"
+                  objetivo={coach.necesidadesMax}
+                  real={coach.gastoNecesidades}
+                  pct={coach.porcentajeNecesidades}
+                />
+                <CoachStat
+                  label="Deseos (30%)"
+                  objetivo={coach.deseosMax}
+                  real={coach.gastoDeseos}
+                  pct={coach.porcentajeDeseos}
+                />
+                <CoachStat
+                  label="Ahorro (20%)"
+                  objetivo={coach.ahorroObjetivo}
+                  real={Math.max(
+                    0,
+                    coach.ingresoMensual - coach.gastoTotal,
+                  )}
+                  pct={coach.cumplimientoAhorro}
+                  positive
+                />
+              </div>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: 16,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                }}
+              >
+                {coach.recomendaciones.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--on-surface-variant)",
+                fontStyle: "italic",
+              }}
+            >
+              Ingresa tu sueldo mensual y dale "Actualizar" para activar las
+              recomendaciones.
+            </p>
+          )}
         </div>
 
         {showForm && (
@@ -320,5 +462,72 @@ export function Goals() {
         )}
       </div>
     </Layout>
+  );
+}
+
+function CoachStat({
+  label,
+  objetivo,
+  real,
+  pct,
+  positive,
+}: {
+  label: string;
+  objetivo: number;
+  real: number;
+  pct: number;
+  positive?: boolean;
+}) {
+  const fill = Math.min(100, Math.max(0, Number(pct) || 0));
+  const danger = !positive && fill > 100;
+  return (
+    <div
+      style={{
+        padding: 12,
+        background: "var(--surface-variant, #f5f5f7)",
+        borderRadius: 8,
+      }}
+    >
+      <p
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </p>
+      <p style={{ fontSize: 14, marginBottom: 2 }}>
+        {fmt(real)} /{" "}
+        <span style={{ color: "var(--on-surface-variant)" }}>
+          {fmt(objetivo)}
+        </span>
+      </p>
+      <div
+        style={{
+          height: 6,
+          background: "var(--surface)",
+          borderRadius: 6,
+          overflow: "hidden",
+          marginTop: 4,
+        }}
+      >
+        <div
+          style={{
+            width: `${fill}%`,
+            height: "100%",
+            background: positive
+              ? "var(--success, #1f7a1f)"
+              : danger
+                ? "var(--error)"
+                : "var(--primary)",
+            transition: "width .3s",
+          }}
+        />
+      </div>
+      <p style={{ fontSize: 11, marginTop: 4 }}>{pct.toFixed(1)}%</p>
+    </div>
   );
 }
