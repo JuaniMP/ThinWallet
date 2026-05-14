@@ -10,6 +10,7 @@ import { Login } from "./pages/Auth/Login";
 import { Register } from "./pages/Auth/Register";
 import { ForgotPassword } from "./pages/Auth/ForgotPassword";
 import { Verify } from "./pages/Auth/Verify";
+import { ReclamarPerfil } from "./pages/Auth/ReclamarPerfil";
 import { Dashboard } from "./pages/Dashboard/Dashboard";
 import { TransactionList } from "./pages/Transactions/TransactionList";
 import { NewTransaction } from "./pages/Transactions/NewTransaction";
@@ -20,6 +21,8 @@ import { Debts } from "./pages/Debts/Debts";
 import { Reports } from "./pages/Reports/Reports";
 import { Goals } from "./pages/Goals/Goals";
 import { ScheduledExpenses } from "./pages/Scheduled/ScheduledExpenses";
+import { GastosHormiga } from "./pages/GastosHormiga/GastosHormiga";
+import { CierreMensual } from "./pages/Ciclos/CierreMensual";
 import "./App.css";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -68,6 +71,14 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <Verify />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reclamar-perfil"
+        element={
+          <PublicRoute>
+            <ReclamarPerfil />
           </PublicRoute>
         }
       />
@@ -149,6 +160,22 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <ScheduledExpenses />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/gastos-hormiga"
+        element={
+          <PrivateRoute>
+            <GastosHormiga />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cierre-mensual"
+        element={
+          <PrivateRoute>
+            <CierreMensual />
           </PrivateRoute>
         }
       />

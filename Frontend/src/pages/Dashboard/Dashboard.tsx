@@ -1,8 +1,25 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useTransactions } from "../../context/TransactionContext";
+import { useAuth } from "../../context/AuthContext";
 import { categoryService } from "../../services/categoryService";
+import { coachService } from "../../services/coachService";
+import type { CoachRecomendacionResponse } from "../../services/coachService";
 import { Layout } from "../../components/layout/Layout";
+import { useSaldoStream } from "../../hooks/useSaldoStream";
 import type { Category } from "../../types";
 
 const CAT_COLORS = [
@@ -12,10 +29,31 @@ const CAT_COLORS = [
   "var(--accent)",
 ];
 
+const PIE_COLORS = [
+  "#5B6CFF",
+  "#FF6B6B",
+  "#4ECDC4",
+  "#FFD93D",
+  "#A06CD5",
+  "#6BCB77",
+  "#FF8C42",
+  "#577590",
+];
+
 export function Dashboard() {
-  const { transactions, saldoTotal, fetchTransactions, fetchSaldo } =
-    useTransactions();
+  const {
+    transactions,
+    saldoTotal,
+    fetchTransactions,
+    fetchSaldo,
+    setSaldo,
+  } = useTransactions();
+  const { user } = useAuth();
+
+  // SSE — actualiza el saldo en tiempo real ante cambios del backend
+  useSaldoStream(user?.idUsuario, setSaldo);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [coach, setCoach] = useState<CoachRecomendacionResponse | null>(null);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -29,6 +67,47 @@ export function Dashboard() {
       .then(setCategories)
       .catch(() => setCategories([]));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!user?.idUsuario) return;
+    coachService
+      .getRecomendacion(user.idUsuario)
+      .then(setCoach)
+      .catch(() => setCoach(null));
+  }, [user?.idUsuario]);
+
+  // Datos para charts (recharts)
+  const pieData = useMemo(() => {
+    if (!coach?.gastoPorCategoria) return [];
+    return Object.entries(coach.gastoPorCategoria)
+      .map(([name, value]) => ({ name, value: Number(value) || 0 }))
+      .filter((d) => d.value > 0)
+      .slice(0, 8);
+  }, [coach]);
+
+  const barData = useMemo(() => {
+    if (!coach) return [];
+    return [
+      {
+        nombre: "Necesidades",
+        Objetivo: Number(coach.necesidadesMax),
+        Real: Number(coach.gastoNecesidades),
+      },
+      {
+        nombre: "Deseos",
+        Objetivo: Number(coach.deseosMax),
+        Real: Number(coach.gastoDeseos),
+      },
+      {
+        nombre: "Ahorro",
+        Objetivo: Number(coach.ahorroObjetivo),
+        Real: Math.max(
+          0,
+          Number(coach.ingresoMensual) - Number(coach.gastoTotal),
+        ),
+      },
+    ];
+  }, [coach]);
 
   const recentTransactions = transactions.slice(0, 5);
 
@@ -200,6 +279,105 @@ export function Dashboard() {
               </Link>
             </div>
           </div>
+
+          {(pieData.length > 0 || barData.some((d) => d.Objetivo > 0)) && (
+            <div
+              className="bento-grid"
+              style={{ gridTemplateColumns: "1fr 1fr", marginTop: 24 }}
+            >
+              <div
+                className="bento-card neo-shadow"
+                style={{ padding: 16 }}
+              >
+                <h3 style={{ marginBottom: 12 }}>Gasto por categoría</h3>
+                {pieData.length === 0 ? (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "var(--on-surface-variant)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Aún no hay gastos registrados.
+                  </p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={50}
+                        outerRadius={90}
+                        paddingAngle={2}
+                      >
+                        {pieData.map((_, i) => (
+                          <Cell
+                            key={i}
+                            fill={PIE_COLORS[i % PIE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => {
+                          const n = Number(value) || 0;
+                          return n.toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            maximumFractionDigits: 0,
+                          });
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        wrapperStyle={{ fontSize: 11 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              <div
+                className="bento-card neo-shadow"
+                style={{ padding: 16 }}
+              >
+                <h3 style={{ marginBottom: 12 }}>Regla 50/30/20</h3>
+                {barData.every((d) => d.Objetivo === 0) ? (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "var(--on-surface-variant)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Registra un ingreso para activar la comparación.
+                  </p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={barData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="nombre" fontSize={12} />
+                      <YAxis fontSize={11} />
+                      <Tooltip
+                        formatter={(value) => {
+                          const n = Number(value) || 0;
+                          return n.toLocaleString("es-CO", {
+                            style: "currency",
+                            currency: "COP",
+                            maximumFractionDigits: 0,
+                          });
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar dataKey="Objetivo" fill="#A0AEFF" />
+                      <Bar dataKey="Real" fill="#5B6CFF" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="activity-section">
             <div className="section-header">
