@@ -49,6 +49,24 @@ export const authService = {
     return api.get<User>(`/usuarios/${id}`);
   },
 
+  async updatePerfil(
+    idUsuario: number,
+    data: { nombres?: string; apellidos?: string; nombreUsuario?: string; descripcion?: string },
+  ): Promise<User> {
+    return api.patch<User>(`/usuarios/${idUsuario}/perfil`, data);
+  },
+
+  async cambiarContrasenaAutenticado(
+    idUsuario: number,
+    contrasenaActual: string,
+    nuevaContrasena: string,
+  ): Promise<string> {
+    return api.put<string>(`/usuarios/${idUsuario}/cambiar-contrasena`, {
+      contrasenaActual,
+      nuevaContrasena,
+    });
+  },
+
   async reenviarVerificacion(correo: string): Promise<string> {
     return api.post<string>("/usuarios/reenviar-verificacion", { correo });
   },

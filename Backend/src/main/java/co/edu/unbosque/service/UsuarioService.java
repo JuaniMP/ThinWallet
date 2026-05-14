@@ -59,10 +59,17 @@ public class UsuarioService {
         return usuarioRepository.findByNombreUsuario(nombreUsuario);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<Usuario> login(LoginRequest request) {
-        return usuarioRepository.findByCorreo(request.getCorreo())
+        Optional<Usuario> resultado = usuarioRepository.findByCorreo(request.getCorreo())
                 .filter(usuario -> passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash()));
+        resultado.ifPresent(usuario -> {
+            if (auditoriaService != null) {
+                auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
+                        "LOGIN", null, "{\"correo\":\"" + usuario.getCorreo() + "\"}");
+            }
+        });
+        return resultado;
     }
 
     public void reenviarVerificacion(String correo) {
@@ -125,6 +132,21 @@ public class UsuarioService {
         }
 
         resetTokens.remove(correo);
+    }
+
+    @Transactional
+    public void cambiarContrasenaAutenticado(Long idUsuario, String contrasenaActual, String nuevaContrasena) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(contrasenaActual, usuario.getContrasenaHash())) {
+            throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+        usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
+        usuarioRepository.save(usuario);
+        if (auditoriaService != null) {
+            auditoriaService.registrar(idUsuario, "usuario", idUsuario,
+                    "CAMBIO_PASS_AUTH", null, null);
+        }
     }
 
     @Transactional
@@ -215,7 +237,28 @@ public class UsuarioService {
                 usuario.setTipoUsuario(tipo);
             }
             usuario.setDescripcion(request.getDescripcion());
-            return usuarioRepository.save(usuario);
+            Usuario saved = usuarioRepository.save(usuario);
+            if (auditoriaService != null) {
+                auditoriaService.registrar(saved.getIdUsuario(), "usuario", saved.getIdUsuario(),
+                        "UPDATE", null, "{\"correo\":\"" + saved.getCorreo() + "\"}");
+            }
+            return saved;
+        });
+    }
+
+    @Transactional
+    public Optional<Usuario> updatePerfil(Long id, String nombres, String apellidos, String nombreUsuario, String descripcion) {
+        return usuarioRepository.findById(id).map(usuario -> {
+            if (nombres != null && !nombres.isBlank()) usuario.setNombres(nombres);
+            if (apellidos != null && !apellidos.isBlank()) usuario.setApellidos(apellidos);
+            if (nombreUsuario != null && !nombreUsuario.isBlank()) usuario.setNombreUsuario(nombreUsuario);
+            usuario.setDescripcion(descripcion);
+            Usuario saved = usuarioRepository.save(usuario);
+            if (auditoriaService != null) {
+                auditoriaService.registrar(saved.getIdUsuario(), "usuario", saved.getIdUsuario(),
+                        "ACTUALIZAR_PERFIL", null, "{\"nombreUsuario\":\"" + saved.getNombreUsuario() + "\"}");
+            }
+            return saved;
         });
     }
 

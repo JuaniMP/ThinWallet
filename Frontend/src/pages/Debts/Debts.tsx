@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { api } from "../../services/api";
-import type { Deuda } from "../../types";
+import type { Deuda, User } from "../../types";
 
 type NewDeudaForm = {
   monto: string;
@@ -14,6 +14,7 @@ export function Debts() {
   const { user } = useAuth();
   const [payables, setPayables] = useState<Deuda[]>([]);
   const [receivables, setReceivables] = useState<Deuda[]>([]);
+  const [userNames, setUserNames] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
@@ -34,8 +35,29 @@ export function Debts() {
         api.get<Deuda[]>(`/deudas/deudor/${user.idUsuario}`),
         api.get<Deuda[]>(`/deudas/acreedor/${user.idUsuario}`),
       ]);
-      setPayables(Array.isArray(pay) ? pay : []);
-      setReceivables(Array.isArray(rec) ? rec : []);
+      const payList = Array.isArray(pay) ? pay : [];
+      const recList = Array.isArray(rec) ? rec : [];
+      setPayables(payList);
+      setReceivables(recList);
+
+      // Fetch names for all unique user IDs involved
+      const ids = new Set<number>();
+      payList.forEach((d) => { if (d.idUsuarioAcreedor) ids.add(d.idUsuarioAcreedor); });
+      recList.forEach((d) => { if (d.idUsuarioDeudor) ids.add(d.idUsuarioDeudor); });
+      ids.delete(user.idUsuario);
+
+      const names: Record<number, string> = {};
+      await Promise.all(
+        Array.from(ids).map(async (id) => {
+          try {
+            const u = await api.get<User>(`/usuarios/${id}`);
+            names[id] = `${u.nombres} ${u.apellidos}`.trim();
+          } catch {
+            names[id] = `Usuario #${id}`;
+          }
+        }),
+      );
+      setUserNames(names);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar deudas");
     } finally {
@@ -217,7 +239,11 @@ export function Debts() {
                             </span>
                           )}
                         </div>
-                        <h4>Deuda #{idx + 1}</h4>
+                        <h4>
+                          {item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]
+                            ? userNames[item.idUsuarioAcreedor]
+                            : `Deuda #${idx + 1}`}
+                        </h4>
                         <p className="card-amount">{fmt(item.monto ?? 0)}</p>
                         <button
                           className="action-btn"
@@ -256,7 +282,11 @@ export function Debts() {
                             </span>
                           </div>
                           <div>
-                            <h4>Cobro #{idx + 1}</h4>
+                            <h4>
+                              {item.idUsuarioDeudor && userNames[item.idUsuarioDeudor]
+                                ? userNames[item.idUsuarioDeudor]
+                                : `Cobro #${idx + 1}`}
+                            </h4>
                             <p>{item.estadoPago ?? "PENDIENTE"}</p>
                           </div>
                         </div>
@@ -299,7 +329,11 @@ export function Debts() {
                               )
                             : item.estadoPago}
                         </p>
-                        <h5>Deuda #{idx + 1}</h5>
+                        <h5>
+                          {item.idUsuarioAcreedor === user?.idUsuario
+                            ? (item.idUsuarioDeudor && userNames[item.idUsuarioDeudor]) || `Deudor #${idx + 1}`
+                            : (item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]) || `Acreedor #${idx + 1}`}
+                        </h5>
                         <p className="item-desc">{item.estadoPago}</p>
                         <p className="item-amount">{fmt(item.monto ?? 0)}</p>
                       </div>

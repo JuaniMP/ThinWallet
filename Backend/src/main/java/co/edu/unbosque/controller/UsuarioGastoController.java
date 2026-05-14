@@ -23,9 +23,9 @@ public class UsuarioGastoController {
         return ResponseEntity.ok(usuarioGastoService.findAll());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UsuarioGasto> getById(@PathVariable Long id) {
-        return usuarioGastoService.findById(id)
+    @GetMapping("/{idUsuario}/{idGasto}")
+    public ResponseEntity<UsuarioGasto> getById(@PathVariable Long idUsuario, @PathVariable Long idGasto) {
+        return usuarioGastoService.findById(idUsuario, idGasto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -45,9 +45,9 @@ public class UsuarioGastoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioGastoService.create(request));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        usuarioGastoService.delete(id);
+    @DeleteMapping("/{idUsuario}/{idGasto}")
+    public ResponseEntity<Void> delete(@PathVariable Long idUsuario, @PathVariable Long idGasto) {
+        usuarioGastoService.delete(idUsuario, idGasto);
         return ResponseEntity.noContent().build();
     }
 }
