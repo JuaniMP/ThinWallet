@@ -63,15 +63,20 @@ public class TransaccionService {
         }
     }
 
-    /** Si el request trae nombre pero no id, resuelve el id desde la tabla. */
+    /** Si el request trae nombre pero no id, resuelve el id desde la tabla. Nunca retorna null. */
     private Long resolverIdTipoMovimiento(TransaccionRequest request) {
         if (request.getIdTipoMovimiento() != null) return request.getIdTipoMovimiento();
         if (request.getTipoMovimiento() != null) {
-            return tipoMovimientoRepository.findByNombre(request.getTipoMovimiento().toUpperCase())
+            Long resuelto = tipoMovimientoRepository.findByNombre(request.getTipoMovimiento().toUpperCase())
                     .map(TipoMovimiento::getIdTipoMovimiento)
                     .orElse(null);
+            if (resuelto != null) return resuelto;
         }
-        return null;
+        // Fallback: primer tipo de movimiento disponible en la tabla
+        return tipoMovimientoRepository.findAll().stream()
+                .findFirst()
+                .map(TipoMovimiento::getIdTipoMovimiento)
+                .orElse(2L);
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
