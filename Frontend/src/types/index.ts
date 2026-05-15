@@ -48,7 +48,9 @@ export interface CreateTransactionRequest {
   idTipoMovimiento?: number;
   idCirculoGasto?: number;
   monedaOriginal?: string;
+  tasaCambio?: number;
   contexto?: string;
+  modalidadDivision?: string;
 }
 
 export interface Transaccion {

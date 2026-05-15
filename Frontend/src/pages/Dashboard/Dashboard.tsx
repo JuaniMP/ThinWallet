@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { useTransactions } from "../../context/TransactionContext";
 import { useAuth } from "../../context/AuthContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { categoryService } from "../../services/categoryService";
 import { coachService } from "../../services/coachService";
 import type { CoachRecomendacionResponse } from "../../services/coachService";
@@ -49,6 +50,7 @@ export function Dashboard() {
     setSaldo,
   } = useTransactions();
   const { user } = useAuth();
+  const { format: fmtMoney } = useCurrency();
 
   // SSE — actualiza el saldo en tiempo real ante cambios del backend
   useSaldoStream(user?.idUsuario, setSaldo);
@@ -149,13 +151,7 @@ export function Dashboard() {
           <div className="balance-hero neo-shadow">
             <div style={{ position: "relative", zIndex: 10 }}>
               <p className="label">SALDO TOTAL DISPONIBLE</p>
-              <h2 className="amount">
-                {saldoTotal.toLocaleString("es-CO", {
-                  style: "currency",
-                  currency: "COP",
-                  maximumFractionDigits: 0,
-                })}
-              </h2>
+              <h2 className="amount">{fmtMoney(saldoTotal, "COP")}</h2>
               <div className="actions">
                 <Link
                   to="/transactions/new"
@@ -202,11 +198,7 @@ export function Dashboard() {
                   marginBottom: "8px",
                 }}
               >
-                {totalExpense.toLocaleString("es-CO", {
-                  style: "currency",
-                  currency: "COP",
-                  maximumFractionDigits: 0,
-                })}
+                {fmtMoney(totalExpense, "COP")}
               </p>
               <p
                 style={{
@@ -260,7 +252,7 @@ export function Dashboard() {
               >
                 {transactions.length === 0
                   ? '"Registra tu primera transacción para comenzar a analizar tus finanzas."'
-                  : `"${transactions.filter((t) => t.type === "income").length} ingresos (+${totalIncome.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}) y ${transactions.filter((t) => t.type === "expense").length} gastos registrados."`}
+                  : `"${transactions.filter((t) => t.type === "income").length} ingresos (+${fmtMoney(totalIncome, "COP")}) y ${transactions.filter((t) => t.type === "expense").length} gastos registrados."`}
               </p>
               <Link
                 to="/reports"
@@ -321,11 +313,7 @@ export function Dashboard() {
                       <Tooltip
                         formatter={(value) => {
                           const n = Number(value) || 0;
-                          return n.toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            maximumFractionDigits: 0,
-                          });
+                          return fmtMoney(n, "COP");
                         }}
                       />
                       <Legend
@@ -362,11 +350,7 @@ export function Dashboard() {
                       <Tooltip
                         formatter={(value) => {
                           const n = Number(value) || 0;
-                          return n.toLocaleString("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            maximumFractionDigits: 0,
-                          });
+                          return fmtMoney(n, "COP");
                         }}
                       />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -431,11 +415,7 @@ export function Dashboard() {
                       className={`tx-amount ${t.type === "expense" ? "error" : ""}`}
                     >
                       {t.type === "income" ? "+" : "-"}
-                      {t.amount.toLocaleString("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        maximumFractionDigits: 0,
-                      })}
+                      {fmtMoney(t.amount, "COP")}
                     </p>
                   </div>
                 ))}

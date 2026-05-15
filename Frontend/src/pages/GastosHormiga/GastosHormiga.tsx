@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react";
 import { Layout } from "../../components/layout/Layout";
 import { useAuth } from "../../context/AuthContext";
+import { useCurrency } from "../../context/CurrencyContext";
+import { MoneyInput } from "../../components/common/MoneyInput";
 import {
   gastosHormigaService,
   type GastosHormigaResponse,
 } from "../../services/gastosHormigaService";
 
-const fmt = (v: number) =>
-  v.toLocaleString("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
-
 export function GastosHormiga() {
   const { user } = useAuth();
+  const { format: fmt } = useCurrency();
   const [umbral, setUmbral] = useState<number>(20000);
   const [dias, setDias] = useState<number>(30);
   const [data, setData] = useState<GastosHormigaResponse | null>(null);
@@ -67,16 +63,13 @@ export function GastosHormiga() {
               alignItems: "end",
             }}
           >
-            <label>
-              Umbral por transacción (COP)
-              <input
-                type="number"
-                min={1}
-                value={umbral}
-                onChange={(e) => setUmbral(Number(e.target.value) || 0)}
-                style={{ width: "100%" }}
-              />
-            </label>
+            <MoneyInput
+              label="Umbral por transacción (COP)"
+              name="umbral"
+              value={umbral}
+              onChange={(v) => setUmbral(v)}
+              placeholder="Ej: 20,000"
+            />
             <label>
               Días a considerar
               <input
@@ -121,7 +114,7 @@ export function GastosHormiga() {
                 color: "var(--error)",
               }}
             >
-              {fmt(data?.totalGastado ?? 0)}
+              {fmt(data?.totalGastado ?? 0, "COP")}
             </h3>
             <p style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>
               dinero erosionado en gastos pequeños
@@ -129,7 +122,7 @@ export function GastosHormiga() {
           </div>
           <div className="bento-card neo-shadow">
             <p className="card-alert-label">PROMEDIO</p>
-            <h3 style={{ fontSize: "1.5rem", marginTop: 8 }}>{fmt(promedio)}</h3>
+            <h3 style={{ fontSize: "1.5rem", marginTop: 8 }}>{fmt(promedio, "COP")}</h3>
             <p style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>
               por transacción hormiga
             </p>
@@ -165,7 +158,7 @@ export function GastosHormiga() {
                     </div>
                   </div>
                   <p className="tx-amount error">
-                    -{fmt(Number(t.montoOriginal ?? 0))}
+                    -{fmt(Number(t.montoOriginal ?? 0), "COP")}
                   </p>
                 </div>
               ))}

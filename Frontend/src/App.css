@@ -3852,3 +3852,295 @@
   margin-bottom: 20px;
   gap: 12px;
 }
+
+/* ── Custom category creation ───────────────────────────────────────────── */
+.category-select-group .category-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.btn-create-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-container-low, #f4f4f4);
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-family: var(--font-headline);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-create-category:hover {
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+}
+
+.btn-create-category .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.custom-category-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.custom-category-modal {
+  background: var(--surface, #fff);
+  border: 2px solid var(--primary);
+  width: 100%;
+  max-width: 460px;
+  padding: 20px 24px 24px;
+  box-shadow: 6px 6px 0 var(--primary);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.custom-category-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.custom-category-modal__header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-family: var(--font-headline);
+  text-transform: uppercase;
+}
+
+.custom-category-modal__close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  display: flex;
+  align-items: center;
+}
+
+.custom-category-modal__close:hover {
+  color: var(--primary);
+}
+
+.custom-category-modal__hint {
+  font-size: 0.8rem;
+  color: var(--on-surface-variant);
+  margin: 0 0 16px;
+}
+
+.custom-category-form .input-group {
+  margin-bottom: 12px;
+}
+
+.custom-category-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--primary);
+  background: white;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.custom-category-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.custom-category-modal__actions .btn {
+  flex: 0 1 auto;
+}
+
+/* ── Amount + currency row (transaction form) ──────────────────────────── */
+.amount-currency-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.amount-currency-row .input-group {
+  margin-bottom: 0;
+}
+
+.amount-currency-row select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--primary);
+  background: white;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* ── Coach Financiero card ─────────────────────────────────────────────── */
+.coach-card {
+  padding: 20px;
+  margin-bottom: 24px;
+  background: var(--surface, #fff);
+  border: 2px solid var(--primary);
+}
+
+.coach-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.coach-card__icon {
+  font-size: 2rem;
+  color: var(--primary);
+  background: var(--surface-variant, #f5f5f7);
+  border: 2px solid var(--primary);
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.coach-card__header h3 {
+  margin: 0;
+  font-family: var(--font-headline);
+  text-transform: uppercase;
+  font-size: 1.1rem;
+}
+
+.coach-card__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.coach-salary-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr);
+  grid-template-areas:
+    "salary moneda"
+    "actions actions";
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.coach-salary-input {
+  grid-area: salary;
+  min-width: 0;
+}
+
+.coach-salary-row > .input-group {
+  grid-area: moneda;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.coach-actions-row {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 540px) {
+  .coach-salary-row {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "salary"
+      "moneda"
+      "actions";
+  }
+}
+
+.coach-salary-input label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.coach-salary-field {
+  display: flex;
+  align-items: stretch;
+  border: 2px solid var(--primary);
+  background: white;
+  overflow: hidden;
+}
+
+.coach-salary-currency {
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-family: var(--font-headline);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.coach-salary-field input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: transparent;
+}
+
+.btn-import-salary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-variant, #f5f5f7);
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  padding: 9px 14px;
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-import-salary:hover:not(:disabled) {
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+}
+
+.btn-import-salary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-import-salary .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.coach-update-btn {
+  padding: 9px 18px;
+}
+
+.coach-info {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--on-surface-variant);
+  font-style: italic;
+}
