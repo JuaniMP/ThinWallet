@@ -1,9 +1,11 @@
 package co.edu.unbosque.service;
 
 import co.edu.unbosque.entity.Categoria;
+import co.edu.unbosque.entity.Gasto;
 import co.edu.unbosque.entity.TipoMovimiento;
 import co.edu.unbosque.entity.Transaccion;
 import co.edu.unbosque.repository.CategoriaRepository;
+import co.edu.unbosque.repository.GastoRepository;
 import co.edu.unbosque.repository.TipoMovimientoRepository;
 import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.request.TransaccionRequest;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ public class TransaccionService {
     private final TransaccionRepository transaccionRepository;
     private final TipoMovimientoRepository tipoMovimientoRepository;
     private final CategoriaRepository categoriaRepository;
+    private final GastoRepository gastoRepository;
 
     @Autowired(required = false)
     private ActividadCirculoService actividadCirculoService;
@@ -64,6 +68,14 @@ public class TransaccionService {
             categoriaRepository.findById(t.getIdCategoria())
                     .ifPresent(c -> t.setTipoCategoria(c.getTipoCategoria()));
         }
+    }
+
+    /** ¿La categoría seleccionada es de tipo RETIRO? */
+    private boolean esCategoriaRetiro(Long idCategoria) {
+        if (idCategoria == null) return false;
+        return categoriaRepository.findById(idCategoria)
+                .map(c -> "RETIRO".equalsIgnoreCase(c.getTipoCategoria()))
+                .orElse(false);
     }
 
     /** Si el request trae nombre pero no id, resuelve el id desde la tabla. Nunca retorna null. */
@@ -114,6 +126,24 @@ public class TransaccionService {
 
     @Transactional
     public Transaccion create(TransaccionRequest request) {
+        Long idTipoMovimiento = resolverIdTipoMovimiento(request);
+
+        Long idGasto = request.getIdGasto();
+        if (idGasto == null
+                && request.getIdCategoria() != null
+                && esCategoriaRetiro(request.getIdCategoria())) {
+            Gasto gasto = new Gasto();
+            gasto.setNombre(request.getNombre());
+            gasto.setValor(request.getMontoOriginal());
+            gasto.setPeriodicidad("GASTO");
+            gasto.setFechaInicio(LocalDateTime.now());
+            gasto.setIdUsuarioCreador(request.getIdUsuario());
+            gasto.setIdCirculoGasto(request.getIdCirculoGasto());
+            gasto.setIdCategoria(request.getIdCategoria());
+            Gasto savedGasto = gastoRepository.save(gasto);
+            idGasto = savedGasto.getIdGasto();
+        }
+
         Transaccion transaccion = new Transaccion();
         transaccion.setNombre(request.getNombre());
         transaccion.setMontoOriginal(request.getMontoOriginal());
@@ -124,8 +154,8 @@ public class TransaccionService {
         transaccion.setIdUsuario(request.getIdUsuario());
         transaccion.setIdCirculoGasto(request.getIdCirculoGasto());
         transaccion.setIdCategoria(request.getIdCategoria());
-        transaccion.setIdGasto(request.getIdGasto());
-        transaccion.setIdTipoMovimiento(resolverIdTipoMovimiento(request));
+        transaccion.setIdGasto(idGasto);
+        transaccion.setIdTipoMovimiento(idTipoMovimiento);
         Transaccion saved = transaccionRepository.save(transaccion);
         populateTipo(saved);
 

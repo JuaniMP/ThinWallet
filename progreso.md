@@ -136,3 +136,151 @@ Antes del push se corrigieron todos los errores que habrían fallado el CI:
 - `Backend/target/` está siendo tracked por git (incluye el `.jar` de 71 MB). Agregar al `.gitignore` para evitar warnings de GitHub en futuros pushes.
 - Los triggers MySQL funcionan pero requieren ejecutar el script con "ejecutar como script completo" en DBeaver, no línea por línea.
 - La tabla `auditoria_sistema` ya se populará automáticamente con cualquier operación nueva (transacciones, deudas, gastos, usuarios, círculos).
+
+---
+
+# Progreso ThinWallet — 2026-05-13 (6 fases)
+
+## Resumen general
+
+Implementación de funcionalidades faltantes del wishlist (RF-07, RF-10, RF-11, RF-13, RF-15, RNF-01, RNF-05, RNF-11, RNF-13) en 6 fases. **No se modificaron entidades JPA**. Se omitieron por instrucción: APIs Booking (RF-12), CAPTCHA fuerte (RF-05), Redis.
+
+---
+
+## Fase 1 — Endpoints sobre SPs/funciones existentes
+
+### Backend Java (nuevo)
+- `service/GastosHormigaService.java` — llama `fn_contar_gastos_hormiga` + listado paralelo via JdbcTemplate
+- `service/CicloService.java` — invoca `sp_cerrar_ciclo_mensual` con OUT params
+- `controller/CicloController.java` — `POST /api/ciclos/cerrar-mensual`
+- `dto/GastosHormigaResponse.java`
+- `dto/CierreCicloResponse.java`
+- `request/CierreCicloRequest.java`
+
+### Backend Java (modificado)
+- `controller/TransaccionController.java` — añadido `GET /api/transacciones/gastos-hormiga/{idUsuario}`
+
+### Base de Datos
+- `Basesdedatos/01_funciones_y_procedimientos.sql` — añadida `fn_recomendar_ahorro(id_usuario, ingreso_mensual)` que devuelve JSON con 50/30/20 + cumplimiento
+- `Basesdedatos/01_funciones_y_procedimientos_dbeaver.sql` — variante DBeaver de la misma función
+
+---
+
+## Fase 2 — Coach Financiero (RF-11)
+
+### Backend Java (nuevo)
+- `service/CoachFinancieroService.java` — regla 50/30/20 con clasificación NECESIDAD/DESEO por keywords sobre `categoria.nombre`
+- `controller/CoachController.java` — `GET /api/coach/recomendacion/{idUsuario}?ingresoMensual=N` y `GET /api/coach/reglas`
+- `dto/CoachRecomendacionResponse.java` — objetivos, gastos reales, %, recomendaciones y desglose por categoría para charts
+
+---
+
+## Fase 3 — Frontend (4 páginas + gráficos)
+
+### Dependencias
+- Instalado `recharts@^3.8.1` para gráficos interactivos
+
+### Servicios nuevos
+- `services/gastosHormigaService.ts`
+- `services/coachService.ts`
+- `services/cicloService.ts`
+- `services/reclamarPerfilService.ts`
+
+### Páginas nuevas
+- `pages/GastosHormiga/GastosHormiga.tsx` → ruta `/gastos-hormiga` con umbral/días + listado de micro-gastos
+- `pages/Ciclos/CierreMensual.tsx` → ruta `/cierre-mensual` con selector de círculo/mes/año
+- `pages/Auth/ReclamarPerfil.tsx` → ruta pública `/reclamar-perfil?token=…` para usuarios fantasma
+
+### Páginas modificadas
+- `pages/Dashboard/Dashboard.tsx` — añadidos PieChart (gasto por categoría) y BarChart (50/30/20 objetivo vs real) con recharts
+- `pages/Goals/Goals.tsx` — tarjeta del Coach Financiero al inicio con barras de cumplimiento por bloque (Necesidades/Deseos/Ahorro) y recomendaciones accionables
+
+### Routing
+- `App.tsx` — 3 rutas nuevas (`/reclamar-perfil` pública, `/gastos-hormiga` y `/cierre-mensual` privadas)
+
+### Fix pre-existente
+- `services/authService.ts` — eliminado duplicado de `loginWithToken` que rompía `tsc -b`
+
+---
+
+## Fase 4 — Sincronización real-time SSE (RF-07)
+
+### Backend Java (nuevo)
+- `service/SseEventBus.java` — bus en memoria con `ConcurrentHashMap<Long, List<SseEmitter>>`, timeout 1h, cleanup automático en completion/timeout/error, push inicial del saldo
+- `controller/EventosController.java` — `GET /api/eventos/saldos/{idUsuario}` con `MediaType.TEXT_EVENT_STREAM_VALUE`
+
+### Backend Java (modificado)
+- `service/TransaccionService.java` — inyecta `SseEventBus` (`@Autowired(required=false)`) y publica saldo en create/update/delete
+- `service/DeudaService.java` — mismo patrón en create/confirmarPago/rechazarPago/delete; publica para deudor y acreedor
+
+### Frontend
+- `hooks/useSaldoStream.ts` — `EventSource` con reconexión automática, listener `saldo`
+- `pages/Dashboard/Dashboard.tsx` — usa `useSaldoStream(user.id, setSaldo)`
+- `context/TransactionContext.tsx` — expone `setSaldo` para que el hook actualice sin re-fetch
+
+---
+
+## Fase 5 — Seguridad y rendimiento
+
+### Backend Java (nuevo)
+- `service/AesCipherService.java` — AES-256-GCM con IV aleatorio, clave maestra desde property (override por env `THINWALLET_CIPHER_MASTER_KEY`). `encrypt()` / `decrypt()` con fallback transparente para datos legacy. **No toca entidades**: se inyecta donde se quiera cifrar antes de persistir.
+- `config/RateLimitFilter.java` — `OncePerRequestFilter` con ventana deslizante en memoria por IP. Default 120 req/min. Excluye SSE y actuator. Devuelve 429 + `Retry-After`. Activable con `thinwallet.rate-limit.enabled=true`.
+
+### Config
+- `resources/application.properties` — añadidas `thinwallet.cipher.master-key` y `thinwallet.rate-limit.*`
+
+### Base de Datos
+- `Basesdedatos/06_indices.sql` — 14 índices idempotentes (`DROP IF EXISTS` + `CREATE`) sobre `transaccion`, `deuda`, `auditoria_sistema`, `usuario`, `usuario_circulo`, `gasto`. Incluye verificación final con `INFORMATION_SCHEMA.STATISTICS`.
+
+---
+
+## Fase 6 — Infraestructura (RNF-11)
+
+### Scripts
+- `scripts/backup.sh` — `mysqldump` (`--single-transaction --routines --triggers --events`) + `mongodump` con gzip, retención configurable (default 14 días), instrucciones de cron en cabecera
+- `scripts/backup.env.example` — plantilla de credenciales por env vars
+
+### Config repo
+- `.gitignore` — excluye `backups/` y `scripts/backup.env`
+
+### Omitido a propósito
+- **Redis**: no aporta valor sin métricas de latencia que lo justifiquen. Mantener para una segunda iteración si aparecen cuellos de botella.
+
+---
+
+## Endpoints nuevos disponibles
+
+| Método | Path | Función |
+|---|---|---|
+| `GET`  | `/api/transacciones/gastos-hormiga/{idUsuario}?umbral=N&dias=N` | Detección de micro-gastos |
+| `POST` | `/api/ciclos/cerrar-mensual` | Cierre de ciclo con SP |
+| `GET`  | `/api/coach/recomendacion/{idUsuario}?ingresoMensual=N` | Recomendación 50/30/20 |
+| `GET`  | `/api/coach/reglas` | Texto de referencia de la regla |
+| `GET`  | `/api/eventos/saldos/{idUsuario}` | Stream SSE de saldos |
+
+---
+
+## Rutas frontend nuevas
+
+- `/gastos-hormiga` (privada)
+- `/cierre-mensual` (privada)
+- `/reclamar-perfil?token=…` (pública)
+
+---
+
+## Acciones manuales pendientes para el usuario
+
+1. **Ejecutar `Basesdedatos/01_funciones_y_procedimientos_dbeaver.sql`** (o solo la nueva `fn_recomendar_ahorro`) en DBeaver para que el Coach use el cálculo SQL.
+2. **Ejecutar `Basesdedatos/06_indices.sql`** en DBeaver para crear los 14 índices.
+3. **En el VPS**: instalar `mysql-client` y `mongodb-database-tools`, copiar `scripts/backup.env.example` → `scripts/backup.env`, rellenar credenciales y registrar el cron:
+   ```
+   0 3 * * *  /ruta/repo/scripts/backup.sh >> /var/log/thinwallet-backup.log 2>&1
+   ```
+4. **En producción**: sobrescribir la clave AES con la variable de entorno `THINWALLET_CIPHER_MASTER_KEY` (la default solo sirve para dev).
+
+---
+
+## Builds verificados
+
+- Backend: `mvn clean compile` → 113 archivos fuente, BUILD SUCCESS
+- Frontend: `npm run build` → 621 módulos transformados, sin errores TypeScript

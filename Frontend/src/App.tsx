@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { TransactionProvider } from "./context/TransactionContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 import { Login } from "./pages/Auth/Login";
 import { Register } from "./pages/Auth/Register";
 import { ForgotPassword } from "./pages/Auth/ForgotPassword";
@@ -189,9 +190,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <TransactionProvider>
-          <AppRoutes />
-        </TransactionProvider>
+        <CurrencyProvider>
+          <TransactionProvider>
+            <AppRoutes />
+          </TransactionProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </Router>
   );
