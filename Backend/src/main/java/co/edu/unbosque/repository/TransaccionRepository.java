@@ -14,6 +14,7 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     List<Transaccion> findByIdUsuario(Long idUsuario);
     List<Transaccion> findByIdCirculoGasto(Long idCirculoGasto);
     List<Transaccion> findByIdCategoria(Long idCategoria);
+    void deleteByIdCirculoGasto(Long idCirculoGasto);
 
     @Query(value = "SELECT COALESCE(SUM(CASE " +
             "WHEN c.tipo_categoria = 'DEPOSITO' THEN t.monto_original * COALESCE(t.tasa_cambio, 1.0) " +

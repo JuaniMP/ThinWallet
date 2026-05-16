@@ -9,8 +9,10 @@ import co.edu.unbosque.entity.UsuarioCirculo;
 import co.edu.unbosque.entity.UsuarioCirculoId;
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.CirculoGastoRepository;
+import co.edu.unbosque.repository.GastoRepository;
 import co.edu.unbosque.repository.TipoCirculoRepository;
 import co.edu.unbosque.repository.TipoUsuarioRepository;
+import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.repository.UsuarioCirculoRepository;
 import co.edu.unbosque.repository.UsuarioRepository;
 import co.edu.unbosque.request.CirculoGastoRequest;
@@ -36,6 +38,8 @@ public class CirculoGastoService {
     private final TipoCirculoRepository tipoCirculoRepository;
     private final TipoUsuarioRepository tipoUsuarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final GastoRepository gastoRepository;
+    private final TransaccionRepository transaccionRepository;
     private final TokenHashingService tokenHashingService;
 
     @Autowired(required = false)
@@ -419,6 +423,9 @@ public class CirculoGastoService {
     @Transactional
     public void delete(Long id) {
         circuloGastoRepository.findById(id).ifPresent(c -> {
+            // Borrar hijos en orden para respetar FK constraints
+            transaccionRepository.deleteByIdCirculoGasto(id);
+            gastoRepository.deleteByIdCirculoGasto(id);
             usuarioCirculoRepository.deleteByCirculoGastoId(id);
             circuloGastoRepository.deleteById(id);
             if (auditoriaService != null) {

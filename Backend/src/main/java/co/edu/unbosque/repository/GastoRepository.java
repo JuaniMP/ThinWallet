@@ -10,4 +10,5 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
     List<Gasto> findByIdUsuarioCreador(Long idUsuarioCreador);
     List<Gasto> findByIdCirculoGasto(Long idCirculoGasto);
     List<Gasto> findByIdCategoria(Long idCategoria);
+    void deleteByIdCirculoGasto(Long idCirculoGasto);
 }

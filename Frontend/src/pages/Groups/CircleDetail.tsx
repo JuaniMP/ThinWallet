@@ -380,6 +380,32 @@ export function CircleDetail() {
                 <p>{detail.totalInvitados} invitados</p>
               </div>
 
+              {/* Token global del círculo — para que usuarios registrados se unan */}
+              {!isGhost && detail.tokenInvitacion && (
+                <article className="guest-token-item" style={{ marginBottom: 16, borderLeft: "4px solid var(--primary)" }}>
+                  <h4 style={{ marginBottom: 4 }}>Token de invitación (usuarios registrados)</h4>
+                  <p style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginBottom: 6 }}>
+                    Comparte este token con personas que ya tienen cuenta. Lo usan en "Unirse a círculo".
+                  </p>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      value={detail.tokenInvitacion}
+                      readOnly
+                      style={{ flex: 1, padding: "8px", border: "1px solid var(--outline-variant)", fontFamily: "monospace", fontSize: "11px" }}
+                    />
+                    <button
+                      type="button"
+                      className="matriz-cta-btn"
+                      onClick={() => { void navigator.clipboard.writeText(detail.tokenInvitacion!); }}
+                      style={{ padding: "8px 14px", whiteSpace: "nowrap" }}
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </article>
+              )}
+
               {/* Usuario fantasma: muestra su propio token de acceso */}
               {isGhost && tokenFromStorage && (
                 <article className="guest-token-item" style={{ marginBottom: 12 }}>
