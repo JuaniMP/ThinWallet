@@ -52,6 +52,10 @@ export const circleService = {
     });
   },
 
+  deleteCircle: async (idCirculoGasto: number) => {
+    return api.delete(`${CIRCULOS_GASTO_BASE}/${idCirculoGasto}`);
+  },
+
   getAllTipoCirculos: async () => {
     try {
       const tiposCirculo = await api.get<TipoCirculo[]>(TIPOS_CIRCULO_BASE);

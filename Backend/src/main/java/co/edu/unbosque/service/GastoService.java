@@ -120,6 +120,9 @@ public class GastoService {
             gasto.setFechaInicio(request.getFechaInicio());
             gasto.setFechaFin(request.getFechaFin());
             gasto.setIdCategoria(request.getIdCategoria());
+            if (request.getMontoActual() != null) {
+                gasto.setMontoActual(request.getMontoActual());
+            }
             Gasto saved = gastoRepository.save(gasto);
             if (auditoriaService != null) {
                 auditoriaService.registrar(saved.getIdUsuarioCreador(), "gasto", saved.getIdGasto(),
