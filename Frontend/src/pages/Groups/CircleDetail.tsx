@@ -413,32 +413,36 @@ export function CircleDetail() {
                   {detail.invitados.map((invitado) => (
                     <article key={invitado.idUsuario} className="guest-token-item">
                       <h4>{invitado.nombreCompleto}</h4>
-                      <p className="guest-type">{invitado.tipoUsuario === "FANTASMA" ? "Invitado fantasma" : (invitado.tipoUsuario || "Registrado")}</p>
+                      <p className="guest-type">{invitado.tipoUsuario?.toUpperCase() === "FANTASMA" ? "Invitado fantasma" : (invitado.tipoUsuario || "Registrado")}</p>
                       {invitado.correo && !invitado.correo.includes("thinwallet.local") && (
                         <p className="guest-email">{invitado.correo}</p>
                       )}
                       {/* Token personal del fantasma — visible solo para el creador */}
-                      {!isGhost && invitado.tipoUsuario === "FANTASMA" && invitado.tokenInvitacionPersonal && (
+                      {!isGhost && invitado.tipoUsuario?.toUpperCase() === "FANTASMA" && (
                         <div style={{ marginTop: 8 }}>
                           <p style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)", marginBottom: 4, fontWeight: 600 }}>
                             Token de acceso personal:
                           </p>
-                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                            <input
-                              type="text"
-                              value={invitado.tokenInvitacionPersonal}
-                              readOnly
-                              style={{ flex: 1, padding: "6px", fontFamily: "monospace", fontSize: "10px", border: "1px solid var(--outline-variant)" }}
-                            />
-                            <button
-                              type="button"
-                              className="matriz-cta-btn"
-                              onClick={() => { navigator.clipboard.writeText(invitado.tokenInvitacionPersonal!); alert(`Token de ${invitado.nombreCompleto} copiado`); }}
-                              style={{ padding: "6px 10px", fontSize: "0.72rem", whiteSpace: "nowrap" }}
-                            >
-                              Copiar
-                            </button>
-                          </div>
+                          {invitado.tokenInvitacionPersonal ? (
+                            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                              <input
+                                type="text"
+                                value={invitado.tokenInvitacionPersonal}
+                                readOnly
+                                style={{ flex: 1, padding: "6px", fontFamily: "monospace", fontSize: "10px", border: "1px solid var(--outline-variant)" }}
+                              />
+                              <button
+                                type="button"
+                                className="matriz-cta-btn"
+                                onClick={() => { void navigator.clipboard.writeText(invitado.tokenInvitacionPersonal!); }}
+                                style={{ padding: "6px 10px", fontSize: "0.72rem", whiteSpace: "nowrap" }}
+                              >
+                                Copiar
+                              </button>
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)", fontStyle: "italic" }}>Recarga la página para ver el token</p>
+                          )}
                         </div>
                       )}
                     </article>
@@ -466,32 +470,6 @@ export function CircleDetail() {
                   required
                 />
               </label>
-<<<<<<< HEAD
-              <label>
-                Monto (COP)
-                <input
-                  type="number"
-                  min={1}
-                  value={gastoForm.monto}
-                  onChange={(e) => setGastoForm((f) => ({ ...f, monto: e.target.value }))}
-                  required
-                />
-              </label>
-              {categories.length > 0 && (
-                <label>
-                  Categoría
-                  <select
-                    value={gastoForm.idCategoria}
-                    onChange={(e) => setGastoForm((f) => ({ ...f, idCategoria: e.target.value }))}
-                  >
-                    <option value="">Sin categoría</option>
-                    {categories.map((c) => (
-                      <option key={c.idCategoria} value={c.idCategoria}>{c.nombre}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
-=======
               <div className="amount-currency-row" style={{ gap: 12, alignItems: "end" }}>
                 <MoneyInput
                   label="Monto"
@@ -525,7 +503,6 @@ export function CircleDetail() {
                   ))}
                 </select>
               </label>
->>>>>>> claude/wizardly-khorana-cf73c6
               {gastoError && <p className="error-msg">{gastoError}</p>}
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowGastoModal(false)}>
