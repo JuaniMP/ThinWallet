@@ -108,9 +108,15 @@ public class CirculoGastoService {
                         Usuario u = uc.getUsuario();
                         m.setNombreCompleto((u.getNombres() + " " + u.getApellidos()).trim());
                         m.setCorreo(u.getCorreo());
-                        m.setTokenInvitacionPersonal(u.getTokenReclamo());
                         String tipoNombre = resolverNombreTipoUsuario(u);
                         m.setTipoUsuario(tipoNombre != null ? tipoNombre : "REGISTRADO");
+                        // Si es fantasma y no tiene token, generar y persistir uno
+                        if ("FANTASMA".equalsIgnoreCase(m.getTipoUsuario()) && u.getTokenReclamo() == null) {
+                            String nuevoToken = tokenHashingService.generateToken();
+                            u.setTokenReclamo(nuevoToken);
+                            usuarioRepository.save(u);
+                        }
+                        m.setTokenInvitacionPersonal(u.getTokenReclamo());
                     }
                     return m;
                 }).collect(Collectors.toList());
@@ -153,7 +159,7 @@ public class CirculoGastoService {
         return circuloGastoRepository.findById(id).map(c -> { populateTipo(c); return c; });
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<CirculoDetalleResponse> findDetalleById(Long id) {
         return circuloGastoRepository.findById(id)
                 .map(c -> { populateTipo(c); return c; })
