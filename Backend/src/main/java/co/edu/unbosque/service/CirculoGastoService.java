@@ -9,10 +9,8 @@ import co.edu.unbosque.entity.UsuarioCirculo;
 import co.edu.unbosque.entity.UsuarioCirculoId;
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.repository.CirculoGastoRepository;
-import co.edu.unbosque.repository.GastoRepository;
 import co.edu.unbosque.repository.TipoCirculoRepository;
 import co.edu.unbosque.repository.TipoUsuarioRepository;
-import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.repository.UsuarioCirculoRepository;
 import co.edu.unbosque.repository.UsuarioRepository;
 import co.edu.unbosque.request.CirculoGastoRequest;
@@ -38,8 +36,6 @@ public class CirculoGastoService {
     private final TipoCirculoRepository tipoCirculoRepository;
     private final TipoUsuarioRepository tipoUsuarioRepository;
     private final UsuarioRepository usuarioRepository;
-    private final GastoRepository gastoRepository;
-    private final TransaccionRepository transaccionRepository;
     private final TokenHashingService tokenHashingService;
 
     @Autowired(required = false)
@@ -153,7 +149,9 @@ public class CirculoGastoService {
 
     @Transactional(readOnly = true)
     public List<CirculoGasto> findAll() {
-        List<CirculoGasto> lista = circuloGastoRepository.findAll();
+        List<CirculoGasto> lista = circuloGastoRepository.findAll().stream()
+                .filter(c -> !"INACTIVO".equals(c.getEstado()))
+                .collect(Collectors.toList());
         populateTipos(lista);
         return lista;
     }
@@ -189,7 +187,9 @@ public class CirculoGastoService {
 
     @Transactional(readOnly = true)
     public List<CirculoGasto> findByUsuarioCreador(Long idUsuarioCreador) {
-        List<CirculoGasto> lista = circuloGastoRepository.findByIdUsuarioCreador(idUsuarioCreador);
+        List<CirculoGasto> lista = circuloGastoRepository.findByIdUsuarioCreador(idUsuarioCreador).stream()
+                .filter(c -> !"INACTIVO".equals(c.getEstado()))
+                .collect(Collectors.toList());
         populateTipos(lista);
         return lista;
     }
@@ -214,6 +214,11 @@ public class CirculoGastoService {
                 todos.add(c);
             }
         }
+
+        // Excluir círculos desactivados
+        todos = todos.stream()
+                .filter(c -> !"INACTIVO".equals(c.getEstado()))
+                .collect(Collectors.toList());
 
         populateTipos(todos);
         return todos;
@@ -423,22 +428,20 @@ public class CirculoGastoService {
     @Transactional
     public void delete(Long id) {
         circuloGastoRepository.findById(id).ifPresent(c -> {
-            // Borrar hijos en orden para respetar FK constraints
-            transaccionRepository.deleteByIdCirculoGasto(id);
-            gastoRepository.deleteByIdCirculoGasto(id);
-            usuarioCirculoRepository.deleteByCirculoGastoId(id);
-            circuloGastoRepository.deleteById(id);
+            // Soft delete: desactivar sin borrar datos
+            c.setEstado("INACTIVO");
+            circuloGastoRepository.save(c);
             if (auditoriaService != null) {
-                auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DELETE",
-                        "{\"nombre\":\"" + c.getNombre() + "\"}", null);
+                auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DESACTIVAR",
+                        "{\"nombre\":\"" + c.getNombre() + "\"}", "{\"estado\":\"INACTIVO\"}");
             }
             if (actividadCirculoService != null) {
                 try {
-                    actividadCirculoService.registrarEvento(id, "CIRCULO_ELIMINADO",
+                    actividadCirculoService.registrarEvento(id, "CIRCULO_DESACTIVADO",
                             c.getIdUsuarioCreador(),
                             Map.of("nombre", c.getNombre()));
                 } catch (Exception e) {
-                    log.warn("MongoDB audit fallo para CIRCULO_ELIMINADO {}: {}", id, e.getMessage());
+                    log.warn("MongoDB audit fallo para CIRCULO_DESACTIVADO {}: {}", id, e.getMessage());
                 }
             }
         });
