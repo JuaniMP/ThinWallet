@@ -6,10 +6,12 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { TransactionProvider } from "./context/TransactionContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 import { Login } from "./pages/Auth/Login";
 import { Register } from "./pages/Auth/Register";
 import { ForgotPassword } from "./pages/Auth/ForgotPassword";
 import { Verify } from "./pages/Auth/Verify";
+import { ReclamarPerfil } from "./pages/Auth/ReclamarPerfil";
 import { Dashboard } from "./pages/Dashboard/Dashboard";
 import { TransactionList } from "./pages/Transactions/TransactionList";
 import { NewTransaction } from "./pages/Transactions/NewTransaction";
@@ -20,6 +22,8 @@ import { Debts } from "./pages/Debts/Debts";
 import { Reports } from "./pages/Reports/Reports";
 import { Goals } from "./pages/Goals/Goals";
 import { ScheduledExpenses } from "./pages/Scheduled/ScheduledExpenses";
+import { GastosHormiga } from "./pages/GastosHormiga/GastosHormiga";
+import { CierreMensual } from "./pages/Ciclos/CierreMensual";
 import "./App.css";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -27,6 +31,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) return <div className="loading">Cargando...</div>;
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+}
+
+function NonGhostRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <div className="loading">Cargando...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (user?.idTipoUsuario === 3) return <Navigate to="/grupos" />;
+  return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -71,29 +84,37 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+      <Route
+        path="/reclamar-perfil"
+        element={
+          <PublicRoute>
+            <ReclamarPerfil />
+          </PublicRoute>
+        }
+      />
 
       <Route
         path="/dashboard"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <Dashboard />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
         path="/transactions"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <TransactionList />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
         path="/transactions/new"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <NewTransaction />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
@@ -131,17 +152,17 @@ function AppRoutes() {
       <Route
         path="/reports"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <Reports />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
         path="/goals"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <Goals />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
@@ -149,6 +170,22 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <ScheduledExpenses />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/gastos-hormiga"
+        element={
+          <PrivateRoute>
+            <GastosHormiga />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cierre-mensual"
+        element={
+          <PrivateRoute>
+            <CierreMensual />
           </PrivateRoute>
         }
       />
@@ -162,9 +199,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <TransactionProvider>
-          <AppRoutes />
-        </TransactionProvider>
+        <CurrencyProvider>
+          <TransactionProvider>
+            <AppRoutes />
+          </TransactionProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </Router>
   );

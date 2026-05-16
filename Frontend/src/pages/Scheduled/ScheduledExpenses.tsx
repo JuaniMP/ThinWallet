@@ -3,14 +3,10 @@ import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { gastoService } from "../../services/gastoService";
 import { categoryService } from "../../services/categoryService";
+import { useCurrency } from "../../context/CurrencyContext";
+import { MoneyInput } from "../../components/common/MoneyInput";
+import { validateAmount, validateDescription, validateDate } from "../../utils/validators";
 import type { Gasto, GastoRequest, Category } from "../../types";
-
-const fmt = (v: number) =>
-  v.toLocaleString("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
 
 const PERIODICIDADES = ["DIARIO", "SEMANAL", "MENSUAL"];
 
@@ -18,8 +14,15 @@ function toISO(local: string) {
   return local ? local + ":00" : undefined;
 }
 
+function nowAsLocalInput(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
 export function ScheduledExpenses() {
   const { user } = useAuth();
+  const { format: fmt } = useCurrency();
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [categorias, setCategorias] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +35,7 @@ export function ScheduledExpenses() {
     nombre: "",
     valor: 0,
     periodicidad: "MENSUAL",
-    fechaInicio: "",
+    fechaInicio: nowAsLocalInput(),
     fechaFin: "",
     idUsuarioCreador: user?.idUsuario ?? 0,
     idCategoria: defaultCat,
@@ -85,20 +88,63 @@ export function ScheduledExpenses() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nombre.trim() || form.valor <= 0) {
-      setError("Nombre y valor son requeridos");
+    setError("");
+
+    // Validar nombre/descripción
+    const nameError = validateDescription(form.nombre, 3, 100);
+    if (nameError) {
+      setError(nameError);
       return;
     }
+
+    // Validar monto
+    const amountError = validateAmount(form.valor);
+    if (amountError) {
+      setError(amountError);
+      return;
+    }
+
+    // Validar categoría
     if (!form.idCategoria) {
       setError("Selecciona una categoría");
       return;
+    }
+
+    // Validar fecha de inicio
+    if (!form.fechaInicio) {
+      setError("La fecha de inicio es obligatoria");
+      return;
+    }
+
+    const dateStartError = validateDate(form.fechaInicio);
+    if (dateStartError) {
+      setError(dateStartError);
+      return;
+    }
+
+    // Validar fecha de fin si está presente
+    if (form.fechaFin) {
+      const dateEndError = validateDate(form.fechaFin);
+      if (dateEndError) {
+        setError(dateEndError);
+        return;
+      }
+
+      // Validar que fechaFin sea posterior a fechaInicio
+      const start = new Date(form.fechaInicio);
+      const end = new Date(form.fechaFin);
+      if (end <= start) {
+        setError("La fecha de fin debe ser posterior a la fecha de inicio");
+        return;
+      }
     }
     setSaving(true);
     setError("");
     try {
       const payload: GastoRequest = {
         ...form,
-        fechaInicio: form.fechaInicio ? toISO(form.fechaInicio) : undefined,
+        idUsuarioCreador: user?.idUsuario ?? form.idUsuarioCreador,
+        fechaInicio: toISO(form.fechaInicio),
         fechaFin: form.fechaFin ? toISO(form.fechaFin) : undefined,
       };
       if (editTarget) {
@@ -128,7 +174,13 @@ export function ScheduledExpenses() {
   const periodIcon = (p?: string) => {
     if (p === "DIARIO") return "today";
     if (p === "SEMANAL") return "view_week";
+    if (p === "UNICO") return "receipt_long";
     return "calendar_month";
+  };
+
+  const periodLabel = (p?: string) => {
+    if (p === "UNICO") return "GASTO ÚNICO";
+    return p ?? "—";
   };
 
   const isActive = (g: Gasto) => {
@@ -175,18 +227,14 @@ export function ScheduledExpenses() {
                     required
                   />
                 </label>
-                <label>
-                  Monto (COP)
-                  <input
-                    type="number"
-                    min={1}
-                    value={form.valor || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, valor: Number(e.target.value) }))
-                    }
-                    required
-                  />
-                </label>
+                <MoneyInput
+                  label="Monto (COP)"
+                  name="valor"
+                  value={form.valor || 0}
+                  onChange={(v) => setForm((f) => ({ ...f, valor: v }))}
+                  required
+                  placeholder="Ej: 50,000"
+                />
                 <label>
                   Categoría
                   <select
@@ -225,13 +273,14 @@ export function ScheduledExpenses() {
                   </select>
                 </label>
                 <label>
-                  Fecha Inicio
+                  Fecha Inicio *
                   <input
                     type="datetime-local"
                     value={form.fechaInicio ?? ""}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, fechaInicio: e.target.value }))
                     }
+                    required
                   />
                 </label>
                 <label>
@@ -297,8 +346,8 @@ export function ScheduledExpenses() {
                 </span>
                 <div className="scheduled-info">
                   <p className="scheduled-name">{g.nombre}</p>
-                  <p className="scheduled-amount">{fmt(g.valor)}</p>
-                  <p className="scheduled-period">{g.periodicidad ?? "—"}</p>
+                  <p className="scheduled-amount">{fmt(g.valor, "COP")}</p>
+                  <p className="scheduled-period">{periodLabel(g.periodicidad)}</p>
                   {g.fechaFin && (
                     <p
                       className="scheduled-date"

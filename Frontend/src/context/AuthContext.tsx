@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
+import notificationService from "../services/notificationService";
+import { requestNotificationPermission } from "../config/firebase";
 import type { LoginRequest, RegisterRequest, User } from "../types";
 
 interface AuthContextType {
@@ -8,7 +10,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
-  loginWithToken: (tokenValue: string) => Promise<void>;
+  loginWithToken: (tokenValue: string) => Promise<User>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   verify: (correo: string, codigo: string) => Promise<void>;
@@ -24,16 +26,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("user");
     if (stored && stored !== "undefined") {
       try {
-        return JSON.parse(stored) as User;
+        const parsed = JSON.parse(stored) as User;
+        if (!parsed.idUsuario || !parsed.nombres) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          return null;
+        }
+        return parsed;
       } catch {
         localStorage.removeItem("user");
       }
     }
     return null;
   });
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token"),
-  );
+  const [token, setToken] = useState<string | null>(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored || stored === "undefined") return null;
+    try {
+      const parsed = JSON.parse(stored) as User;
+      if (!parsed.idUsuario || !parsed.nombres) return null;
+    } catch {
+      return null;
+    }
+    return localStorage.getItem("token");
+  });
   const [isLoading] = useState(false);
   const [registrationEmail, setRegistrationEmail] = useState<string | null>(
     null,
@@ -48,6 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(authToken);
     setUser(userData);
+
+    try {
+      const fcmToken = await requestNotificationPermission();
+      if (fcmToken && userData.id) {
+        await notificationService.saveFCMToken(userData.id, fcmToken);
+      }
+    } catch (error) {
+      console.warn("Failed to save FCM token:", error);
+    }
   };
 
   const loginWithToken = async (tokenValue: string) => {
@@ -58,6 +83,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("userToken", tokenValue);
     setToken(authToken);
     setUser(userData);
+
+    try {
+      const fcmToken = await requestNotificationPermission();
+      if (fcmToken && userData.id) {
+        await notificationService.saveFCMToken(userData.id, fcmToken);
+      }
+    } catch (error) {
+      console.warn("Failed to save FCM token:", error);
+    }
+    return userData;
   };
 
   const register = async (data: RegisterRequest) => {

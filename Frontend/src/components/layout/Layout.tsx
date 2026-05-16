@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { notificacionService } from "../../services/notificacionService";
 import type { Notificacion } from "../../types";
@@ -12,12 +12,17 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showGhostModal, setShowGhostModal] = useState(false);
 
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
+
+  const isGhost = user?.idTipoUsuario === 3;
+  const ghostBlocked = ["/dashboard", "/transactions/new", "/goals", "/reports"];
 
   const navItems = [
     { path: "/dashboard", icon: "home", label: "INICIO" },
@@ -149,7 +154,12 @@ export function Layout({ children }: LayoutProps) {
               ).toUpperCase()}
             </div>
           </div>
-          <h1>THIN WALLET</h1>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <h1>THIN WALLET</h1>
+            <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--on-surface-variant)", letterSpacing: "0.08em", fontFamily: "var(--font-label)", marginTop: -2 }}>
+              v1.2.0
+            </span>
+          </div>
         </div>
 
         <div
@@ -348,17 +358,58 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Bottom Nav Bar */}
       <nav className="bottom-nav">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={location.pathname === item.path ? "active" : ""}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="nav-label">{item.label}</span>
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const blocked = isGhost && ghostBlocked.includes(item.path);
+          if (blocked) {
+            return (
+              <button
+                key={item.path}
+                type="button"
+                className="nav-ghost-blocked"
+                onClick={() => setShowGhostModal(true)}
+                title="Reclama tu perfil para acceder"
+              >
+                <span className="material-symbols-outlined">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
+              </button>
+            );
+          }
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={location.pathname === item.path ? "active" : ""}
+            >
+              <span className="material-symbols-outlined">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
+
+      {/* Modal reclamar perfil */}
+      {showGhostModal && (
+        <div className="modal-overlay" onClick={() => setShowGhostModal(false)}>
+          <div className="modal-card neo-shadow" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 340 }}>
+            <h3>Acceso restringido</h3>
+            <p style={{ fontSize: "0.9rem", margin: "12px 0 20px", color: "var(--on-surface-variant)", lineHeight: 1.5 }}>
+              Eres un usuario invitado. Para acceder a esta sección debes reclamar tu perfil y crear una cuenta completa.
+            </p>
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowGhostModal(false)}>
+                Cerrar
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => { setShowGhostModal(false); navigate("/reclamar-perfil"); }}
+              >
+                Reclamar perfil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

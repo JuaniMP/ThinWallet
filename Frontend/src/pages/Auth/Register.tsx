@@ -3,6 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/common/Button";
 import { Input } from "../../components/common/Input";
+import { PasswordStrengthIndicator } from "../../components/common/PasswordStrengthIndicator";
+import {
+  validateName,
+  validateUsername,
+  validateEmail,
+  validatePassword,
+} from "../../utils/validators";
 
 export function Register() {
   const [nombres, setNombres] = useState("");
@@ -22,13 +29,44 @@ export function Register() {
     e.preventDefault();
     setError("");
 
+    // Validar nombres
+    const nombresError = validateName(nombres, "Nombres");
+    if (nombresError) {
+      setError(nombresError);
+      return;
+    }
+
+    // Validar apellidos
+    const apellidosError = validateName(apellidos, "Apellidos");
+    if (apellidosError) {
+      setError(apellidosError);
+      return;
+    }
+
+    // Validar nombre de usuario
+    const usernameError = validateUsername(nombreUsuario);
+    if (usernameError) {
+      setError(usernameError);
+      return;
+    }
+
+    // Validar email
+    const emailError = validateEmail(correo);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
+    // Validar que las contraseñas coincidan
     if (contrasena !== confirmPassword) {
       setError("Las contraseñas no coinciden");
       return;
     }
 
-    if (contrasena.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    // Validar contraseña fuerte
+    const passwordError = validatePassword(contrasena);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -148,16 +186,19 @@ export function Register() {
             />
 
             <div className="form-row">
-              <Input
-                label="Contraseña"
-                type="password"
-                name="contrasena"
-                icon="lock"
-                placeholder="********"
-                value={contrasena}
-                onChange={(e) => setContrasena(e.target.value)}
-                required
-              />
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="Contraseña"
+                  type="password"
+                  name="contrasena"
+                  icon="lock"
+                  placeholder="********"
+                  value={contrasena}
+                  onChange={(e) => setContrasena(e.target.value)}
+                  required
+                />
+                {contrasena && <PasswordStrengthIndicator password={contrasena} />}
+              </div>
               <Input
                 label="Confirmar Contraseña"
                 type="password"

@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "circulo_gasto")
@@ -51,4 +52,7 @@ public class CirculoGasto {
 
     @Column(name = "estado")
     private String estado;
+
+    @Transient
+    private List<String> nombresInvitados;
 }

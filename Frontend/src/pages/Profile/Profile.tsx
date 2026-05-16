@@ -4,10 +4,16 @@ import { Layout } from "../../components/layout/Layout";
 import { authService } from "../../services/authService";
 import { transactionService } from "../../services/transactionService";
 import { api } from "../../services/api";
+import {
+  useCurrency,
+  SUPPORTED_CURRENCIES,
+  type CurrencyCode,
+} from "../../context/CurrencyContext";
 import type { User } from "../../types";
 
 export function Profile() {
   const { user: authUser, logout, setUser } = useAuth();
+  const { currency, setCurrency, format } = useCurrency();
   const [profileData, setProfileData] = useState<User | null>(authUser);
   const [saldo, setSaldo] = useState<number | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(!!authUser?.idUsuario);
@@ -150,11 +156,12 @@ export function Profile() {
       .finally(() => setLoadingSaldo(false));
   }, [authUser?.idUsuario]);
 
-  const fullName = profileData
-    ? `${profileData.nombres} ${profileData.apellidos}`
-    : "Usuario";
+  const fullName =
+    profileData?.nombres && profileData?.apellidos
+      ? `${profileData.nombres} ${profileData.apellidos}`
+      : profileData?.nombres ?? "Usuario";
 
-  const initials = profileData
+  const initials = profileData?.nombres
     ? profileData.nombres.charAt(0).toUpperCase()
     : "U";
 
@@ -165,14 +172,7 @@ export function Profile() {
       })
     : null;
 
-  const saldoFormatted =
-    saldo !== null
-      ? saldo.toLocaleString("es-CO", {
-          style: "currency",
-          currency: "COP",
-          maximumFractionDigits: 0,
-        })
-      : "—";
+  const saldoFormatted = saldo !== null ? format(saldo, "COP") : "—";
 
   const stats = [
     {
@@ -396,6 +396,38 @@ export function Profile() {
             )}
           </div>
         )}
+
+        {/* Preferencia de moneda */}
+        <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
+          <h4>Moneda Preferida</h4>
+          <div className="section-row" style={{ alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ color: "var(--primary)", fontSize: "1.5rem" }}
+              >
+                currency_exchange
+              </span>
+              <div>
+                <p className="row-label">Visualizar todo en</p>
+                <p className="row-desc">
+                  Todos los valores se convertirán y mostrarán en esta moneda
+                </p>
+              </div>
+            </div>
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+              className="currency-pref-select"
+            >
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {/* Gastos programados y metas — accesos rápidos */}
         <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
