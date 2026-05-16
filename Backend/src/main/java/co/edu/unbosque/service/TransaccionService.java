@@ -78,7 +78,6 @@ public class TransaccionService {
                 .orElse(false);
     }
 
-
     /** Si el request trae nombre pero no id, resuelve el id desde la tabla. Nunca retorna null. */
     private Long resolverIdTipoMovimiento(TransaccionRequest request) {
         if (request.getIdTipoMovimiento() != null) return request.getIdTipoMovimiento();
