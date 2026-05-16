@@ -2,7 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/common/Button";
 import { Input } from "../../components/common/Input";
+import { PasswordStrengthIndicator } from "../../components/common/PasswordStrengthIndicator";
 import { reclamarPerfilService } from "../../services/reclamarPerfilService";
+import {
+  validateName,
+  validateUsername,
+  validateEmail,
+  validatePassword,
+} from "../../utils/validators";
 
 export function ReclamarPerfil() {
   const [searchParams] = useSearchParams();
@@ -25,16 +32,51 @@ export function ReclamarPerfil() {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    // Validar token
     if (!tokenReclamo.trim()) {
       setError("El token de reclamación es obligatorio.");
       return;
     }
-    if (contrasena.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+
+    // Validar nombres
+    const nombresError = validateName(nombres, "Nombres");
+    if (nombresError) {
+      setError(nombresError);
       return;
     }
+
+    // Validar apellidos
+    const apellidosError = validateName(apellidos, "Apellidos");
+    if (apellidosError) {
+      setError(apellidosError);
+      return;
+    }
+
+    // Validar nombre de usuario
+    const usernameError = validateUsername(nombreUsuario);
+    if (usernameError) {
+      setError(usernameError);
+      return;
+    }
+
+    // Validar email
+    const emailError = validateEmail(correo);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
+    // Validar que las contraseñas coincidan
     if (contrasena !== confirmar) {
       setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    // Validar contraseña fuerte
+    const passwordError = validatePassword(contrasena);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -121,13 +163,16 @@ export function ReclamarPerfil() {
             onChange={(e) => setCorreo(e.target.value)}
             required
           />
-          <Input
-            label="Contraseña"
-            type="password"
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            required
-          />
+          <div>
+            <Input
+              label="Contraseña"
+              type="password"
+              value={contrasena}
+              onChange={(e) => setContrasena(e.target.value)}
+              required
+            />
+            {contrasena && <PasswordStrengthIndicator password={contrasena} />}
+          </div>
           <Input
             label="Confirmar contraseña"
             type="password"
