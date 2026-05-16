@@ -51,6 +51,7 @@ interface TransactionContextType {
   error: string | null;
   fetchTransactions: (filters?: TransactionFilters) => Promise<void>;
   fetchSaldo: () => Promise<void>;
+  setSaldo: (saldo: number) => void;
   createTransaction: (data: {
     nombre: string;
     montoOriginal: number;
@@ -58,6 +59,8 @@ interface TransactionContextType {
     idUsuario: number;
     idCategoria?: number;
     idTipoMovimiento: number;
+    monedaOriginal?: string;
+    tasaCambio?: number;
   }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 }
@@ -115,11 +118,18 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     idUsuario: number;
     idCategoria?: number;
     idTipoMovimiento: number;
+    monedaOriginal?: string;
+    tasaCambio?: number;
   }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.post<BackendTransaccion>("/transacciones", data);
+      const payload = {
+        ...data,
+        monedaOriginal: data.monedaOriginal ?? "COP",
+        tasaCambio: data.tasaCambio ?? 1,
+      };
+      await api.post<BackendTransaccion>("/transacciones", payload);
       await fetchTransactions();
       await fetchSaldo();
     } catch (err) {
@@ -158,6 +168,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         error,
         fetchTransactions,
         fetchSaldo,
+        setSaldo: setSaldoTotal,
         createTransaction,
         deleteTransaction,
       }}
