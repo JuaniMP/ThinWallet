@@ -156,11 +156,12 @@ export function Profile() {
       .finally(() => setLoadingSaldo(false));
   }, [authUser?.idUsuario]);
 
-  const fullName = profileData
-    ? `${profileData.nombres} ${profileData.apellidos}`
-    : "Usuario";
+  const fullName =
+    profileData?.nombres && profileData?.apellidos
+      ? `${profileData.nombres} ${profileData.apellidos}`
+      : profileData?.nombres ?? "Usuario";
 
-  const initials = profileData
+  const initials = profileData?.nombres
     ? profileData.nombres.charAt(0).toUpperCase()
     : "U";
 

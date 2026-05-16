@@ -24,8 +24,8 @@ export function CustomCategoryModal({
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [tipoCategoria, setTipoCategoria] = useState<
-    "DEPOSITO" | "RETIRO" | "AMBOS"
-  >(defaultTipo);
+    "DEPOSITO" | "RETIRO" | "AMBOS" | ""
+  >("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,7 +34,7 @@ export function CustomCategoryModal({
   const resetForm = () => {
     setNombre("");
     setDescripcion("");
-    setTipoCategoria(defaultTipo);
+    setTipoCategoria("");
     setError("");
   };
 
@@ -136,11 +136,12 @@ export function CustomCategoryModal({
               value={tipoCategoria}
               onChange={(e) =>
                 setTipoCategoria(
-                  e.target.value as "DEPOSITO" | "RETIRO" | "AMBOS",
+                  e.target.value as "DEPOSITO" | "RETIRO" | "AMBOS" | "",
                 )
               }
               required
             >
+              <option value="" disabled>Seleccionar categoría</option>
               <option value="RETIRO">Retiro (Gasto)</option>
               <option value="DEPOSITO">Depósito (Ingreso)</option>
               <option value="AMBOS">Ambos</option>

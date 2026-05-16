@@ -38,4 +38,7 @@ public class Gasto {
 
     @Column(name = "id_categoria")
     private Long idCategoria;
+
+    @Column(name = "monto_actual")
+    private BigDecimal montoActual;
 }

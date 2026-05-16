@@ -5,6 +5,8 @@ import { circleService } from "../../services/circuloGastoService";
 import { transactionService } from "../../services/transactionService";
 import { categoryService } from "../../services/categoryService";
 import { useAuth } from "../../context/AuthContext";
+import { validateAmount, validateDescription } from "../../utils/validators";
+import { MoneyInput } from "../../components/common/MoneyInput";
 import type { CirculoDetalle, Transaccion, Category } from "../../types";
 
 const FALLBACK_IMAGE =
@@ -25,20 +27,33 @@ export function CircleDetail() {
   const [history, setHistory] = useState<Transaccion[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tokenFromStorage, setTokenFromStorage] = useState<string | null>(null);
+  const isGhost = user?.idTipoUsuario === 3;
 
   // Modal registrar gasto
   const [showGastoModal, setShowGastoModal] = useState(false);
-  const [gastoForm, setGastoForm] = useState({ nombre: "", monto: "", idCategoria: "" });
+  const [gastoForm, setGastoForm] = useState({ nombre: "", monto: 0, idCategoria: "", moneda: "COP" });
   const [gastoError, setGastoError] = useState("");
   const [gastoSaving, setGastoSaving] = useState(false);
 
   const handleRegistrarGasto = async (e: React.FormEvent) => {
     e.preventDefault();
-    const monto = parseFloat(gastoForm.monto);
-    if (!gastoForm.nombre.trim() || isNaN(monto) || monto <= 0) {
-      setGastoError("Nombre y monto son requeridos");
+    setGastoError("");
+
+    // Validar descripción/nombre
+    const nameError = validateDescription(gastoForm.nombre);
+    if (nameError) {
+      setGastoError(nameError);
       return;
     }
+
+    // Validar monto
+    const monto = gastoForm.monto;
+    const amountError = validateAmount(monto);
+    if (amountError) {
+      setGastoError(amountError);
+      return;
+    }
+
     if (!user?.idUsuario) return;
     setGastoSaving(true);
     setGastoError("");
@@ -46,12 +61,13 @@ export function CircleDetail() {
       await transactionService.create({
         nombre: gastoForm.nombre.trim(),
         montoOriginal: monto,
+        monedaOriginal: gastoForm.moneda,
         idUsuario: user.idUsuario,
         idCirculoGasto: Number(id),
         idCategoria: gastoForm.idCategoria ? Number(gastoForm.idCategoria) : undefined,
         idTipoMovimiento: 2,
       });
-      setGastoForm({ nombre: "", monto: "", idCategoria: "" });
+      setGastoForm({ nombre: "", monto: 0, idCategoria: "", moneda: "COP" });
       setShowGastoModal(false);
       // Reload history
       const txs = await transactionService.getByCirculo(Number(id));
@@ -77,8 +93,8 @@ export function CircleDetail() {
       setDraftImage(savedImage);
     }
 
-    // Recuperar token del usuario desde localStorage
-    const savedToken = localStorage.getItem("user-token");
+    // Para usuario fantasma: su token personal de acceso
+    const savedToken = localStorage.getItem("userToken");
     if (savedToken) {
       setTokenFromStorage(savedToken);
     }
@@ -111,6 +127,13 @@ export function CircleDetail() {
   );
 
   const presupuesto = fmt(totalGastos);
+
+  const getNombreUsuario = (idUsuario?: number): string => {
+    if (!idUsuario) return "Desconocido";
+    if (idUsuario === user?.idUsuario) return `${user.nombres} ${user.apellidos}`.trim();
+    const miembro = detail?.invitados?.find((m) => m.idUsuario === idUsuario);
+    return miembro?.nombreCompleto ?? `Usuario #${idUsuario}`;
+  };
 
   const handleSaveImage = () => {
     if (!detail || !draftImage.trim()) {
@@ -276,12 +299,19 @@ export function CircleDetail() {
                         <div className="history-line" />
                         <div className="history-content">
                           <div className="history-time">
-                            {item.contexto
-                              ? new Date(item.contexto).toLocaleDateString("es-CO")
+                            {(item.fechaEjecucion ?? item.contexto)
+                              ? new Date((item.fechaEjecucion ?? item.contexto)!).toLocaleString("es-CO", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
                               : "—"}
                           </div>
                           <div className="history-title">{item.nombre}</div>
                           <div className="history-desc">{cat?.nombre ?? item.tipoCategoria ?? "Sin categoría"}</div>
+                          <div className="history-author">Por: {getNombreUsuario(item.idUsuario)}</div>
                           <div className="history-amount">{fmt(Number(item.montoOriginal))}</div>
                         </div>
                       </div>
@@ -313,67 +343,66 @@ export function CircleDetail() {
                 <p>{detail.totalInvitados} invitados</p>
               </div>
 
-              {detail.invitados.length === 0 && !tokenFromStorage ? (
-                <p className="empty-state">
-                  Aún no hay invitados en este círculo.
-                </p>
+              {/* Usuario fantasma: muestra su propio token de acceso */}
+              {isGhost && tokenFromStorage && (
+                <article className="guest-token-item" style={{ marginBottom: 12 }}>
+                  <h4>Tu token de acceso</h4>
+                  <p style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginBottom: 6 }}>
+                    Úsalo para entrar a este círculo desde cualquier dispositivo.
+                  </p>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      value={tokenFromStorage}
+                      readOnly
+                      style={{ flex: 1, padding: "8px", border: "1px solid var(--outline-variant)", fontFamily: "monospace", fontSize: "11px" }}
+                    />
+                    <button
+                      type="button"
+                      className="matriz-cta-btn"
+                      onClick={() => { navigator.clipboard.writeText(tokenFromStorage); alert("Token copiado"); }}
+                      style={{ padding: "8px 14px", whiteSpace: "nowrap" }}
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </article>
+              )}
+
+              {detail.invitados.length === 0 ? (
+                <p className="empty-state">Aún no hay invitados en este círculo.</p>
               ) : (
                 <div className="guest-token-grid">
-                  {/* Token como primer item - entrada del usuario */}
-                  {tokenFromStorage && (
-                    <article className="guest-token-item">
-                      <h4>Tu entrada</h4>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <input
-                          type="text"
-                          value={tokenFromStorage}
-                          readOnly
-                          style={{
-                            flex: 1,
-                            padding: "8px",
-                            border: "1px solid var(--border-color)",
-                            borderRadius: "4px",
-                            fontFamily: "monospace",
-                            fontSize: "12px",
-                            wordBreak: "break-all",
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="matriz-cta-btn"
-                          onClick={() => {
-                            if (tokenFromStorage) {
-                              navigator.clipboard.writeText(tokenFromStorage);
-                              alert("Token copiado al portapapeles");
-                            }
-                          }}
-                          title="Copiar token"
-                          style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
-                        >
-                          Copiar
-                        </button>
-                      </div>
-                    </article>
-                  )}
-
-                  {/* Invitados debajo del token */}
                   {detail.invitados.map((invitado) => (
-                    <article
-                      key={invitado.idUsuario}
-                      className="guest-token-item"
-                    >
+                    <article key={invitado.idUsuario} className="guest-token-item">
                       <h4>{invitado.nombreCompleto}</h4>
-                      <p className="guest-type">
-                        Tipo: {invitado.tipoUsuario || "N/A"}
-                      </p>
-                      {invitado.correo && (
+                      <p className="guest-type">{invitado.tipoUsuario === "FANTASMA" ? "Invitado fantasma" : (invitado.tipoUsuario || "Registrado")}</p>
+                      {invitado.correo && !invitado.correo.includes("thinwallet.local") && (
                         <p className="guest-email">{invitado.correo}</p>
+                      )}
+                      {/* Token personal del fantasma — visible solo para el creador */}
+                      {!isGhost && invitado.tipoUsuario === "FANTASMA" && invitado.tokenInvitacionPersonal && (
+                        <div style={{ marginTop: 8 }}>
+                          <p style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)", marginBottom: 4, fontWeight: 600 }}>
+                            Token de acceso personal:
+                          </p>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <input
+                              type="text"
+                              value={invitado.tokenInvitacionPersonal}
+                              readOnly
+                              style={{ flex: 1, padding: "6px", fontFamily: "monospace", fontSize: "10px", border: "1px solid var(--outline-variant)" }}
+                            />
+                            <button
+                              type="button"
+                              className="matriz-cta-btn"
+                              onClick={() => { navigator.clipboard.writeText(invitado.tokenInvitacionPersonal!); alert(`Token de ${invitado.nombreCompleto} copiado`); }}
+                              style={{ padding: "6px 10px", fontSize: "0.72rem", whiteSpace: "nowrap" }}
+                            >
+                              Copiar
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </article>
                   ))}
@@ -400,30 +429,39 @@ export function CircleDetail() {
                   required
                 />
               </label>
-              <label>
-                Monto (COP)
-                <input
-                  type="number"
-                  min={1}
+              <div className="amount-currency-row" style={{ gap: 12, alignItems: "end" }}>
+                <MoneyInput
+                  label="Monto"
+                  name="monto"
                   value={gastoForm.monto}
-                  onChange={(e) => setGastoForm((f) => ({ ...f, monto: e.target.value }))}
+                  onChange={(v) => setGastoForm((f) => ({ ...f, monto: v }))}
+                  placeholder="Ej: 1,000,000"
                   required
                 />
-              </label>
-              {categories.length > 0 && (
-                <label>
-                  Categoría
+                <label style={{ flex: 1, marginBottom: 0 }}>
+                  Moneda
                   <select
-                    value={gastoForm.idCategoria}
-                    onChange={(e) => setGastoForm((f) => ({ ...f, idCategoria: e.target.value }))}
+                    value={gastoForm.moneda}
+                    onChange={(e) => setGastoForm((f) => ({ ...f, moneda: e.target.value }))}
                   >
-                    <option value="">Sin categoría</option>
-                    {categories.map((c) => (
-                      <option key={c.idCategoria} value={c.idCategoria}>{c.nombre}</option>
-                    ))}
+                    <option value="COP">COP</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
                   </select>
                 </label>
-              )}
+              </div>
+              <label>
+                Categoría
+                <select
+                  value={gastoForm.idCategoria}
+                  onChange={(e) => setGastoForm((f) => ({ ...f, idCategoria: e.target.value }))}
+                >
+                  <option value="" disabled>Seleccionar categoría</option>
+                  {categories.map((c) => (
+                    <option key={c.idCategoria} value={c.idCategoria}>{c.nombre}</option>
+                  ))}
+                </select>
+              </label>
               {gastoError && <p className="error-msg">{gastoError}</p>}
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowGastoModal(false)}>

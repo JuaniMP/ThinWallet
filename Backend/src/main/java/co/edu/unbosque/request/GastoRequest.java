@@ -29,4 +29,6 @@ public class GastoRequest {
     private Long idCirculoGasto;
 
     private Long idCategoria;
+
+    private BigDecimal montoActual;
 }

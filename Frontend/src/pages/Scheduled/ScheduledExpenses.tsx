@@ -5,6 +5,7 @@ import { gastoService } from "../../services/gastoService";
 import { categoryService } from "../../services/categoryService";
 import { useCurrency } from "../../context/CurrencyContext";
 import { MoneyInput } from "../../components/common/MoneyInput";
+import { validateAmount, validateDescription, validateDate } from "../../utils/validators";
 import type { Gasto, GastoRequest, Category } from "../../types";
 
 const PERIODICIDADES = ["DIARIO", "SEMANAL", "MENSUAL"];
@@ -87,17 +88,55 @@ export function ScheduledExpenses() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nombre.trim() || form.valor <= 0) {
-      setError("Nombre y valor son requeridos");
+    setError("");
+
+    // Validar nombre/descripción
+    const nameError = validateDescription(form.nombre, 3, 100);
+    if (nameError) {
+      setError(nameError);
       return;
     }
+
+    // Validar monto
+    const amountError = validateAmount(form.valor);
+    if (amountError) {
+      setError(amountError);
+      return;
+    }
+
+    // Validar categoría
     if (!form.idCategoria) {
       setError("Selecciona una categoría");
       return;
     }
+
+    // Validar fecha de inicio
     if (!form.fechaInicio) {
       setError("La fecha de inicio es obligatoria");
       return;
+    }
+
+    const dateStartError = validateDate(form.fechaInicio);
+    if (dateStartError) {
+      setError(dateStartError);
+      return;
+    }
+
+    // Validar fecha de fin si está presente
+    if (form.fechaFin) {
+      const dateEndError = validateDate(form.fechaFin);
+      if (dateEndError) {
+        setError(dateEndError);
+        return;
+      }
+
+      // Validar que fechaFin sea posterior a fechaInicio
+      const start = new Date(form.fechaInicio);
+      const end = new Date(form.fechaFin);
+      if (end <= start) {
+        setError("La fecha de fin debe ser posterior a la fecha de inicio");
+        return;
+      }
     }
     setSaving(true);
     setError("");

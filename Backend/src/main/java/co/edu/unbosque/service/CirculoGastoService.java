@@ -56,6 +56,16 @@ public class CirculoGastoService {
             if (c.getIdTipoCirculo() != null) {
                 c.setTipoCirculo(tipos.getOrDefault(c.getIdTipoCirculo(), "PERSONAL"));
             }
+            // Poblar nombres de miembros (excluyendo al creador)
+            List<UsuarioCirculo> vinculaciones = usuarioCirculoRepository
+                    .findByCirculoGasto_IdCirculoGasto(c.getIdCirculoGasto());
+            List<String> nombres = vinculaciones.stream()
+                    .filter(uc -> !uc.getId().getIdUsuario().equals(c.getIdUsuarioCreador()))
+                    .map(uc -> uc.getUsuario() != null
+                            ? (uc.getUsuario().getNombres() + " " + uc.getUsuario().getApellidos()).trim()
+                            : "Invitado")
+                    .collect(Collectors.toList());
+            c.setNombresInvitados(nombres);
         });
     }
 

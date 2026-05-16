@@ -7,6 +7,11 @@ import {
   type CurrencyCode,
 } from "../../context/CurrencyContext";
 import { CategorySelect } from "../category/CategorySelect";
+import {
+  validateAmount,
+  validateDescription,
+  validateCurrency,
+} from "../../utils/validators";
 
 interface TransactionFormProps {
   onSubmit: (data: {
@@ -35,18 +40,30 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
     e.preventDefault();
     setError("");
 
-    if (!amount || amount <= 0) {
-      setError("El monto debe ser un número positivo");
+    // Validar monto
+    const amountError = validateAmount(amount);
+    if (amountError) {
+      setError(amountError);
       return;
     }
 
-    if (!description.trim()) {
-      setError("La descripción es requerida");
+    // Validar descripción
+    const descError = validateDescription(description);
+    if (descError) {
+      setError(descError);
       return;
     }
 
+    // Validar categoría
     if (!categoryId) {
       setError("Por favor subministra una categoría válida");
+      return;
+    }
+
+    // Validar moneda
+    const currencyError = validateCurrency(moneda);
+    if (currencyError) {
+      setError(currencyError);
       return;
     }
 
@@ -143,7 +160,6 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           name="amount"
           value={amount}
           onChange={setAmount}
-          prefix={moneda}
           required
         />
         <div className="input-group">
