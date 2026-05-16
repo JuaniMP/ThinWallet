@@ -67,6 +67,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
       return;
     }
 
+
     const storedUser = localStorage.getItem("user");
     let idUsuario = 0;
     if (storedUser) {
@@ -160,6 +161,10 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           name="amount"
           value={amount}
           onChange={setAmount}
+<<<<<<< HEAD
+=======
+          prefix={moneda}
+>>>>>>> 3ad0b71b8a0609d17459013c5a89f98c483e37bd
           required
         />
         <div className="input-group">

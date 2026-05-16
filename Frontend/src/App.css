@@ -4071,7 +4071,7 @@
     "salary moneda"
     "actions actions";
   gap: 12px;
-  align-items: start;
+  align-items: end;
   margin-bottom: 12px;
 }
 
@@ -4196,4 +4196,3 @@
   color: var(--on-surface-variant);
   font-style: italic;
 }
-
