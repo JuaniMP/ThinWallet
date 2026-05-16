@@ -33,6 +33,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
+function NonGhostRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <div className="loading">Cargando...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (user?.idTipoUsuario === 3) return <Navigate to="/grupos" />;
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -87,25 +96,25 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <Dashboard />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
         path="/transactions"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <TransactionList />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
         path="/transactions/new"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <NewTransaction />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
@@ -143,17 +152,17 @@ function AppRoutes() {
       <Route
         path="/reports"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <Reports />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
         path="/goals"
         element={
-          <PrivateRoute>
+          <NonGhostRoute>
             <Goals />
-          </PrivateRoute>
+          </NonGhostRoute>
         }
       />
       <Route
