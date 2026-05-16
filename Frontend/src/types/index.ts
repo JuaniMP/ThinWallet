@@ -48,7 +48,9 @@ export interface CreateTransactionRequest {
   idTipoMovimiento?: number;
   idCirculoGasto?: number;
   monedaOriginal?: string;
+  tasaCambio?: number;
   contexto?: string;
+  modalidadDivision?: string;
 }
 
 export interface Transaccion {
@@ -61,6 +63,7 @@ export interface Transaccion {
   tipoCategoria?: string;
   modalidadDivision?: string;
   contexto?: string;
+  fechaEjecucion?: string;
   idUsuario?: number;
   idCirculoGasto?: number;
   idCategoria?: number;
@@ -198,6 +201,7 @@ export interface Gasto {
   idGasto: number;
   nombre: string;
   valor: number;
+  montoActual?: number;
   periodicidad?: string;
   fechaInicio?: string;
   fechaFin?: string;
@@ -209,6 +213,7 @@ export interface Gasto {
 export interface GastoRequest {
   nombre: string;
   valor: number;
+  montoActual?: number;
   periodicidad?: string;
   fechaInicio?: string;
   fechaFin?: string;

@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
+import { MoneyInput } from "../common/MoneyInput";
+import {
+  SUPPORTED_CURRENCIES,
+  type CurrencyCode,
+} from "../../context/CurrencyContext";
 import { CategorySelect } from "../category/CategorySelect";
+import {
+  validateAmount,
+  validateDescription,
+  validateCurrency,
+} from "../../utils/validators";
 
 interface TransactionFormProps {
   onSubmit: (data: {
@@ -11,39 +21,52 @@ interface TransactionFormProps {
     idUsuario: number;
     idCategoria?: number;
     idTipoMovimiento: number;
+    monedaOriginal: string;
+    tasaCambio: number;
   }) => Promise<void>;
   isLoading?: boolean;
 }
 
 export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState("");
   const [type, setType] = useState<"DEPOSITO" | "RETIRO">("RETIRO");
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [paymentMethodId, setPaymentMethodId] = useState<number>(1); // 1: Efectivo, 2: Tarjeta
+  const [paymentMethodId, setPaymentMethodId] = useState<number>(1);
+  const [moneda, setMoneda] = useState<CurrencyCode>("COP");
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setError("El monto debe ser un número positivo");
+    // Validar monto
+    const amountError = validateAmount(amount);
+    if (amountError) {
+      setError(amountError);
       return;
     }
 
-    if (!description.trim()) {
-      setError("La descripción es requerida");
+    // Validar descripción
+    const descError = validateDescription(description);
+    if (descError) {
+      setError(descError);
       return;
     }
 
+    // Validar categoría
     if (!categoryId) {
       setError("Por favor subministra una categoría válida");
       return;
     }
 
-    // Get the user from localStorage
+    // Validar moneda
+    const currencyError = validateCurrency(moneda);
+    if (currencyError) {
+      setError(currencyError);
+      return;
+    }
+
     const storedUser = localStorage.getItem("user");
     let idUsuario = 0;
     if (storedUser) {
@@ -63,14 +86,16 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
     try {
       await onSubmit({
         nombre: description.trim(),
-        montoOriginal: amountNum,
+        montoOriginal: amount,
         tipoMovimiento: type,
         idUsuario,
         idCategoria: Number(categoryId),
         idTipoMovimiento: paymentMethodId,
+        monedaOriginal: moneda,
+        tasaCambio: 1,
       });
 
-      setAmount("");
+      setAmount(0);
       setDescription("");
       setCategoryId("");
     } catch (err) {
@@ -88,7 +113,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           className={`type-btn ${type === "RETIRO" ? "active expense" : ""}`}
           onClick={() => {
             setType("RETIRO");
-            setCategoryId(""); // Reset category when type changes
+            setCategoryId("");
           }}
         >
           Retiro
@@ -98,7 +123,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           className={`type-btn ${type === "DEPOSITO" ? "active income" : ""}`}
           onClick={() => {
             setType("DEPOSITO");
-            setCategoryId(""); // Reset category when type changes
+            setCategoryId("");
           }}
         >
           Depósito
@@ -128,16 +153,30 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
       </div>
 
       <CategorySelect type={type} value={categoryId} onChange={setCategoryId} />
-      <Input
-        label="Monto"
-        type="number"
-        step="0.01"
-        min="0"
-        name="amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        required
-      />
+
+      <div className="amount-currency-row">
+        <MoneyInput
+          label="Monto"
+          name="amount"
+          value={amount}
+          onChange={setAmount}
+          required
+        />
+        <div className="input-group">
+          <label htmlFor="moneda">Moneda</label>
+          <select
+            id="moneda"
+            value={moneda}
+            onChange={(e) => setMoneda(e.target.value as CurrencyCode)}
+          >
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <Input
         label="Descripción"

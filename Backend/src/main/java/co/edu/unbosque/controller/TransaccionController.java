@@ -1,7 +1,9 @@
 package co.edu.unbosque.controller;
 
+import co.edu.unbosque.dto.GastosHormigaResponse;
 import co.edu.unbosque.entity.Transaccion;
 import co.edu.unbosque.request.TransaccionRequest;
+import co.edu.unbosque.service.GastosHormigaService;
 import co.edu.unbosque.service.TransaccionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -17,6 +20,7 @@ import java.util.List;
 public class TransaccionController {
 
     private final TransaccionService transaccionService;
+    private final GastosHormigaService gastosHormigaService;
 
     @GetMapping
     public ResponseEntity<List<Transaccion>> getAll() {
@@ -38,6 +42,18 @@ public class TransaccionController {
     @GetMapping("/circulo/{idCirculo}")
     public ResponseEntity<List<Transaccion>> getByCirculo(@PathVariable Long idCirculo) {
         return ResponseEntity.ok(transaccionService.findByCirculoGasto(idCirculo));
+    }
+
+    /**
+     * RF-10 — Gastos hormiga: micro-gastos personales del usuario.
+     * Query params opcionales: umbral (default 20000), dias (default 30).
+     */
+    @GetMapping("/gastos-hormiga/{idUsuario}")
+    public ResponseEntity<GastosHormigaResponse> getGastosHormiga(
+            @PathVariable Long idUsuario,
+            @RequestParam(required = false) BigDecimal umbral,
+            @RequestParam(required = false) Integer dias) {
+        return ResponseEntity.ok(gastosHormigaService.detectar(idUsuario, umbral, dias));
     }
 
     @PostMapping

@@ -93,6 +93,22 @@ export function Groups() {
     };
   }, [user?.idUsuario]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  const handleDeleteCircle = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await circleService.deleteCircle(id);
+      setCircles((prev) => prev.filter((c) => c.idCirculoGasto !== id));
+    } catch (error) {
+      console.error("Error eliminando círculo", error);
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  };
+
   const handleAddGuestInput = () => setInvitados([...invitados, ""]);
 
   const handleJoin = async () => {
@@ -269,18 +285,48 @@ export function Groups() {
                         <div className="name">{circle.nombre}</div>
                         <div className="action">
                           {circle.tipoCirculo} ·{" "}
-                          {circle.nombresInvitados?.length ?? 0} invitados
+                          {circle.nombresInvitados?.length ?? 0} {(circle.nombresInvitados?.length ?? 0) === 1 ? "miembro" : "miembros"}
                         </div>
+                        {circle.nombresInvitados && circle.nombresInvitados.length > 0 && (
+                          <div style={{ fontSize: "0.7rem", color: "var(--on-surface-variant)", marginTop: 2 }}>
+                            {circle.nombresInvitados.slice(0, 3).join(", ")}
+                            {circle.nombresInvitados.length > 3 ? ` +${circle.nombresInvitados.length - 3}` : ""}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="matriz-amount">
                       <div className="amount primary">Activo</div>
-                      <Link
-                        to={`/grupos/${circle.idCirculoGasto}`}
-                        className="action-btn"
-                      >
-                        Ver círculo
-                      </Link>
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <Link
+                          to={`/grupos/${circle.idCirculoGasto}`}
+                          className="action-btn"
+                        >
+                          Ver círculo
+                        </Link>
+                        {user?.tipoUsuario !== 3 && (
+                          <button
+                            type="button"
+                            title="Eliminar círculo"
+                            onClick={() => setConfirmDeleteId(circle.idCirculoGasto)}
+                            style={{
+                              background: "transparent",
+                              border: "2px solid var(--primary)",
+                              color: "var(--primary)",
+                              cursor: "pointer",
+                              padding: "4px 7px",
+                              display: "flex",
+                              alignItems: "center",
+                              opacity: 0.6,
+                              transition: "opacity 0.15s",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>delete</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -338,11 +384,7 @@ export function Groups() {
         {/* Modal: Crear círculo */}
         {showModal && user?.tipoUsuario !== 3 && (
           <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-            <div
-              className="modal-container"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-content neo-shadow">
+              <div className="modal-content neo-shadow" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h1>Nuevo círculo</h1>
                   <button
@@ -431,7 +473,6 @@ export function Groups() {
                   </div>
                 </div>
               </div>
-            </div>
           </div>
         )}
       </div>
@@ -439,8 +480,7 @@ export function Groups() {
       {/* Modal: Unirse con token */}
       {showJoinModal && (
         <div className="modal-backdrop" onClick={() => setShowJoinModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content neo-shadow">
+            <div className="modal-content neo-shadow" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h1>Unirse a un círculo</h1>
                 <button
@@ -495,14 +535,12 @@ export function Groups() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Modal: Token generado */}
       {tokenCreado && (
         <div className="modal-backdrop" onClick={() => setTokenCreado(null)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content neo-shadow">
+            <div className="modal-content neo-shadow" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h1>Token de invitación</h1>
                 <button
@@ -559,6 +597,73 @@ export function Groups() {
                   Listo
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+      {/* Modal: Confirmar eliminación */}
+      {confirmDeleteId !== null && (
+        <div className="modal-overlay" onClick={() => setConfirmDeleteId(null)}>
+          <div
+            className="neo-shadow"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--background)",
+              border: "2px solid var(--primary)",
+              padding: "28px 24px 20px",
+              maxWidth: 360,
+              width: "90%",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <span className="material-symbols-outlined" style={{ color: "var(--primary)", fontSize: 28 }}>
+                warning
+              </span>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 900, color: "var(--primary)", margin: 0 }}>
+                ELIMINAR CÍRCULO
+              </h3>
+            </div>
+            <p style={{ fontSize: "0.88rem", color: "var(--on-surface-variant)", lineHeight: 1.6, marginBottom: 24 }}>
+              Esta acción es permanente. Se eliminará el círculo y todos sus gastos asociados. ¿Continuar?
+            </p>
+            <div style={{ display: "flex", gap: 10, borderTop: "2px solid var(--primary)", paddingTop: 16 }}>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  background: "transparent",
+                  border: "2px solid var(--primary)",
+                  color: "var(--primary)",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 700,
+                  fontSize: "0.8rem",
+                  letterSpacing: "0.06em",
+                  cursor: "pointer",
+                }}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                disabled={deletingId === confirmDeleteId}
+                onClick={() => void handleDeleteCircle(confirmDeleteId)}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  background: "var(--primary)",
+                  border: "2px solid var(--primary)",
+                  color: "var(--on-primary)",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 700,
+                  fontSize: "0.8rem",
+                  letterSpacing: "0.06em",
+                  cursor: "pointer",
+                  opacity: deletingId === confirmDeleteId ? 0.7 : 1,
+                }}
+              >
+                {deletingId === confirmDeleteId ? "ELIMINANDO..." : "SÍ, ELIMINAR"}
+              </button>
             </div>
           </div>
         </div>
