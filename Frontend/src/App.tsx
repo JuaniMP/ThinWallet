@@ -6,10 +6,12 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { TransactionProvider } from "./context/TransactionContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 import { Login } from "./pages/Auth/Login";
 import { Register } from "./pages/Auth/Register";
 import { ForgotPassword } from "./pages/Auth/ForgotPassword";
 import { Verify } from "./pages/Auth/Verify";
+import { ReclamarPerfil } from "./pages/Auth/ReclamarPerfil";
 import { Dashboard } from "./pages/Dashboard/Dashboard";
 import { TransactionList } from "./pages/Transactions/TransactionList";
 import { NewTransaction } from "./pages/Transactions/NewTransaction";
@@ -20,6 +22,8 @@ import { Debts } from "./pages/Debts/Debts";
 import { Reports } from "./pages/Reports/Reports";
 import { Goals } from "./pages/Goals/Goals";
 import { ScheduledExpenses } from "./pages/Scheduled/ScheduledExpenses";
+import { GastosHormiga } from "./pages/GastosHormiga/GastosHormiga";
+import { CierreMensual } from "./pages/Ciclos/CierreMensual";
 import "./App.css";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -68,6 +72,14 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <Verify />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reclamar-perfil"
+        element={
+          <PublicRoute>
+            <ReclamarPerfil />
           </PublicRoute>
         }
       />
@@ -152,6 +164,22 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
+      <Route
+        path="/gastos-hormiga"
+        element={
+          <PrivateRoute>
+            <GastosHormiga />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cierre-mensual"
+        element={
+          <PrivateRoute>
+            <CierreMensual />
+          </PrivateRoute>
+        }
+      />
 
       <Route path="/" element={<Navigate to="/dashboard" />} />
     </Routes>
@@ -162,9 +190,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <TransactionProvider>
-          <AppRoutes />
-        </TransactionProvider>
+        <CurrencyProvider>
+          <TransactionProvider>
+            <AppRoutes />
+          </TransactionProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </Router>
   );

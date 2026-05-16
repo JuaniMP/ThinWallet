@@ -70,8 +70,4 @@ export const authService = {
   async reenviarVerificacion(correo: string): Promise<string> {
     return api.post<string>("/usuarios/reenviar-verificacion", { correo });
   },
-
-  async loginWithToken(token: string): Promise<User> {
-    return api.post<User>("/usuarios/login-token", { tokenInvitacion: token });
-  },
 };

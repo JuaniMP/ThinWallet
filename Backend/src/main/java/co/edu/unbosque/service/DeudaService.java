@@ -31,6 +31,16 @@ public class DeudaService {
     @Autowired(required = false)
     private AuditoriaSistemaService auditoriaService;
 
+    @Autowired(required = false)
+    private SseEventBus eventBus;
+
+    private void publicarSaldos(Long... usuarios) {
+        if (eventBus == null) return;
+        for (Long u : usuarios) {
+            if (u != null) eventBus.publicarSaldo(u);
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<Deuda> findAll() {
         return deudaRepository.findAll();
@@ -92,6 +102,7 @@ public class DeudaService {
             }
         }
 
+        publicarSaldos(saved.getIdUsuarioDeudor(), saved.getIdUsuarioAcreedor());
         return saved;
     }
 
@@ -130,6 +141,7 @@ public class DeudaService {
                 }
             }
 
+            publicarSaldos(saved.getIdUsuarioDeudor(), saved.getIdUsuarioAcreedor());
             return saved;
         });
     }
@@ -160,6 +172,7 @@ public class DeudaService {
                 }
             }
 
+            publicarSaldos(saved.getIdUsuarioDeudor(), saved.getIdUsuarioAcreedor());
             return saved;
         });
     }
@@ -172,6 +185,7 @@ public class DeudaService {
                 auditoriaService.registrar(d.getIdUsuarioDeudor(), "deuda", id, "DELETE",
                         "{\"monto\":" + d.getMonto() + ",\"estado\":\"" + d.getEstadoPago() + "\"}", null);
             }
+            publicarSaldos(d.getIdUsuarioDeudor(), d.getIdUsuarioAcreedor());
         });
     }
 

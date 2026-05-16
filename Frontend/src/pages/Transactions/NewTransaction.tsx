@@ -14,6 +14,8 @@ export function NewTransaction() {
     idUsuario: number;
     idCategoria?: number;
     idTipoMovimiento: number;
+    monedaOriginal: string;
+    tasaCambio: number;
   }) => {
     await createTransaction(data);
     navigate("/dashboard");

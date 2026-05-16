@@ -2,16 +2,24 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { api } from "../../services/api";
+import { MoneyInput } from "../../components/common/MoneyInput";
+import {
+  useCurrency,
+  SUPPORTED_CURRENCIES,
+  type CurrencyCode,
+} from "../../context/CurrencyContext";
 import type { Deuda, User } from "../../types";
 
 type NewDeudaForm = {
-  monto: string;
+  monto: number;
   idUsuarioAcreedor: string;
   metodoPagoSugerido: string;
+  moneda: CurrencyCode;
 };
 
 export function Debts() {
   const { user } = useAuth();
+  const { format: fmt, currency: prefCurrency } = useCurrency();
   const [payables, setPayables] = useState<Deuda[]>([]);
   const [receivables, setReceivables] = useState<Deuda[]>([]);
   const [userNames, setUserNames] = useState<Record<number, string>>({});
@@ -20,9 +28,10 @@ export function Debts() {
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<NewDeudaForm>({
-    monto: "",
+    monto: 0,
     idUsuarioAcreedor: "",
     metodoPagoSugerido: "EFECTIVO",
+    moneda: prefCurrency,
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -84,8 +93,7 @@ export function Debts() {
   const handleCreateDebt = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.idUsuario) return;
-    const monto = parseFloat(form.monto);
-    if (isNaN(monto) || monto <= 0) {
+    if (!form.monto || form.monto <= 0) {
       setError("El monto debe ser un número positivo");
       return;
     }
@@ -103,16 +111,18 @@ export function Debts() {
     setError(null);
     try {
       await api.post("/deudas", {
-        monto,
+        monto: form.monto,
         idUsuarioDeudor: user.idUsuario,
         idUsuarioAcreedor: acreedorId,
         metodoPagoSugerido: form.metodoPagoSugerido,
         estadoPago: "PENDIENTE",
+        moneda: form.moneda,
       });
       setForm({
-        monto: "",
+        monto: 0,
         idUsuarioAcreedor: "",
         metodoPagoSugerido: "EFECTIVO",
+        moneda: prefCurrency,
       });
       setShowForm(false);
       await fetchDebts();
@@ -122,13 +132,6 @@ export function Debts() {
       setSubmitting(false);
     }
   };
-
-  const fmt = (v: number) =>
-    v.toLocaleString("es-CO", {
-      style: "currency",
-      currency: "COP",
-      maximumFractionDigits: 0,
-    });
 
   const pendingPayables = payables.filter(
     (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO",
@@ -174,7 +177,7 @@ export function Debts() {
                   <span className="tag">Pendiente</span>
                 </div>
                 <h3>Cuentas por Pagar</h3>
-                <p className="amount">{fmt(totalPayable)}</p>
+                <p className="amount">{fmt(totalPayable, "COP")}</p>
                 <p
                   style={{
                     fontSize: "0.75rem",
@@ -193,7 +196,7 @@ export function Debts() {
                   <span className="tag">Por Recibir</span>
                 </div>
                 <h3>Cuentas por Cobrar</h3>
-                <p className="amount">{fmt(totalReceivable)}</p>
+                <p className="amount">{fmt(totalReceivable, "COP")}</p>
                 <p
                   style={{
                     fontSize: "0.75rem",
@@ -244,7 +247,7 @@ export function Debts() {
                             ? userNames[item.idUsuarioAcreedor]
                             : `Deuda #${idx + 1}`}
                         </h4>
-                        <p className="card-amount">{fmt(item.monto ?? 0)}</p>
+                        <p className="card-amount">{fmt(item.monto ?? 0, "COP")}</p>
                         <button
                           className="action-btn"
                           onClick={() => handleConfirm(item.idDeuda)}
@@ -290,7 +293,7 @@ export function Debts() {
                             <p>{item.estadoPago ?? "PENDIENTE"}</p>
                           </div>
                         </div>
-                        <p className="card-amount">{fmt(item.monto ?? 0)}</p>
+                        <p className="card-amount">{fmt(item.monto ?? 0, "COP")}</p>
                         <button
                           className="action-btn"
                           onClick={() => handleConfirm(item.idDeuda)}
@@ -335,7 +338,7 @@ export function Debts() {
                             : (item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]) || `Acreedor #${idx + 1}`}
                         </h5>
                         <p className="item-desc">{item.estadoPago}</p>
-                        <p className="item-amount">{fmt(item.monto ?? 0)}</p>
+                        <p className="item-amount">{fmt(item.monto ?? 0, "COP")}</p>
                       </div>
                     ))}
                   </div>
@@ -358,24 +361,32 @@ export function Debts() {
 
               {showForm && (
                 <form onSubmit={handleCreateDebt} className="transaction-form">
+                  <MoneyInput
+                    label="Monto"
+                    name="monto"
+                    value={form.monto}
+                    onChange={(v) => setForm((f) => ({ ...f, monto: v }))}
+                    prefix={form.moneda}
+                    placeholder="0"
+                    required
+                  />
                   <div className="input-group">
-                    <label>Monto</label>
-                    <div className="input-wrapper">
-                      <span className="material-symbols-outlined">
-                        payments
-                      </span>
-                      <input
-                        type="number"
-                        placeholder="0"
-                        min="0"
-                        step="0.01"
-                        value={form.monto}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, monto: e.target.value }))
-                        }
-                        required
-                      />
-                    </div>
+                    <label>Moneda</label>
+                    <select
+                      value={form.moneda}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          moneda: e.target.value as CurrencyCode,
+                        }))
+                      }
+                    >
+                      {SUPPORTED_CURRENCIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="input-group">
                     <label>ID Usuario Acreedor</label>
