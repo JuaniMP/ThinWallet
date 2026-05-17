@@ -362,23 +362,25 @@ export function CircleDetail() {
 
               {/* Token global del círculo — para que usuarios registrados se unan */}
               {!isGhost && detail.tokenInvitacion && (
-                <article className="guest-token-item" style={{ marginBottom: 16, borderLeft: "4px solid var(--primary)" }}>
-                  <h4 style={{ marginBottom: 4 }}>Token de invitación (usuarios registrados)</h4>
-                  <p style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginBottom: 6 }}>
-                    Comparte este token con personas que ya tienen cuenta. Lo usan en "Unirse a círculo".
+                <article className="guest-token-item" style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--primary)" }}>
+                    Token de invitación — usuarios registrados
+                  </label>
+                  <p className="guest-type" style={{ textTransform: "none", letterSpacing: 0, opacity: 0.7 }}>
+                    Comparte con personas que ya tienen cuenta. Lo usan en "Unirse a círculo".
                   </p>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
                     <input
                       type="text"
                       value={detail.tokenInvitacion}
                       readOnly
-                      style={{ flex: 1, padding: "8px", border: "1px solid var(--outline-variant)", fontFamily: "monospace", fontSize: "11px" }}
+                      style={{ flex: 1, background: "var(--surface-container-low)", border: "2px solid var(--primary)", padding: "8px 12px", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--primary)", borderRadius: 0 }}
                     />
                     <button
                       type="button"
-                      className="matriz-cta-btn"
+                      className="btn btn-secondary"
                       onClick={() => { void navigator.clipboard.writeText(detail.tokenInvitacion!); }}
-                      style={{ padding: "8px 14px", whiteSpace: "nowrap" }}
+                      style={{ borderRadius: 0, padding: "0 16px", fontSize: "0.75rem", whiteSpace: "nowrap" }}
                     >
                       Copiar
                     </button>
@@ -389,22 +391,24 @@ export function CircleDetail() {
               {/* Usuario fantasma: muestra su propio token de acceso */}
               {isGhost && tokenFromStorage && (
                 <article className="guest-token-item" style={{ marginBottom: 12 }}>
-                  <h4>Tu token de acceso</h4>
-                  <p style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginBottom: 6 }}>
+                  <label style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--primary)" }}>
+                    Tu token de acceso
+                  </label>
+                  <p className="guest-type" style={{ textTransform: "none", letterSpacing: 0, opacity: 0.7 }}>
                     Úsalo para entrar a este círculo desde cualquier dispositivo.
                   </p>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
                     <input
                       type="text"
                       value={tokenFromStorage}
                       readOnly
-                      style={{ flex: 1, padding: "8px", border: "1px solid var(--outline-variant)", fontFamily: "monospace", fontSize: "11px" }}
+                      style={{ flex: 1, background: "var(--surface-container-low)", border: "2px solid var(--primary)", padding: "8px 12px", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--primary)", borderRadius: 0 }}
                     />
                     <button
                       type="button"
-                      className="matriz-cta-btn"
-                      onClick={() => { navigator.clipboard.writeText(tokenFromStorage); alert("Token copiado"); }}
-                      style={{ padding: "8px 14px", whiteSpace: "nowrap" }}
+                      className="btn btn-secondary"
+                      onClick={() => { void navigator.clipboard.writeText(tokenFromStorage); }}
+                      style={{ borderRadius: 0, padding: "0 16px", fontSize: "0.75rem", whiteSpace: "nowrap" }}
                     >
                       Copiar
                     </button>
@@ -428,9 +432,9 @@ export function CircleDetail() {
                             onClick={() => void handleExpulsar(invitado.idUsuario)}
                             style={{
                               background: "none",
-                              border: "1px solid var(--error, #b00020)",
+                              border: "2px solid var(--error, #b00020)",
                               color: "var(--error, #b00020)",
-                              borderRadius: "6px",
+                              borderRadius: 0,
                               padding: "2px 8px",
                               fontSize: "0.7rem",
                               cursor: "pointer",
@@ -450,23 +454,23 @@ export function CircleDetail() {
                       )}
                       {/* Token personal del fantasma — visible solo para el creador */}
                       {!isGhost && invitado.tipoUsuario?.toUpperCase() === "FANTASMA" && (
-                        <div style={{ marginTop: 8 }}>
-                          <p style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)", marginBottom: 4, fontWeight: 600 }}>
-                            Token de acceso personal:
-                          </p>
+                        <div style={{ marginTop: 10 }}>
+                          <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--primary)", marginBottom: 6 }}>
+                            Token de acceso personal
+                          </label>
                           {invitado.tokenInvitacionPersonal ? (
-                            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
                               <input
                                 type="text"
                                 value={invitado.tokenInvitacionPersonal}
                                 readOnly
-                                style={{ flex: 1, padding: "6px", fontFamily: "monospace", fontSize: "10px", border: "1px solid var(--outline-variant)" }}
+                                style={{ flex: 1, background: "var(--surface-container-low)", border: "2px solid var(--primary)", padding: "6px 10px", fontFamily: "monospace", fontSize: "0.68rem", color: "var(--primary)", borderRadius: 0 }}
                               />
                               <button
                                 type="button"
-                                className="matriz-cta-btn"
+                                className="btn btn-secondary"
                                 onClick={() => { void navigator.clipboard.writeText(invitado.tokenInvitacionPersonal!); }}
-                                style={{ padding: "6px 10px", fontSize: "0.72rem", whiteSpace: "nowrap" }}
+                                style={{ borderRadius: 0, padding: "0 12px", fontSize: "0.68rem", whiteSpace: "nowrap" }}
                               >
                                 Copiar
                               </button>
