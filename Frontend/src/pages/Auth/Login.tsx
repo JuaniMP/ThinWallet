@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/common/Button";
 import { Input } from "../../components/common/Input";
+import { validateEmail, validatePassword } from "../../utils/validators";
 
 export function Login() {
   const [correo, setCorreo] = useState("");
@@ -17,6 +18,10 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const emailErr = validateEmail(correo);
+    if (emailErr) { setError(emailErr); return; }
+    const passErr = validatePassword(contrasena);
+    if (passErr) { setError(passErr); return; }
     setIsLoading(true);
 
     try {

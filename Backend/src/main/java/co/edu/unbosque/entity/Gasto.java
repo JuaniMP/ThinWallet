@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "gasto")
@@ -41,4 +42,10 @@ public class Gasto {
 
     @Column(name = "monto_actual")
     private BigDecimal montoActual;
+
+    @Transient
+    private List<Long> aceptaciones;
+
+    @Transient
+    private Integer totalMiembros;
 }

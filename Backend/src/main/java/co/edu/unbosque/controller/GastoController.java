@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -68,5 +69,44 @@ public class GastoController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         gastoService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Metas grupales ────────────────────────────────────────────────────────
+
+    @GetMapping("/circulo/{idCirculo}/metas-grupales")
+    public ResponseEntity<List<Gasto>> getMetasGrupales(@PathVariable Long idCirculo) {
+        return ResponseEntity.ok(gastoService.findMetasGrupalesByCirculo(idCirculo));
+    }
+
+    @PostMapping("/circulo/{idCirculo}/meta-grupal")
+    public ResponseEntity<Gasto> proponerMeta(
+            @PathVariable Long idCirculo,
+            @RequestParam Long idUsuario,
+            @Valid @RequestBody GastoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(gastoService.proponerMetaGrupal(idCirculo, idUsuario, request));
+    }
+
+    @PutMapping("/{idGasto}/meta-grupal/aceptar")
+    public ResponseEntity<Gasto> aceptarMeta(
+            @PathVariable Long idGasto,
+            @RequestParam Long idUsuario) {
+        return ResponseEntity.ok(gastoService.aceptarMetaGrupal(idGasto, idUsuario));
+    }
+
+    @PutMapping("/{idGasto}/meta-grupal/rechazar")
+    public ResponseEntity<Void> rechazarMeta(
+            @PathVariable Long idGasto,
+            @RequestParam Long idUsuario) {
+        gastoService.rechazarMetaGrupal(idGasto, idUsuario);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{idGasto}/meta-grupal/abonar")
+    public ResponseEntity<Gasto> abonarMeta(
+            @PathVariable Long idGasto,
+            @RequestParam Long idUsuario,
+            @RequestParam BigDecimal monto) {
+        return ResponseEntity.ok(gastoService.abonarMetaGrupal(idGasto, idUsuario, monto));
     }
 }

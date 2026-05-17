@@ -8,10 +8,33 @@ import { MoneyInput } from "../../components/common/MoneyInput";
 import { validateAmount, validateDescription, validateDate } from "../../utils/validators";
 import type { Gasto, GastoRequest, Category } from "../../types";
 
-const PERIODICIDADES = ["DIARIO", "SEMANAL", "MENSUAL"];
+const PERIODICIDADES: { value: string; label: string }[] = [
+  { value: "DIARIO",      label: "Diario"      },
+  { value: "SEMANAL",     label: "Semanal"     },
+  { value: "MENSUAL",     label: "Mensual"     },
+  { value: "TRIMESTRAL",  label: "Trimestral"  },
+  { value: "ANUAL",       label: "Anual"       },
+  { value: "GASTO",       label: "Único (sin repetición)" },
+];
 
 function toISO(local: string) {
   return local ? local + ":00" : undefined;
+}
+
+function calcFechaFin(inicio: string, periodicidad: string): string {
+  if (!inicio || periodicidad === "DIARIO") return "";
+  const d = new Date(inicio);
+  if (isNaN(d.getTime())) return "";
+  switch (periodicidad) {
+    case "SEMANAL":    d.setDate(d.getDate() + 7); break;
+    case "MENSUAL":    d.setMonth(d.getMonth() + 1); break;
+    case "TRIMESTRAL": d.setMonth(d.getMonth() + 3); break;
+    case "ANUAL":      d.setFullYear(d.getFullYear() + 1); break;
+    case "GASTO":      break; // mismo día
+    default: return "";
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function nowAsLocalInput(): string {
@@ -91,7 +114,7 @@ export function ScheduledExpenses() {
     setError("");
 
     // Validar nombre/descripción
-    const nameError = validateDescription(form.nombre, 3, 100);
+    const nameError = validateDescription(form.nombre);
     if (nameError) {
       setError(nameError);
       return;
@@ -172,15 +195,17 @@ export function ScheduledExpenses() {
   };
 
   const periodIcon = (p?: string) => {
-    if (p === "DIARIO") return "today";
-    if (p === "SEMANAL") return "view_week";
-    if (p === "UNICO") return "receipt_long";
+    if (p === "DIARIO")     return "today";
+    if (p === "SEMANAL")    return "view_week";
+    if (p === "MENSUAL")    return "calendar_month";
+    if (p === "TRIMESTRAL") return "event_repeat";
+    if (p === "ANUAL")      return "cake";
+    if (p === "GASTO")      return "receipt_long";
     return "calendar_month";
   };
 
   const periodLabel = (p?: string) => {
-    if (p === "UNICO") return "GASTO ÚNICO";
-    return p ?? "—";
+    return PERIODICIDADES.find((x) => x.value === p)?.label.toUpperCase() ?? p ?? "—";
   };
 
   const isActive = (g: Gasto) => {
@@ -261,13 +286,18 @@ export function ScheduledExpenses() {
                   Periodicidad
                   <select
                     value={form.periodicidad ?? "MENSUAL"}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, periodicidad: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const p = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        periodicidad: p,
+                        fechaFin: calcFechaFin(f.fechaInicio ?? "", p),
+                      }));
+                    }}
                   >
                     {PERIODICIDADES.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
+                      <option key={p.value} value={p.value}>
+                        {p.label}
                       </option>
                     ))}
                   </select>
@@ -277,9 +307,14 @@ export function ScheduledExpenses() {
                   <input
                     type="datetime-local"
                     value={form.fechaInicio ?? ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, fechaInicio: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const ini = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        fechaInicio: ini,
+                        fechaFin: calcFechaFin(ini, f.periodicidad ?? ""),
+                      }));
+                    }}
                     required
                   />
                 </label>

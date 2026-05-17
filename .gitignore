@@ -149,3 +149,4 @@ Backend/*.iml
 # Backups locales y configuración con credenciales (RNF-11)
 backups/
 scripts/backup.env
+Frontend/package-lock.json
