@@ -57,7 +57,10 @@ public class UsuarioController {
 
     @GetMapping("/buscar")
     public ResponseEntity<List<UsuarioBusquedaResponse>> buscar(
-            @RequestParam(defaultValue = "") String q,
+            @RequestParam(defaultValue = "")
+            @jakarta.validation.constraints.Size(max = 100)
+            @jakarta.validation.constraints.Pattern(regexp = "^[\\w\\s@.áéíóúÁÉÍÓÚñÑ_-]*$", message = "Caracteres no permitidos en la búsqueda")
+            String q,
             @RequestParam(required = false) Long excludeId) {
         return ResponseEntity.ok(usuarioService.buscarUsuariosRegistrados(q, excludeId));
     }
