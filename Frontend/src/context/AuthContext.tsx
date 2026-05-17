@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
-import notificationService from "../services/notificationService";
-import { requestNotificationPermission } from "../config/firebase";
 import type { LoginRequest, RegisterRequest, User } from "../types";
 
 interface AuthContextType {
@@ -65,14 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(authToken);
     setUser(userData);
 
-    try {
-      const fcmToken = await requestNotificationPermission();
-      if (fcmToken && userData.id) {
-        await notificationService.saveFCMToken(userData.id, fcmToken);
-      }
-    } catch (error) {
-      console.warn("Failed to save FCM token:", error);
-    }
   };
 
   const loginWithToken = async (tokenValue: string) => {
@@ -84,14 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(authToken);
     setUser(userData);
 
-    try {
-      const fcmToken = await requestNotificationPermission();
-      if (fcmToken && userData.id) {
-        await notificationService.saveFCMToken(userData.id, fcmToken);
-      }
-    } catch (error) {
-      console.warn("Failed to save FCM token:", error);
-    }
     return userData;
   };
 
