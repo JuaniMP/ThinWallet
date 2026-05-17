@@ -150,7 +150,6 @@ Backend/*.iml
 backups/
 scripts/backup.env
 Frontend/package-lock.json
-
 # Credenciales y variables de entorno — NUNCA subir al repositorio
 Backend/src/main/resources/application-local.properties
 *.env
