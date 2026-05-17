@@ -1,6 +1,7 @@
 package co.edu.unbosque.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "usuario")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Usuario {
 
     @Id
@@ -24,18 +26,22 @@ public class Usuario {
     @Column(name = "nombre_usuario", unique = true)
     private String nombreUsuario;
 
-    @Column(name = "correo", unique = true, nullable = false)
+    @Column(name = "correo", unique = true)
     private String correo;
 
     @JsonIgnore
-    @Column(name = "contrasena_hash", nullable = false)
+    @Column(name = "contrasena_hash")
     private String contrasenaHash;
 
-    @Column(name = "tipo_usuario")
-    private String tipoUsuario;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tipo_usuario", referencedColumnName = "id_tipo_usuario")
+    private TipoUsuario tipoUsuario;
 
     @Column(name = "token_reclamo")
     private String tokenReclamo;
+
+    @Transient
+    private String tokenReclamoOriginal; // Token sin hashear (solo se devuelve al crear)
 
     @Column(name = "descripcion")
     private String descripcion;

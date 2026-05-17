@@ -2,8 +2,10 @@ package co.edu.unbosque.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "circulo_gasto")
@@ -24,7 +26,13 @@ public class CirculoGasto {
     @Column(name = "token_invitacion")
     private String tokenInvitacion;
 
-    @Column(name = "tipo_circulo")
+    @Transient
+    private String tokenInvitacionOriginal;
+
+    @Column(name = "id_tipo_circulo")
+    private Long idTipoCirculo;
+
+    @Transient
     private String tipoCirculo;
 
     @Column(name = "presupuesto_grupal")
@@ -44,4 +52,7 @@ public class CirculoGasto {
 
     @Column(name = "estado")
     private String estado;
+
+    @Transient
+    private List<String> nombresInvitados;
 }

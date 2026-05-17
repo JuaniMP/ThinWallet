@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { useTransactions } from '../../context/TransactionContext';
-import { TransactionForm } from '../../components/transaction/TransactionForm';
-import { Layout } from '../../components/layout/Layout';
+import { useNavigate } from "react-router-dom";
+import { useTransactions } from "../../context/TransactionContext";
+import { TransactionForm } from "../../components/transaction/TransactionForm";
+import { Layout } from "../../components/layout/Layout";
 
 export function NewTransaction() {
   const { createTransaction, isLoading, error } = useTransactions();
@@ -13,18 +13,21 @@ export function NewTransaction() {
     tipoMovimiento: string;
     idUsuario: number;
     idCategoria?: number;
+    idTipoMovimiento: number;
+    monedaOriginal: string;
+    tasaCambio: number;
   }) => {
     await createTransaction(data);
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
     <Layout>
       <div className="new-transaction-page">
         <h2>Nueva Transacción</h2>
-        
+
         {error && <div className="error-alert">{error}</div>}
-        
+
         <TransactionForm onSubmit={handleSubmit} isLoading={isLoading} />
       </div>
     </Layout>

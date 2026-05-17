@@ -1,6 +1,7 @@
 package co.edu.unbosque.service;
 
 import co.edu.unbosque.entity.UsuarioGasto;
+import co.edu.unbosque.entity.UsuarioGastoId;
 import co.edu.unbosque.repository.UsuarioGastoRepository;
 import co.edu.unbosque.request.UsuarioGastoRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,11 @@ public class UsuarioGastoService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<UsuarioGasto> findById(Long id) {
-        return usuarioGastoRepository.findById(id);
+    public Optional<UsuarioGasto> findById(Long idUsuario, Long idGasto) {
+        UsuarioGastoId key = new UsuarioGastoId();
+        key.setIdUsuario(idUsuario);
+        key.setIdGasto(idGasto);
+        return usuarioGastoRepository.findById(key);
     }
 
     @Transactional(readOnly = true)
@@ -47,7 +51,10 @@ public class UsuarioGastoService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        usuarioGastoRepository.deleteById(id);
+    public void delete(Long idUsuario, Long idGasto) {
+        UsuarioGastoId key = new UsuarioGastoId();
+        key.setIdUsuario(idUsuario);
+        key.setIdGasto(idGasto);
+        usuarioGastoRepository.deleteById(key);
     }
 }
