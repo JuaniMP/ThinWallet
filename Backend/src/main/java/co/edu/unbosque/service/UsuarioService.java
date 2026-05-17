@@ -65,8 +65,9 @@ public class UsuarioService {
                 .filter(usuario -> passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash()));
         resultado.ifPresent(usuario -> {
             if (auditoriaService != null) {
+                String correoSanitizado = usuario.getCorreo().replace("\\", "\\\\").replace("\"", "\\\"");
                 auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
-                        "LOGIN", null, "{\"correo\":\"" + usuario.getCorreo() + "\"}");
+                        "LOGIN", null, "{\"correo\":\"" + correoSanitizado + "\"}");
             }
         });
         return resultado;
@@ -121,8 +122,9 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
 
         if (auditoriaService != null) {
+            String correoSanitizado = correo.replace("\\", "\\\\").replace("\"", "\\\"");
             auditoriaService.registrar(usuario.getIdUsuario(), "usuario", usuario.getIdUsuario(),
-                    "CAMBIO_CONTRASENA", null, "{\"correo\":\"" + correo + "\"}");
+                    "CAMBIO_CONTRASENA", null, "{\"correo\":\"" + correoSanitizado + "\"}");
         }
 
         resetTokens.remove(correo);
