@@ -19,7 +19,7 @@ export function CustomCategoryModal({
   isOpen,
   onClose,
   onCreated,
-  defaultTipo = "RETIRO",
+  defaultTipo: _defaultTipo = "RETIRO",
 }: CustomCategoryModalProps) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
