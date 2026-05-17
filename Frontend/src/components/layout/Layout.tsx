@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
-  const isGhost = user?.idTipoUsuario === 3;
+  const isGhost = user?.estado === 0;
   const ghostBlocked = ["/dashboard", "/transactions/new", "/goals", "/reports"];
 
   const navItems = [
