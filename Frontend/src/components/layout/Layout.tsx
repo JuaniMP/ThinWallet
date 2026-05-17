@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
-  const isGhost = user?.idTipoUsuario === 3;
+  const isGhost = user?.estado === 0;
   const ghostBlocked = ["/dashboard", "/transactions/new", "/goals", "/reports"];
 
   const navItems = [
@@ -390,21 +390,48 @@ export function Layout({ children }: LayoutProps) {
       {/* Modal reclamar perfil */}
       {showGhostModal && (
         <div className="modal-overlay" onClick={() => setShowGhostModal(false)}>
-          <div className="modal-card neo-shadow" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 340 }}>
-            <h3>Acceso restringido</h3>
-            <p style={{ fontSize: "0.9rem", margin: "12px 0 20px", color: "var(--on-surface-variant)", lineHeight: 1.5 }}>
-              Eres un usuario invitado. Para acceder a esta sección debes reclamar tu perfil y crear una cuenta completa.
-            </p>
-            <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setShowGhostModal(false)}>
+          <div
+            className="modal-card neo-shadow"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 360, padding: 0, overflow: "hidden" }}
+          >
+            {/* Header con icono */}
+            <div style={{ background: "var(--primary)", padding: "24px 24px 20px", textAlign: "center" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 40, color: "var(--background)", display: "block", marginBottom: 8 }}>
+                lock
+              </span>
+              <h3 style={{ color: "var(--background)", margin: 0, fontSize: "1rem", letterSpacing: "0.12em", fontWeight: 700 }}>
+                ACCESO RESTRINGIDO
+              </h3>
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: "24px 24px 20px" }}>
+              <p style={{ fontSize: "0.88rem", margin: "0 0 8px", color: "var(--primary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Cuenta invitada
+              </p>
+              <p style={{ fontSize: "0.85rem", margin: 0, color: "var(--on-surface-variant)", lineHeight: 1.6 }}>
+                No puedes acceder a esta funcionalidad porque no estás registrado. Reclama tu perfil para crear una cuenta completa y desbloquear todas las funciones.
+              </p>
+            </div>
+
+            {/* Acciones */}
+            <div style={{ display: "flex", borderTop: "2px solid var(--primary)" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowGhostModal(false)}
+                style={{ flex: 1, borderRadius: 0, border: "none", borderRight: "1px solid var(--primary)", padding: "14px" }}
+              >
                 Cerrar
               </button>
               <button
                 type="button"
-                className="btn-primary"
+                className="btn btn-primary"
                 onClick={() => { setShowGhostModal(false); navigate("/reclamar-perfil"); }}
+                style={{ flex: 1, borderRadius: 0, padding: "14px" }}
               >
-                Reclamar perfil
+                Reclamar perfil →
               </button>
             </div>
           </div>

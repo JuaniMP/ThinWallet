@@ -108,9 +108,15 @@ public class CirculoGastoService {
                         Usuario u = uc.getUsuario();
                         m.setNombreCompleto((u.getNombres() + " " + u.getApellidos()).trim());
                         m.setCorreo(u.getCorreo());
-                        m.setTokenInvitacionPersonal(u.getTokenReclamo());
                         String tipoNombre = resolverNombreTipoUsuario(u);
                         m.setTipoUsuario(tipoNombre != null ? tipoNombre : "REGISTRADO");
+                        // Si es fantasma y no tiene token, generar y persistir uno
+                        if ("FANTASMA".equalsIgnoreCase(m.getTipoUsuario()) && u.getTokenReclamo() == null) {
+                            String nuevoToken = tokenHashingService.generateToken();
+                            u.setTokenReclamo(nuevoToken);
+                            usuarioRepository.save(u);
+                        }
+                        m.setTokenInvitacionPersonal(u.getTokenReclamo());
                     }
                     return m;
                 }).collect(Collectors.toList());
@@ -143,7 +149,9 @@ public class CirculoGastoService {
 
     @Transactional(readOnly = true)
     public List<CirculoGasto> findAll() {
-        List<CirculoGasto> lista = circuloGastoRepository.findAll();
+        List<CirculoGasto> lista = circuloGastoRepository.findAll().stream()
+                .filter(c -> !"INACTIVO".equals(c.getEstado()))
+                .collect(Collectors.toList());
         populateTipos(lista);
         return lista;
     }
@@ -153,7 +161,7 @@ public class CirculoGastoService {
         return circuloGastoRepository.findById(id).map(c -> { populateTipo(c); return c; });
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<CirculoDetalleResponse> findDetalleById(Long id) {
         return circuloGastoRepository.findById(id)
                 .map(c -> { populateTipo(c); return c; })
@@ -179,7 +187,9 @@ public class CirculoGastoService {
 
     @Transactional(readOnly = true)
     public List<CirculoGasto> findByUsuarioCreador(Long idUsuarioCreador) {
-        List<CirculoGasto> lista = circuloGastoRepository.findByIdUsuarioCreador(idUsuarioCreador);
+        List<CirculoGasto> lista = circuloGastoRepository.findByIdUsuarioCreador(idUsuarioCreador).stream()
+                .filter(c -> !"INACTIVO".equals(c.getEstado()))
+                .collect(Collectors.toList());
         populateTipos(lista);
         return lista;
     }
@@ -204,6 +214,11 @@ public class CirculoGastoService {
                 todos.add(c);
             }
         }
+
+        // Excluir círculos desactivados
+        todos = todos.stream()
+                .filter(c -> !"INACTIVO".equals(c.getEstado()))
+                .collect(Collectors.toList());
 
         populateTipos(todos);
         return todos;
@@ -413,19 +428,20 @@ public class CirculoGastoService {
     @Transactional
     public void delete(Long id) {
         circuloGastoRepository.findById(id).ifPresent(c -> {
-            usuarioCirculoRepository.deleteByCirculoGastoId(id);
-            circuloGastoRepository.deleteById(id);
+            // Soft delete: desactivar sin borrar datos
+            c.setEstado("INACTIVO");
+            circuloGastoRepository.save(c);
             if (auditoriaService != null) {
-                auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DELETE",
-                        "{\"nombre\":\"" + c.getNombre() + "\"}", null);
+                auditoriaService.registrar(c.getIdUsuarioCreador(), "circulo_gasto", id, "DESACTIVAR",
+                        "{\"nombre\":\"" + c.getNombre() + "\"}", "{\"estado\":\"INACTIVO\"}");
             }
             if (actividadCirculoService != null) {
                 try {
-                    actividadCirculoService.registrarEvento(id, "CIRCULO_ELIMINADO",
+                    actividadCirculoService.registrarEvento(id, "CIRCULO_DESACTIVADO",
                             c.getIdUsuarioCreador(),
                             Map.of("nombre", c.getNombre()));
                 } catch (Exception e) {
-                    log.warn("MongoDB audit fallo para CIRCULO_ELIMINADO {}: {}", id, e.getMessage());
+                    log.warn("MongoDB audit fallo para CIRCULO_DESACTIVADO {}: {}", id, e.getMessage());
                 }
             }
         });

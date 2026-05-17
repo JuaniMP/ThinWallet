@@ -19,7 +19,7 @@ export function Profile() {
   const [loadingProfile, setLoadingProfile] = useState(!!authUser?.idUsuario);
   const [loadingSaldo, setLoadingSaldo] = useState(!!authUser?.idUsuario);
 
-  const isGhost = authUser?.idTipoUsuario === 3;
+  const isGhost = authUser?.estado === 0;
 
   const [idCopied, setIdCopied] = useState(false);
   const handleCopyId = () => {
@@ -187,7 +187,7 @@ export function Profile() {
     },
     {
       label: "Estado",
-      value: profileData?.estado === 1 ? "Activo" : "—",
+      value: profileData?.estado === 1 ? "Activo" : profileData?.estado === 0 ? "Fantasma" : "—",
       bg: "bg-high",
     },
   ];

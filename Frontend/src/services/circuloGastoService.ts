@@ -76,4 +76,8 @@ export const circleService = {
 
     return FALLBACK_TIPOS_CIRCULO;
   },
+
+  expulsarMiembro(idCirculo: number, idUsuario: number): Promise<unknown> {
+    return api.delete(`${CIRCULOS_GASTO_BASE}/${idCirculo}/expulsar/${idUsuario}`);
+  },
 };

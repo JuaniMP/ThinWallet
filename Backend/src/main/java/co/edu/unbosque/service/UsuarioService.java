@@ -89,15 +89,9 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public Optional<Usuario> loginWithToken(String tokenReclamo) {
-        // Obtener todos los usuarios para validar contra tokens hasheados en BD
-        List<Usuario> todosUsuarios = usuarioRepository.findAll();
-        for (Usuario usuario : todosUsuarios) {
-            if (usuario.getTokenReclamo() != null &&
-                tokenHashingService.validateToken(tokenReclamo, usuario.getTokenReclamo())) {
-                return Optional.of(usuario);
-            }
-        }
-        return Optional.empty();
+        return usuarioRepository.findAll().stream()
+                .filter(u -> tokenReclamo.equals(u.getTokenReclamo()))
+                .findFirst();
     }
 
     public void solicitarRecuperacionPassword(String correo) {

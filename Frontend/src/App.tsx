@@ -38,7 +38,7 @@ function NonGhostRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) return <div className="loading">Cargando...</div>;
   if (!isAuthenticated) return <Navigate to="/login" />;
-  if (user?.idTipoUsuario === 3) return <Navigate to="/grupos" />;
+  if (user?.estado === 0) return <Navigate to="/grupos" />;
   return <>{children}</>;
 }
 
