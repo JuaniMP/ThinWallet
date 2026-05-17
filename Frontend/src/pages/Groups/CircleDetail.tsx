@@ -79,43 +79,6 @@ export function CircleDetail() {
     }
   };
 
-  // Modal registrar gasto
-  const [showGastoModal, setShowGastoModal] = useState(false);
-  const [gastoForm, setGastoForm] = useState({ nombre: "", monto: "", idCategoria: "" });
-  const [gastoError, setGastoError] = useState("");
-  const [gastoSaving, setGastoSaving] = useState(false);
-
-  const handleRegistrarGasto = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const monto = parseFloat(gastoForm.monto);
-    if (!gastoForm.nombre.trim() || isNaN(monto) || monto <= 0) {
-      setGastoError("Nombre y monto son requeridos");
-      return;
-    }
-    if (!user?.idUsuario) return;
-    setGastoSaving(true);
-    setGastoError("");
-    try {
-      await transactionService.create({
-        nombre: gastoForm.nombre.trim(),
-        montoOriginal: monto,
-        idUsuario: user.idUsuario,
-        idCirculoGasto: Number(id),
-        idCategoria: gastoForm.idCategoria ? Number(gastoForm.idCategoria) : undefined,
-        idTipoMovimiento: 2,
-      });
-      setGastoForm({ nombre: "", monto: "", idCategoria: "" });
-      setShowGastoModal(false);
-      // Reload history
-      const txs = await transactionService.getByCirculo(Number(id));
-      setHistory(Array.isArray(txs) ? txs : []);
-    } catch (err: unknown) {
-      setGastoError(err instanceof Error ? err.message : "Error al registrar gasto");
-    } finally {
-      setGastoSaving(false);
-    }
-  };
-
   useEffect(() => {
     const circleId = Number(id);
     if (!Number.isFinite(circleId) || circleId <= 0) {
@@ -367,7 +330,7 @@ export function CircleDetail() {
               <button
                 className="btn btn-primary"
                 type="button"
-                onClick={() => { setGastoForm({ nombre: "", monto: "", idCategoria: "" }); setGastoError(""); setShowGastoModal(true); }}
+                onClick={() => { setGastoForm({ nombre: "", monto: 0, idCategoria: "", moneda: "COP" }); setGastoError(""); setShowGastoModal(true); }}
               >
                 Registrar gasto
               </button>
