@@ -187,7 +187,7 @@ export function Profile() {
     },
     {
       label: "Estado",
-      value: profileData?.estado === 1 ? "Activo" : "—",
+      value: profileData?.estado === 1 ? "Activo" : profileData?.estado === 0 ? "Fantasma" : "—",
       bg: "bg-high",
     },
   ];
