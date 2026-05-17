@@ -1,13 +1,18 @@
 import { api } from "./api";
 import type { LoginRequest, RegisterRequest, User } from "../types";
 
+interface LoginResponse {
+  token: string;
+  usuario: User;
+}
+
 export const authService = {
-  async login(credentials: LoginRequest): Promise<User> {
-    return api.post<User>("/usuarios/login", credentials);
+  async login(credentials: LoginRequest): Promise<LoginResponse> {
+    return api.post<LoginResponse>("/usuarios/login", credentials);
   },
 
-  async loginWithToken(token: string): Promise<User> {
-    return api.post<User>('/usuarios/login-token', { tokenInvitacion: token });
+  async loginWithToken(token: string): Promise<LoginResponse> {
+    return api.post<LoginResponse>('/usuarios/login-token', { tokenInvitacion: token });
   },
 
   async register(data: RegisterRequest): Promise<User> {
