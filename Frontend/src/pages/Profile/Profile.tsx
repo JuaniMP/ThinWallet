@@ -365,39 +365,32 @@ export function Profile() {
         </div>
 
         {/* Gastos programados y metas — accesos rápidos */}
-        <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
-          <h4>Mis Finanzas</h4>
+        <div className="profile-section bg-white" style={{ marginBottom: 16, opacity: isGhost ? 0.4 : 1, pointerEvents: isGhost ? "none" : "auto" }}>
+          <h4 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            Mis Finanzas
+            {isGhost && <span className="material-symbols-outlined" style={{ fontSize: "1rem", color: "var(--on-surface-variant)" }}>lock</span>}
+          </h4>
           <div
             className="section-row"
-            style={{ cursor: "pointer" }}
-            onClick={() => window.location.assign("/goals")}
+            style={{ cursor: isGhost ? "not-allowed" : "pointer" }}
+            onClick={() => !isGhost && window.location.assign("/goals")}
           >
             <div>
               <p className="row-label">Metas de Ahorro</p>
               <p className="row-desc">Gestiona tus objetivos financieros</p>
             </div>
-            <span
-              className="material-symbols-outlined"
-              style={{ color: "var(--primary)" }}
-            >
-              savings
-            </span>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>savings</span>
           </div>
           <div
             className="section-row"
-            style={{ cursor: "pointer" }}
-            onClick={() => window.location.assign("/scheduled")}
+            style={{ cursor: isGhost ? "not-allowed" : "pointer" }}
+            onClick={() => !isGhost && window.location.assign("/scheduled")}
           >
             <div>
               <p className="row-label">Gastos Programados</p>
               <p className="row-desc">Automatiza tus gastos recurrentes</p>
             </div>
-            <span
-              className="material-symbols-outlined"
-              style={{ color: "var(--primary)" }}
-            >
-              event_repeat
-            </span>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>event_repeat</span>
           </div>
         </div>
 
