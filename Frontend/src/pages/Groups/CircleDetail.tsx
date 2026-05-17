@@ -29,7 +29,7 @@ export function CircleDetail() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tokenFromStorage, setTokenFromStorage] = useState<string | null>(null);
   const [expulsando, setExpulsando] = useState<number | null>(null);
-  const isGhost = user?.idTipoUsuario === 3;
+  const isGhost = user?.estado === 0;
 
   const handleExpulsar = async (idUsuario: number) => {
     if (!id) return;
