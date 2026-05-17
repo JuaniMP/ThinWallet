@@ -1,24 +1,38 @@
-import type { Transaction } from '../../types';
+import type { Transaction } from "../../types";
 
 interface TransactionCardProps {
   transaction: Transaction;
   onDelete?: (id: string) => void;
 }
 
-export function TransactionCard({ transaction, onDelete }: TransactionCardProps) {
-  const isIncome = transaction.type === 'income';
+export function TransactionCard({
+  transaction,
+  onDelete,
+}: TransactionCardProps) {
+  const isIncome = transaction.type === "income";
 
   return (
     <div className={`transaction-card ${transaction.type}`}>
       <div className="transaction-info">
-        <span className="transaction-description">{transaction.description}</span>
+        <span className="transaction-description">
+          {transaction.description}
+        </span>
         <span className="transaction-date">
-          {new Date(transaction.date).toLocaleDateString('es-ES')}
+          {new Date(transaction.date).toLocaleDateString("es-ES")}
+        </span>
+        <span className="method-tag">
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: "14px" }}
+          >
+            {transaction.idTipoMovimiento === 2 ? "credit_card" : "payments"}
+          </span>
+          {transaction.idTipoMovimiento === 2 ? "Tarjeta" : "Efectivo"}
         </span>
       </div>
       <div className="transaction-amount">
-        <span className={isIncome ? 'amount-income' : 'amount-expense'}>
-          {isIncome ? '+' : '-'}${transaction.amount.toFixed(2)}
+        <span className={isIncome ? "amount-income" : "amount-expense"}>
+          {isIncome ? "+" : "-"}${transaction.amount.toFixed(2)}
         </span>
         {onDelete && (
           <button

@@ -23,9 +23,9 @@ public class UsuarioCirculoController {
         return ResponseEntity.ok(usuarioCirculoService.findAll());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UsuarioCirculo> getById(@PathVariable Long id) {
-        return usuarioCirculoService.findById(id)
+    @GetMapping("/{idUsuario}/{idCirculoGasto}")
+    public ResponseEntity<UsuarioCirculo> getById(@PathVariable Long idUsuario, @PathVariable Long idCirculoGasto) {
+        return usuarioCirculoService.findById(idUsuario, idCirculoGasto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -45,16 +45,16 @@ public class UsuarioCirculoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioCirculoService.create(request));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UsuarioCirculo> update(@PathVariable Long id, @Valid @RequestBody UsuarioCirculoRequest request) {
-        return usuarioCirculoService.update(id, request)
+    @PutMapping("/{idUsuario}/{idCirculoGasto}")
+    public ResponseEntity<UsuarioCirculo> update(@PathVariable Long idUsuario, @PathVariable Long idCirculoGasto, @Valid @RequestBody UsuarioCirculoRequest request) {
+        return usuarioCirculoService.update(idUsuario, idCirculoGasto, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        usuarioCirculoService.delete(id);
+    @DeleteMapping("/{idUsuario}/{idCirculoGasto}")
+    public ResponseEntity<Void> delete(@PathVariable Long idUsuario, @PathVariable Long idCirculoGasto) {
+        usuarioCirculoService.delete(idUsuario, idCirculoGasto);
         return ResponseEntity.noContent().build();
     }
 }

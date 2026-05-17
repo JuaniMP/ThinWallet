@@ -1,7 +1,15 @@
-import { useState } from 'react';
-import { Input } from '../common/Input';
-import { Button } from '../common/Button';
-import { CategorySelect } from '../category/CategorySelect';
+import { useState } from "react";
+import { Input } from "../common/Input";
+import { Button } from "../common/Button";
+import { MoneyInput } from "../common/MoneyInput";
+import { SUPPORTED_CURRENCIES, type CurrencyCode } from "../../context/CurrencyContext";
+import { CategorySelect } from "../category/CategorySelect";
+import {
+  validateAmount,
+  validateDescription,
+  validateCurrency,
+} from "../../utils/validators";
+import { useAuth } from "../../context/AuthContext";
 
 interface TransactionFormProps {
   onSubmit: (data: {
@@ -10,66 +18,102 @@ interface TransactionFormProps {
     tipoMovimiento: string;
     idUsuario: number;
     idCategoria?: number;
+    idTipoMovimiento: number;
+    monedaOriginal: string;
+    tasaCambio: number;
   }) => Promise<void>;
   isLoading?: boolean;
 }
 
 export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<'DEPOSITO' | 'RETIRO'>('RETIRO');
-  const [categoryId, setCategoryId] = useState<number | ''>('');
-  const [error, setError] = useState('');
+  const { user } = useAuth();
+  const isGhost = user?.estado === 0;
+  const [amount, setAmount] = useState<number>(0);
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<"DEPOSITO" | "RETIRO" | null>(isGhost ? "DEPOSITO" : null);
+  const [ghostRetiroMsg, setGhostRetiroMsg] = useState(false);
+  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
+  const [moneda, setMoneda] = useState<CurrencyCode>("COP");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setError('El monto debe ser un número positivo');
+    // Validar tipo de movimiento
+    if (!type) {
+      setError("Selecciona Retiro o Depósito");
       return;
     }
 
-    if (!description.trim()) {
-      setError('La descripción es requerida');
+    // Validar método de pago
+    if (!paymentMethodId) {
+      setError("Selecciona un método de pago");
       return;
     }
 
+    // Validar categoría
     if (!categoryId) {
-      setError('Por favor subministra una categoría válida');
+      setError("Selecciona una categoría");
       return;
     }
 
-    // Get the user from localStorage
-    const storedUser = localStorage.getItem('user');
+    // Validar monto
+    const amountError = validateAmount(amount);
+    if (amountError) {
+      setError(amountError);
+      return;
+    }
+
+    // Validar descripción
+    const descError = validateDescription(description);
+    if (descError) {
+      setError(descError);
+      return;
+    }
+
+    // Validar moneda
+    const currencyError = validateCurrency(moneda);
+    if (currencyError) {
+      setError(currencyError);
+      return;
+    }
+
+
+    const storedUser = localStorage.getItem("user");
     let idUsuario = 0;
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
         idUsuario = user.idUsuario;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     if (!idUsuario) {
-      setError('No se pudo identificar al usuario. Inicia sesión nuevamente.');
+      setError("No se pudo identificar al usuario. Inicia sesión nuevamente.");
       return;
     }
 
     try {
       await onSubmit({
         nombre: description.trim(),
-        montoOriginal: amountNum,
+        montoOriginal: amount,
         tipoMovimiento: type,
         idUsuario,
         idCategoria: Number(categoryId),
+        idTipoMovimiento: paymentMethodId,
+        monedaOriginal: moneda,
+        tasaCambio: 1,
       });
-      
-      setAmount('');
-      setDescription('');
-      setCategoryId('');
+
+      setAmount(0);
+      setDescription("");
+      setCategoryId("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al guardar');
+      setError(err instanceof Error ? err.message : "Error al guardar");
     }
   };
 
@@ -80,42 +124,82 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
       <div className="type-selector">
         <button
           type="button"
-          className={`type-btn ${type === 'RETIRO' ? 'active expense' : ''}`}
+          className={`type-btn ${type === "RETIRO" ? "active expense" : ""}`}
           onClick={() => {
-            setType('RETIRO');
-            setCategoryId(''); // Reset category when type changes
+            if (isGhost) { setGhostRetiroMsg(true); return; }
+            setGhostRetiroMsg(false);
+            setType("RETIRO");
+            setCategoryId("");
           }}
         >
           Retiro
         </button>
         <button
           type="button"
-          className={`type-btn ${type === 'DEPOSITO' ? 'active income' : ''}`}
+          className={`type-btn ${type === "DEPOSITO" ? "active income" : ""}`}
           onClick={() => {
-            setType('DEPOSITO');
-            setCategoryId(''); // Reset category when type changes
+            setGhostRetiroMsg(false);
+            setType("DEPOSITO");
+            setCategoryId("");
           }}
         >
           Depósito
         </button>
       </div>
+      {ghostRetiroMsg && (
+        <div style={{ margin: "12px 0", padding: "14px 16px", borderLeft: "4px solid var(--primary)", background: "var(--surface-container-low)" }}>
+          <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--primary)", marginBottom: 6 }}>
+            Cuenta invitada
+          </p>
+          <p style={{ margin: 0, fontSize: "0.84rem", color: "var(--on-surface-variant)", lineHeight: 1.5 }}>
+            No puedes registrar gastos personales sin una cuenta activa. Solo puedes registrar depósitos o gastos dentro de un círculo.
+          </p>
+        </div>
+      )}
 
-      <CategorySelect 
-        type={type} 
-        value={categoryId} 
-        onChange={setCategoryId} 
-      />
+      <div className="input-group">
+        <label>Método de Pago</label>
+        <div className="type-selector payment-method">
+          <button
+            type="button"
+            className={`type-btn payment-btn ${paymentMethodId === 1 ? "active cash" : ""}`}
+            onClick={() => setPaymentMethodId(1)}
+          >
+            <span className="material-symbols-outlined">payments</span>
+            Efectivo
+          </button>
+          <button
+            type="button"
+            className={`type-btn payment-btn ${paymentMethodId === 2 ? "active card" : ""}`}
+            onClick={() => setPaymentMethodId(2)}
+          >
+            <span className="material-symbols-outlined">credit_card</span>
+            Tarjeta
+          </button>
+        </div>
+      </div>
 
-      <Input
+      <CategorySelect type={type} value={categoryId} onChange={setCategoryId} />
+
+      <MoneyInput
         label="Monto"
-        type="number"
-        step="0.01"
-        min="0"
         name="amount"
         value={amount}
-        onChange={(e) => setAmount(e.target.value)}
+        onChange={setAmount}
         required
       />
+      <div className="input-group">
+        <label htmlFor="moneda">Moneda</label>
+        <select
+          id="moneda"
+          value={moneda}
+          onChange={(e) => setMoneda(e.target.value as CurrencyCode)}
+        >
+          {SUPPORTED_CURRENCIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
 
       <Input
         label="Descripción"
@@ -123,16 +207,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         name="description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        maxLength={500}
-        required
-      />
-
-      <Input
-        label="Fecha"
-        type="date"
-        name="date"
-        value={new Date().toISOString().split('T')[0]}
-        onChange={() => {}}
+        maxLength={200}
         required
       />
 

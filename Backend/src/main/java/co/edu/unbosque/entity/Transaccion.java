@@ -3,6 +3,7 @@ package co.edu.unbosque.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transaccion")
@@ -26,14 +27,20 @@ public class Transaccion {
     @Column(name = "tasa_cambio")
     private BigDecimal tasaCambio;
 
-    @Column(name = "tipo_movimiento")
+    @Transient
     private String tipoMovimiento;
+
+    @Transient
+    private String tipoCategoria;
 
     @Column(name = "modalidad_division")
     private String modalidadDivision;
 
     @Column(name = "contexto")
     private String contexto;
+
+    @Column(name = "fecha_ejecucion", insertable = false, updatable = false)
+    private LocalDateTime fechaEjecucion;
 
     @Column(name = "id_usuario")
     private Long idUsuario;
@@ -46,4 +53,7 @@ public class Transaccion {
 
     @Column(name = "id_gasto")
     private Long idGasto;
+
+    @Column(name = "id_tipo_movimiento")
+    private Long idTipoMovimiento;
 }

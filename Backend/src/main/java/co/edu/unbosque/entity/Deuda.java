@@ -44,4 +44,7 @@ public class Deuda {
 
     @Column(name = "id_usuario_acreedor")
     private Long idUsuarioAcreedor;
+
+    @Transient
+    private String moneda;
 }

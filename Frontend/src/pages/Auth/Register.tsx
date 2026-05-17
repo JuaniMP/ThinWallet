@@ -1,55 +1,93 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { Button } from "../../components/common/Button";
+import { Input } from "../../components/common/Input";
+import { PasswordStrengthIndicator } from "../../components/common/PasswordStrengthIndicator";
+import {
+  validateName,
+  validateUsername,
+  validateEmail,
+  validatePassword,
+} from "../../utils/validators";
 
 export function Register() {
-  const [nombres, setNombres] = useState('');
-  const [apellidos, setApellidos] = useState('');
-  const [nombreUsuario, setNombreUsuario] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nombres, setNombres] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [nombreUsuario, setNombreUsuario] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contrasena, setContrasena] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    if (contrasena !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+    // Validar nombres
+    const nombresError = validateName(nombres, "Nombres");
+    if (nombresError) {
+      setError(nombresError);
       return;
     }
 
-    if (contrasena.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    // Validar apellidos
+    const apellidosError = validateName(apellidos, "Apellidos");
+    if (apellidosError) {
+      setError(apellidosError);
+      return;
+    }
+
+    // Validar nombre de usuario
+    const usernameError = validateUsername(nombreUsuario);
+    if (usernameError) {
+      setError(usernameError);
+      return;
+    }
+
+    // Validar email
+    const emailError = validateEmail(correo);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
+    // Validar que las contraseñas coincidan
+    if (contrasena !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    // Validar contraseña fuerte
+    const passwordError = validatePassword(contrasena);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
     if (!acceptedTerms) {
-      setError('Debes aceptar los términos y condiciones');
+      setError("Debes aceptar los términos y condiciones");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await register({ 
-        nombres, 
-        apellidos, 
-        nombreUsuario, 
-        correo, 
-        contrasena 
+      await register({
+        nombres,
+        apellidos,
+        nombreUsuario,
+        correo,
+        contrasena,
       });
-      navigate('/login');
+      navigate("/verify");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear cuenta');
+      setError(err instanceof Error ? err.message : "Error al crear cuenta");
     } finally {
       setIsLoading(false);
     }
@@ -60,19 +98,31 @@ export function Register() {
       <main className="register-layout neo-shadow">
         {/* Left Side: Branding (Desktop) */}
         <section className="register-brand-panel">
-          <div style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ position: "relative", zIndex: 10 }}>
             <div className="brand-header">
-              <span className="material-symbols-outlined" style={{ fontSize: '2.25rem' }}>account_balance</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "2.25rem" }}
+              >
+                account_balance
+              </span>
               <h1>THIN WALLET</h1>
             </div>
             <div className="hero-text">
-              <h2>THE<br />BOTANICAL<br />ARCHIVIST.</h2>
-              <p>Organiza tus activos digitales con la precisión de un herbario real. Estructura, seguridad y crecimiento orgánico.</p>
+              <h2>
+                THIN
+                <br />
+                WALLET.
+              </h2>
+              <p>
+                Controla tus gastos, organiza tus círculos y alcanza tus metas
+                financieras con facilidad.
+              </p>
             </div>
           </div>
-          <div style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ position: "relative", zIndex: 10 }}>
             <div className="version-badge">
-              <p>Version 2.0.4 - 2024</p>
+              <p>v1.2.0 — 2026</p>
             </div>
           </div>
         </section>
@@ -82,7 +132,7 @@ export function Register() {
           <header>
             <h3>NUEVA CUENTA</h3>
             <div className="accent-bar" />
-            <p>Empieza a cultivar tu patrimonio hoy mismo.</p>
+            <p>Crea tu cuenta y empieza a gestionar tus finanzas personales.</p>
           </header>
 
           {error && <div className="error-alert">{error}</div>}
@@ -134,16 +184,19 @@ export function Register() {
             />
 
             <div className="form-row">
-              <Input
-                label="Contraseña"
-                type="password"
-                name="contrasena"
-                icon="lock"
-                placeholder="********"
-                value={contrasena}
-                onChange={(e) => setContrasena(e.target.value)}
-                required
-              />
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="Contraseña"
+                  type="password"
+                  name="contrasena"
+                  icon="lock"
+                  placeholder="********"
+                  value={contrasena}
+                  onChange={(e) => setContrasena(e.target.value)}
+                  required
+                />
+                {contrasena && <PasswordStrengthIndicator password={contrasena} />}
+              </div>
               <Input
                 label="Confirmar Contraseña"
                 type="password"
@@ -176,8 +229,7 @@ export function Register() {
           {/* Footer */}
           <div className="register-footer">
             <p>
-              ¿Ya tienes cuenta?{' '}
-              <Link to="/login">Inicia sesión</Link>
+              ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
             </p>
           </div>
         </section>

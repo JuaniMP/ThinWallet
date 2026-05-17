@@ -33,4 +33,25 @@ public class EmailService {
             throw new RuntimeException("Error al enviar el correo de recuperacion, por favor intente nuevamente mas tarde", e);
         }
     }
+
+    public void enviarCodigoVerificacion(String emailTo, String codigo) {
+        log.info("Enviando correo de verificacion de registro a {}", emailTo);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("ThinWalletTeam@gmail.com");
+            message.setTo(emailTo);
+            message.setSubject("ThinWallet - Verificacion de cuenta");
+            message.setText("Hola,\n\n" +
+                    "Gracias por registrarte en ThinWallet. Tu codigo de verificacion para activar tu cuenta es:\n\n" +
+                    codigo + "\n\n" +
+                    "Por favor, ingresa este codigo en la aplicacion para completar tu registro.\n\n" +
+                    "Atentamente,\n" +
+                    "Equipo de ThinWallet");
+            javaMailSender.send(message);
+            log.info("Correo de verificacion enviado exitosamente a {}", emailTo);
+        } catch (Exception e) {
+            log.error("Fallo al enviar el correo de verificacion a {}: {}", emailTo, e.getMessage());
+            throw new RuntimeException("Error al enviar el correo de verificacion", e);
+        }
+    }
 }
