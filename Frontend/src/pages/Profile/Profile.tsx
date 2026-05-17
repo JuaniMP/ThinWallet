@@ -343,30 +343,22 @@ export function Profile() {
         {/* Preferencia de moneda */}
         <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
           <h4>Moneda Preferida</h4>
-          <div className="section-row" style={{ alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ color: "var(--primary)", fontSize: "1.5rem" }}
-              >
-                currency_exchange
-              </span>
-              <div>
-                <p className="row-label">Visualizar todo en</p>
-                <p className="row-desc">
-                  Todos los valores se convertirán y mostrarán en esta moneda
-                </p>
-              </div>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)", fontSize: "1.4rem", flexShrink: 0 }}>
+              currency_exchange
+            </span>
+            <p className="row-desc" style={{ margin: 0 }}>
+              Todos los valores se convertirán y mostrarán en esta moneda
+            </p>
+          </div>
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <label>Visualizar todo en</label>
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-              className="currency-pref-select"
             >
               {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
