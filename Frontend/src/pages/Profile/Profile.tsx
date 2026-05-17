@@ -424,8 +424,11 @@ export function Profile() {
         </div>
 
         {/* Security Section */}
-        <div className="profile-section bg-white">
-          <h4>Seguridad & Privacidad</h4>
+        <div className="profile-section bg-white" style={{ opacity: isGhost ? 0.4 : 1, pointerEvents: isGhost ? "none" : "auto" }}>
+          <h4 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            Seguridad & Privacidad
+            {isGhost && <span className="material-symbols-outlined" style={{ fontSize: "1rem", color: "var(--on-surface-variant)" }}>lock</span>}
+          </h4>
 
           {/* Cambiar contraseña */}
           <div className="section-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
