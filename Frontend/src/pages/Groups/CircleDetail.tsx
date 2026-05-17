@@ -12,27 +12,6 @@ import type { CirculoDetalle, Transaccion, Category } from "../../types";
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80";
 
-const PRESET_IMAGES = [
-  // Viajes
-  { url: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80", label: "Viaje" },
-  { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", label: "Playa" },
-  { url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80", label: "Montaña" },
-  { url: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=800&q=80", label: "Ciudad" },
-  { url: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80", label: "Tokio" },
-  // Comida y salidas
-  { url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", label: "Comida" },
-  { url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80", label: "Restaurante" },
-  { url: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80", label: "Cena" },
-  { url: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80", label: "Bebidas" },
-  { url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80", label: "Fiesta" },
-  // Amigos y familia
-  { url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80", label: "Amigos" },
-  { url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80", label: "Grupo" },
-  // Deportes y hogar
-  { url: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=800&q=80", label: "Deporte" },
-  { url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80", label: "Hogar" },
-  { url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80", label: "Naturaleza" },
-];
 
 const fmt = (v: number) =>
   v.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -216,71 +195,19 @@ export function CircleDetail() {
                   <span className="material-symbols-outlined">edit</span>
                 </button>
                 {editingImage && (
-                  <div className="circle-hero-editor" style={{ display: "block", padding: "16px" }}>
-                    <p style={{ fontSize: "0.78rem", fontWeight: 600, marginBottom: 10, color: "var(--on-surface-variant)", letterSpacing: "0.05em" }}>
-                      ELIGE UNA PORTADA
-                    </p>
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(5, 1fr)",
-                      gap: 8,
-                      marginBottom: 14,
-                    }}>
-                      {PRESET_IMAGES.map((img) => (
-                        <button
-                          key={img.url}
-                          type="button"
-                          title={img.label}
-                          onClick={() => { setDraftImage(img.url); }}
-                          style={{
-                            padding: 0,
-                            border: draftImage === img.url ? "3px solid var(--primary)" : "3px solid transparent",
-                            borderRadius: 8,
-                            overflow: "hidden",
-                            cursor: "pointer",
-                            aspectRatio: "16/9",
-                            background: "none",
-                            position: "relative",
-                          }}
-                        >
-                          <img
-                            src={img.url}
-                            alt={img.label}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                          />
-                          <span style={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            background: "rgba(0,0,0,0.45)",
-                            color: "#fff",
-                            fontSize: "0.6rem",
-                            padding: "2px 4px",
-                            textAlign: "center",
-                            letterSpacing: "0.05em",
-                          }}>
-                            {img.label.toUpperCase()}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input
-                        value={draftImage}
-                        onChange={(event) => setDraftImage(event.target.value)}
-                        placeholder="O pega una URL personalizada"
-                        style={{ flex: 1, fontSize: "0.8rem" }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleSaveImage}
-                        style={{ flexShrink: 0 }}
-                      >
-                        Guardar
-                      </button>
-                    </div>
+                  <div className="circle-hero-editor">
+                    <input
+                      value={draftImage}
+                      onChange={(event) => setDraftImage(event.target.value)}
+                      placeholder="Pega URL de imagen"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSaveImage}
+                    >
+                      Guardar
+                    </button>
                   </div>
                 )}
               </div>
