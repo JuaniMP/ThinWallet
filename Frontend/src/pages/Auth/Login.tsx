@@ -212,16 +212,17 @@ export function Login() {
             <p
               style={{
                 fontSize: "0.85rem",
-                marginBottom: "16px",
+                marginBottom: "20px",
                 color: "var(--on-surface-variant)",
+                lineHeight: 1.5,
               }}
             >
               Ingresa el token personal que recibiste para acceder a tu círculo.
             </p>
             {error && <div className="error-alert">{error}</div>}
-            <form onSubmit={handleTokenSubmit}>
-              <div className="input-group">
-                <label>Token de acceso</label>
+            <form onSubmit={handleTokenSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontWeight: 600, letterSpacing: "0.05em", fontSize: "0.78rem" }}>Token de acceso</label>
                 <input
                   type="text"
                   value={tokenInput}
@@ -233,11 +234,11 @@ export function Login() {
               </div>
               <button
                 type="submit"
-                className="submit-btn neo-shadow"
+                className="btn btn-primary"
                 disabled={isLoading || !tokenInput.trim()}
-                style={{ width: "100%", marginTop: "12px" }}
+                style={{ width: "100%", marginTop: "4px" }}
               >
-                {isLoading ? "Verificando..." : "Acceder"}
+                {isLoading ? "Verificando..." : "Acceder →"}
               </button>
             </form>
           </div>
