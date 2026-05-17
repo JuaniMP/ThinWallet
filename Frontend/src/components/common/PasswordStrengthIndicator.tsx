@@ -2,101 +2,53 @@ interface PasswordStrengthIndicatorProps {
   password: string;
 }
 
-export function PasswordStrengthIndicator({
-  password,
-}: PasswordStrengthIndicatorProps) {
+export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps) {
   const requirements = [
     { test: password.length >= 8, label: "Al menos 8 caracteres" },
     { test: /[a-z]/.test(password), label: "Una letra minúscula" },
     { test: /[A-Z]/.test(password), label: "Una letra mayúscula" },
     { test: /\d/.test(password), label: "Un número" },
-    { test: /@$!%*?&/.test(password), label: "Un carácter especial (@$!%*?&)" },
+    { test: /@$!%*?&/.test(password), label: "Carácter especial (@$!%*?&)" },
   ];
 
-  const metRequirements = requirements.filter((r) => r.test).length;
+  const metCount = requirements.filter((r) => r.test).length;
   const strength =
-    metRequirements === 0
-      ? "none"
-      : metRequirements <= 2
-        ? "weak"
-        : metRequirements <= 3
-          ? "fair"
-          : "strong";
+    metCount === 0 ? "none"
+    : metCount <= 2 ? "weak"
+    : metCount <= 3 ? "fair"
+    : "strong";
 
-  const strengthColor = {
-    none: "#999",
-    weak: "#ff6b6b",
-    fair: "#ffd93d",
-    strong: "#6bcb77",
-  };
+  const strengthMeta = {
+    none:  { label: "Sin definir", color: "var(--outline)" },
+    weak:  { label: "Débil",       color: "var(--error)" },
+    fair:  { label: "Aceptable",   color: "#d4a017" },
+    strong:{ label: "Fuerte",      color: "var(--secondary)" },
+  } as const;
+
+  const { label: strengthLabel, color: barColor } = strengthMeta[strength];
+  const pct = (metCount / 5) * 100;
 
   return (
-    <div style={{ marginTop: 12, fontSize: 13 }}>
-      {/* Barra de fortaleza */}
-      <div style={{ marginBottom: 8 }}>
+    <div className="password-strength-indicator">
+      {/* Barra de progreso */}
+      <div className="psi-bar-track">
         <div
-          style={{
-            height: 4,
-            backgroundColor: "#eee",
-            borderRadius: 2,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              width: `${(metRequirements / 5) * 100}%`,
-              backgroundColor: strengthColor[strength],
-              transition: "width 0.3s ease",
-            }}
-          />
-        </div>
-        <div style={{ marginTop: 4, fontSize: 12, color: strengthColor[strength] }}>
-          Fortaleza: {strength === "none" ? "Sin definir" : strength === "weak" ? "Débil" : strength === "fair" ? "Aceptable" : "Fuerte"}
-        </div>
+          className="psi-bar-fill"
+          style={{ width: `${pct}%`, background: barColor, transition: "width 0.3s ease, background 0.3s ease" }}
+        />
       </div>
+      <p className="psi-label" style={{ color: barColor }}>
+        Fortaleza: <strong>{strengthLabel}</strong>
+      </p>
 
       {/* Requisitos */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div className="psi-requirements">
         {requirements.map((req) => (
-          <div
-            key={req.label}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              color: req.test ? "#6bcb77" : "#999",
-            }}
-          >
-            <span
-              style={{
-                display: "inline-block",
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                border: `1px solid ${req.test ? "#6bcb77" : "#ddd"}`,
-                backgroundColor: req.test ? "#6bcb77" : "transparent",
-              }}
-            >
-              {req.test && (
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "100%",
-                    height: "100%",
-                    color: "white",
-                    fontSize: 12,
-                    fontWeight: "bold",
-                  }}
-                >
-                  ✓
-                </span>
-              )}
+          <div key={req.label} className={`psi-req${req.test ? " psi-req--met" : ""}`}>
+            <span className="material-symbols-outlined psi-icon">
+              {req.test ? "check_circle" : "radio_button_unchecked"}
             </span>
-            <span>{req.label}</span>
+            <span className="psi-req-label">{req.label}</span>
           </div>
         ))}
       </div>
