@@ -193,7 +193,15 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         </div>
       </div>
 
-      <CategorySelect type={type} value={categoryId} onChange={setCategoryId} />
+      <CategorySelect
+        type={type}
+        value={categoryId}
+        onChange={setCategoryId}
+        onTypeHint={(tipo) => {
+          // Si la categoría es AMBOS y aún no se eligió tipo, auto-seleccionar Retiro (gasto)
+          if (tipo === "AMBOS" && !type) setType("RETIRO");
+        }}
+      />
 
       <MoneyInput
         label="Monto"

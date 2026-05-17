@@ -1620,6 +1620,234 @@
 }
 
 /* ===========================
+   DEBT CARDS (REDESIGN)
+   =========================== */
+
+/* Balance neto */
+.debt-net-balance {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  padding: 10px 14px;
+  background: var(--surface-container-low);
+  border-left: 4px solid var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Hint texto bajo el heading de sección */
+.debt-section-hint {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Nuevo diseño de tarjeta (reemplaza .debt-card y .receivable-card) */
+.debt-card {
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.debt-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 var(--primary);
+}
+
+/* Tira coloreada en el tope */
+.debt-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+.debt-card--receive::before { background: var(--secondary); }
+.debt-card--pay::before     { background: var(--error, #c00); opacity: 0.7; }
+
+.debt-card--receive { background: var(--secondary-container); }
+.debt-card--pay     { background: var(--surface); }
+
+/* Header de la tarjeta: avatar + nombre + método */
+.debt-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.debt-card__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.debt-card__avatar .material-symbols-outlined {
+  font-size: 1.125rem;
+  color: var(--on-secondary);
+}
+.debt-card__avatar--pay {
+  background: var(--primary);
+}
+.debt-card__avatar--pay .material-symbols-outlined {
+  color: var(--on-primary);
+}
+
+.debt-card__person {
+  flex: 1;
+  min-width: 0;
+}
+.debt-card__person h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.debt-card__badge {
+  display: inline-block;
+  font-family: var(--font-label);
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+.debt-card__badge--pending {
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+}
+
+.debt-card__method {
+  font-family: var(--font-label);
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Monto con signo */
+.debt-card__amount {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+.debt-card__amount--income  { color: var(--secondary); }
+.debt-card__amount--expense { color: var(--on-surface); }
+
+/* Botones de acción unificados */
+.action-btn {
+  width: 100%;
+  padding: 10px 16px;
+  font-family: var(--font-headline);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 2px solid var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+.action-btn .material-symbols-outlined { font-size: 1rem; }
+
+.action-btn--receive {
+  background: var(--secondary);
+  color: var(--on-secondary);
+  border-color: var(--secondary);
+}
+.action-btn--receive:hover   { background: var(--on-secondary); color: var(--secondary); }
+.action-btn--receive:active  { transform: translate(1px, 1px); box-shadow: none; }
+.action-btn--receive:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.action-btn--pay {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.action-btn--pay:hover   { background: var(--tertiary-container); color: var(--primary); }
+.action-btn--pay:active  { transform: translate(1px, 1px); box-shadow: none; }
+.action-btn--pay:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* History item income/expense color */
+.item-amount--income  { color: var(--secondary); font-weight: 700; }
+.item-amount--expense { color: var(--primary);   font-weight: 700; }
+
+/* ===========================
+   PASSWORD STRENGTH INDICATOR
+   =========================== */
+.password-strength-indicator {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--surface-container-low);
+  border-left: 4px solid var(--primary);
+}
+
+.psi-bar-track {
+  height: 5px;
+  background: var(--outline-variant, #ddd);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.psi-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.psi-label {
+  font-size: 0.75rem;
+  font-family: var(--font-label);
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.psi-requirements {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+
+.psi-req {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+.psi-req--met {
+  color: var(--secondary);
+}
+
+.psi-icon {
+  font-size: 1rem !important;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.psi-req-label {
+  line-height: 1.3;
+}
+
+/* ===========================
    NEW TRANSACTION MODAL
    =========================== */
 .modal-backdrop {
