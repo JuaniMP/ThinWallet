@@ -282,118 +282,61 @@ export function Profile() {
 
         {/* Reclamar perfil para cuentas fantasma */}
         {isGhost && (
-          <div
-            className="profile-section neo-shadow"
-            style={{ background: "var(--accent)", marginBottom: 16 }}
-          >
-            <h4 style={{ color: "var(--primary)" }}>Cuenta Invitada</h4>
-            <p
-              style={{
-                fontSize: "0.85rem",
-                marginBottom: 12,
-                color: "var(--on-surface-variant)",
-              }}
-            >
-              Eres un usuario invitado. Reclamá tu perfil para acceder con tu
-              propio correo y contraseña.
-            </p>
-            {reclamarOk && (
-              <p style={{ color: "var(--primary)", fontWeight: 700 }}>
-                ¡Perfil reclamado exitosamente!
-              </p>
-            )}
-            {!reclamarOk && (
-              <button
-                className="btn-primary"
-                onClick={() => setShowReclamar((v) => !v)}
-              >
-                {showReclamar ? "Cancelar" : "Reclamar mi perfil"}
-              </button>
-            )}
-            {showReclamar && !reclamarOk && (
-              <form
-                onSubmit={(e) => void handleReclamar(e)}
-                style={{
-                  marginTop: 16,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                <label style={{ fontSize: "0.85rem" }}>
-                  Nombres
-                  <input
-                    type="text"
-                    value={reclamarForm.nombres}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        nombres: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Apellidos
-                  <input
-                    type="text"
-                    value={reclamarForm.apellidos}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        apellidos: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Nombre de usuario
-                  <input
-                    type="text"
-                    value={reclamarForm.nombreUsuario}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        nombreUsuario: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Correo electrónico
-                  <input
-                    type="email"
-                    value={reclamarForm.correo}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({ ...f, correo: e.target.value }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Contraseña
-                  <input
-                    type="password"
-                    value={reclamarForm.contrasena}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        contrasena: e.target.value,
-                      }))
-                    }
-                    required
-                    minLength={6}
-                  />
-                </label>
-                {reclamarError && <p className="error-msg">{reclamarError}</p>}
-                <button type="submit" className="btn-primary">
-                  Confirmar y reclamar
-                </button>
-              </form>
-            )}
+          <div className="profile-section neo-shadow" style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ background: "var(--primary)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", color: "var(--background)", opacity: 0.75 }}>CUENTA INVITADA</p>
+                <h4 style={{ margin: "2px 0 0", color: "var(--background)", fontSize: "1rem", fontWeight: 700 }}>Reclama tu perfil</h4>
+              </div>
+              <span className="material-symbols-outlined" style={{ color: "var(--background)", fontSize: 28, opacity: 0.8 }}>person_add</span>
+            </div>
+
+            <div style={{ padding: "16px 20px" }}>
+              {reclamarOk ? (
+                <p style={{ color: "var(--primary)", fontWeight: 700, margin: 0 }}>¡Perfil reclamado exitosamente!</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: "0.85rem", marginBottom: 16, color: "var(--on-surface-variant)", lineHeight: 1.5 }}>
+                    Eres un usuario invitado. Registra tus datos para acceder con tu propio correo y contraseña.
+                  </p>
+
+                  {!showReclamar ? (
+                    <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => setShowReclamar(true)}>
+                      Reclamar mi perfil →
+                    </button>
+                  ) : (
+                    <form onSubmit={(e) => void handleReclamar(e)} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      <div className="input-group">
+                        <label>Nombres</label>
+                        <input type="text" value={reclamarForm.nombres} onChange={(e) => setReclamarForm((f) => ({ ...f, nombres: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Apellidos</label>
+                        <input type="text" value={reclamarForm.apellidos} onChange={(e) => setReclamarForm((f) => ({ ...f, apellidos: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Nombre de usuario</label>
+                        <input type="text" value={reclamarForm.nombreUsuario} onChange={(e) => setReclamarForm((f) => ({ ...f, nombreUsuario: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Correo electrónico</label>
+                        <input type="email" value={reclamarForm.correo} onChange={(e) => setReclamarForm((f) => ({ ...f, correo: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" value={reclamarForm.contrasena} onChange={(e) => setReclamarForm((f) => ({ ...f, contrasena: e.target.value }))} required minLength={6} />
+                      </div>
+                      {reclamarError && <p className="error-msg">{reclamarError}</p>}
+                      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                        <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowReclamar(false)}>Cancelar</button>
+                        <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Confirmar y reclamar</button>
+                      </div>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
