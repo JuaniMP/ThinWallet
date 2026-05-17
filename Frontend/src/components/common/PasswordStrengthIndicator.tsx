@@ -1,5 +1,3 @@
-import { validatePassword } from "../../utils/validators";
-
 interface PasswordStrengthIndicatorProps {
   password: string;
 }
