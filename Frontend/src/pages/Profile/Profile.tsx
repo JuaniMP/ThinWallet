@@ -9,6 +9,7 @@ import {
   SUPPORTED_CURRENCIES,
   type CurrencyCode,
 } from "../../context/CurrencyContext";
+import { validatePassword, validateName, validateUsername, validateEmail } from "../../utils/validators";
 import type { User } from "../../types";
 
 export function Profile() {
@@ -44,12 +45,14 @@ export function Profile() {
   const handleCambiarPass = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassError("");
-    if (passForm.nuevaContrasena !== passForm.confirmar) {
-      setPassError("Las contraseñas nuevas no coinciden");
+    if (!passForm.contrasenaActual) {
+      setPassError("Ingresa tu contraseña actual");
       return;
     }
-    if (passForm.nuevaContrasena.length < 6) {
-      setPassError("La nueva contraseña debe tener al menos 6 caracteres");
+    const passErr = validatePassword(passForm.nuevaContrasena);
+    if (passErr) { setPassError(passErr); return; }
+    if (passForm.nuevaContrasena !== passForm.confirmar) {
+      setPassError("Las contraseñas nuevas no coinciden");
       return;
     }
     if (!authUser?.idUsuario) return;
@@ -94,8 +97,16 @@ export function Profile() {
   const handleEditPerfil = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authUser?.idUsuario) return;
-    setEditSaving(true);
     setEditError("");
+    const nombresErr = validateName(editForm.nombres, "Nombres");
+    if (nombresErr) { setEditError(nombresErr); return; }
+    const apellidosErr = validateName(editForm.apellidos, "Apellidos");
+    if (apellidosErr) { setEditError(apellidosErr); return; }
+    if (editForm.nombreUsuario) {
+      const usernameErr = validateUsername(editForm.nombreUsuario);
+      if (usernameErr) { setEditError(usernameErr); return; }
+    }
+    setEditSaving(true);
     try {
       const updated = await authService.updatePerfil(authUser.idUsuario, editForm);
       setProfileData(updated);
@@ -122,6 +133,16 @@ export function Profile() {
   const handleReclamar = async (e: React.FormEvent) => {
     e.preventDefault();
     setReclamarError("");
+    const nombresErr = validateName(reclamarForm.nombres, "Nombres");
+    if (nombresErr) { setReclamarError(nombresErr); return; }
+    const apellidosErr = validateName(reclamarForm.apellidos, "Apellidos");
+    if (apellidosErr) { setReclamarError(apellidosErr); return; }
+    const usernameErr = validateUsername(reclamarForm.nombreUsuario);
+    if (usernameErr) { setReclamarError(usernameErr); return; }
+    const emailErr = validateEmail(reclamarForm.correo);
+    if (emailErr) { setReclamarError(emailErr); return; }
+    const passErr = validatePassword(reclamarForm.contrasena);
+    if (passErr) { setReclamarError(passErr); return; }
     try {
       const usuario = await api.post<User>("/usuarios/reclamar-perfil", {
         tokenReclamo: authUser?.tokenReclamo,
@@ -192,18 +213,6 @@ export function Profile() {
     },
   ];
 
-  const securityItems = [
-    {
-      label: "Two-Factor Authentication",
-      desc: "Habilitado via Authenticator App",
-      icon: "check_circle",
-    },
-    {
-      label: "Compartir Datos",
-      desc: "Limitado a servicios esenciales",
-      icon: "toggle_on",
-    },
-  ];
 
   return (
     <Layout>
@@ -282,187 +291,104 @@ export function Profile() {
 
         {/* Reclamar perfil para cuentas fantasma */}
         {isGhost && (
-          <div
-            className="profile-section neo-shadow"
-            style={{ background: "var(--accent)", marginBottom: 16 }}
-          >
-            <h4 style={{ color: "var(--primary)" }}>Cuenta Invitada</h4>
-            <p
-              style={{
-                fontSize: "0.85rem",
-                marginBottom: 12,
-                color: "var(--on-surface-variant)",
-              }}
-            >
-              Eres un usuario invitado. Reclamá tu perfil para acceder con tu
-              propio correo y contraseña.
-            </p>
-            {reclamarOk && (
-              <p style={{ color: "var(--primary)", fontWeight: 700 }}>
-                ¡Perfil reclamado exitosamente!
-              </p>
-            )}
-            {!reclamarOk && (
-              <button
-                className="btn-primary"
-                onClick={() => setShowReclamar((v) => !v)}
-              >
-                {showReclamar ? "Cancelar" : "Reclamar mi perfil"}
-              </button>
-            )}
-            {showReclamar && !reclamarOk && (
-              <form
-                onSubmit={(e) => void handleReclamar(e)}
-                style={{
-                  marginTop: 16,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                <label style={{ fontSize: "0.85rem" }}>
-                  Nombres
-                  <input
-                    type="text"
-                    value={reclamarForm.nombres}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        nombres: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Apellidos
-                  <input
-                    type="text"
-                    value={reclamarForm.apellidos}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        apellidos: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Nombre de usuario
-                  <input
-                    type="text"
-                    value={reclamarForm.nombreUsuario}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        nombreUsuario: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Correo electrónico
-                  <input
-                    type="email"
-                    value={reclamarForm.correo}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({ ...f, correo: e.target.value }))
-                    }
-                    required
-                  />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Contraseña
-                  <input
-                    type="password"
-                    value={reclamarForm.contrasena}
-                    onChange={(e) =>
-                      setReclamarForm((f) => ({
-                        ...f,
-                        contrasena: e.target.value,
-                      }))
-                    }
-                    required
-                    minLength={6}
-                  />
-                </label>
-                {reclamarError && <p className="error-msg">{reclamarError}</p>}
-                <button type="submit" className="btn-primary">
-                  Confirmar y reclamar
-                </button>
-              </form>
-            )}
+          <div className="profile-section neo-shadow" style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ background: "var(--primary)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <p style={{ margin: 0, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", color: "var(--background)", opacity: 0.75 }}>CUENTA INVITADA</p>
+                <h4 style={{ margin: "2px 0 0", color: "var(--background)", fontSize: "1rem", fontWeight: 700 }}>Reclama tu perfil</h4>
+              </div>
+              <span className="material-symbols-outlined" style={{ color: "var(--background)", fontSize: 28, opacity: 0.8 }}>person_add</span>
+            </div>
+
+            <div style={{ padding: "16px 20px" }}>
+              {reclamarOk ? (
+                <p style={{ color: "var(--primary)", fontWeight: 700, margin: 0 }}>¡Perfil reclamado exitosamente!</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: "0.85rem", marginBottom: 16, color: "var(--on-surface-variant)", lineHeight: 1.5 }}>
+                    Eres un usuario invitado. Registra tus datos para acceder con tu propio correo y contraseña.
+                  </p>
+
+                  {!showReclamar ? (
+                    <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => setShowReclamar(true)}>
+                      Reclamar mi perfil →
+                    </button>
+                  ) : (
+                    <form onSubmit={(e) => void handleReclamar(e)} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      <div className="input-group">
+                        <label>Nombres</label>
+                        <input type="text" value={reclamarForm.nombres} onChange={(e) => setReclamarForm((f) => ({ ...f, nombres: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Apellidos</label>
+                        <input type="text" value={reclamarForm.apellidos} onChange={(e) => setReclamarForm((f) => ({ ...f, apellidos: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Nombre de usuario</label>
+                        <input type="text" value={reclamarForm.nombreUsuario} onChange={(e) => setReclamarForm((f) => ({ ...f, nombreUsuario: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Correo electrónico</label>
+                        <input type="email" value={reclamarForm.correo} onChange={(e) => setReclamarForm((f) => ({ ...f, correo: e.target.value }))} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" value={reclamarForm.contrasena} onChange={(e) => setReclamarForm((f) => ({ ...f, contrasena: e.target.value }))} required />
+                      </div>
+                      {reclamarError && <p className="error-msg">{reclamarError}</p>}
+                      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                        <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowReclamar(false)}>Cancelar</button>
+                        <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Confirmar y reclamar</button>
+                      </div>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
         {/* Preferencia de moneda */}
         <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
           <h4>Moneda Preferida</h4>
-          <div className="section-row" style={{ alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ color: "var(--primary)", fontSize: "1.5rem" }}
-              >
-                currency_exchange
-              </span>
-              <div>
-                <p className="row-label">Visualizar todo en</p>
-                <p className="row-desc">
-                  Todos los valores se convertirán y mostrarán en esta moneda
-                </p>
-              </div>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)", fontSize: "1.4rem", flexShrink: 0 }}>
+              currency_exchange
+            </span>
+            <p className="row-desc" style={{ margin: 0 }}>
+              Todos los valores se convertirán y mostrarán en esta moneda
+            </p>
+          </div>
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <label>Visualizar todo en</label>
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-              className="currency-pref-select"
             >
               {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
         </div>
 
         {/* Gastos programados y metas — accesos rápidos */}
-        <div className="profile-section bg-white" style={{ marginBottom: 16 }}>
-          <h4>Mis Finanzas</h4>
+        <div className="profile-section bg-white" style={{ marginBottom: 16, opacity: isGhost ? 0.4 : 1, pointerEvents: isGhost ? "none" : "auto" }}>
+          <h4 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            Mis Finanzas
+            {isGhost && <span className="material-symbols-outlined" style={{ fontSize: "1rem", color: "var(--on-surface-variant)" }}>lock</span>}
+          </h4>
           <div
             className="section-row"
-            style={{ cursor: "pointer" }}
-            onClick={() => window.location.assign("/goals")}
-          >
-            <div>
-              <p className="row-label">Metas de Ahorro</p>
-              <p className="row-desc">Gestiona tus objetivos financieros</p>
-            </div>
-            <span
-              className="material-symbols-outlined"
-              style={{ color: "var(--primary)" }}
-            >
-              savings
-            </span>
-          </div>
-          <div
-            className="section-row"
-            style={{ cursor: "pointer" }}
-            onClick={() => window.location.assign("/scheduled")}
+            style={{ cursor: isGhost ? "not-allowed" : "pointer" }}
+            onClick={() => !isGhost && window.location.assign("/scheduled")}
           >
             <div>
               <p className="row-label">Gastos Programados</p>
               <p className="row-desc">Automatiza tus gastos recurrentes</p>
             </div>
-            <span
-              className="material-symbols-outlined"
-              style={{ color: "var(--primary)" }}
-            >
-              event_repeat
-            </span>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>event_repeat</span>
           </div>
         </div>
 
@@ -496,8 +422,11 @@ export function Profile() {
         </div>
 
         {/* Security Section */}
-        <div className="profile-section bg-white">
-          <h4>Seguridad & Privacidad</h4>
+        <div className="profile-section bg-white" style={{ opacity: isGhost ? 0.4 : 1, pointerEvents: isGhost ? "none" : "auto" }}>
+          <h4 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            Seguridad & Privacidad
+            {isGhost && <span className="material-symbols-outlined" style={{ fontSize: "1rem", color: "var(--on-surface-variant)" }}>lock</span>}
+          </h4>
 
           {/* Cambiar contraseña */}
           <div className="section-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
@@ -522,10 +451,10 @@ export function Profile() {
               <form
                 ref={passFormRef}
                 onSubmit={(e) => void handleCambiarPass(e)}
-                style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}
+                style={{ width: "100%", display: "flex", flexDirection: "column", gap: 0, marginTop: 8 }}
               >
-                <label style={{ fontSize: "0.85rem" }}>
-                  Contraseña actual
+                <div className="input-group">
+                  <label>Contraseña actual</label>
                   <input
                     type="password"
                     value={passForm.contrasenaActual}
@@ -533,9 +462,9 @@ export function Profile() {
                     required
                     autoComplete="current-password"
                   />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Nueva contraseña
+                </div>
+                <div className="input-group">
+                  <label>Nueva contraseña</label>
                   <input
                     type="password"
                     value={passForm.nuevaContrasena}
@@ -544,9 +473,9 @@ export function Profile() {
                     minLength={6}
                     autoComplete="new-password"
                   />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Confirmar nueva contraseña
+                </div>
+                <div className="input-group">
+                  <label>Confirmar nueva contraseña</label>
                   <input
                     type="password"
                     value={passForm.confirmar}
@@ -555,39 +484,25 @@ export function Profile() {
                     minLength={6}
                     autoComplete="new-password"
                   />
-                </label>
+                </div>
                 {passError && <p className="error-msg">{passError}</p>}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button type="submit" className="btn btn-primary" disabled={passLoading} style={{ fontSize: "0.85rem" }}>
-                    {passLoading ? "Guardando..." : "Guardar contraseña"}
-                  </button>
+                <div style={{ display: "flex", gap: 0, marginTop: 4, borderTop: "2px solid var(--primary)" }}>
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ fontSize: "0.85rem" }}
+                    style={{ flex: 1, borderRadius: 0, borderRight: "1px solid var(--primary)" }}
                     onClick={() => { setShowCambiarPass(false); setPassError(""); }}
                   >
                     Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={passLoading} style={{ flex: 2, borderRadius: 0 }}>
+                    {passLoading ? "Guardando..." : "Guardar contraseña"}
                   </button>
                 </div>
               </form>
             )}
           </div>
 
-          {securityItems.map((item) => (
-            <div key={item.label} className="section-row">
-              <div>
-                <p className="row-label">{item.label}</p>
-                <p className="row-desc">{item.desc}</p>
-              </div>
-              <span
-                className="material-symbols-outlined"
-                style={{ color: "var(--primary)" }}
-              >
-                {item.icon}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
 

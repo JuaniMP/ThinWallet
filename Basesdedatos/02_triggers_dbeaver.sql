@@ -125,7 +125,7 @@ BEGIN
         id_usuario, tabla_afectada, registro_id, accion,
         valores_nuevos, fecha_accion
     ) VALUES (
-        NEW.id_usuario, 'usuario_circulo', NEW.id_usuario_circulo, 'INSERT',
+        NEW.id_usuario, 'usuario_circulo', CONCAT(NEW.id_usuario, '_', NEW.id_circulo_gasto), 'INSERT',
         JSON_OBJECT('rol', NEW.rol_usuario, 'id_circulo', NEW.id_circulo_gasto),
         NOW()
     );
@@ -218,9 +218,9 @@ CREATE TRIGGER trg_validar_gasto_programado
 BEFORE INSERT ON gasto
 FOR EACH ROW
 BEGIN
-    IF NEW.periodicidad NOT IN ('META','DIARIO','SEMANAL','MENSUAL','TRIMESTRAL','ANUAL') THEN
+    IF NEW.periodicidad NOT IN ('META','META_PROPUESTA','GASTO','DIARIO','SEMANAL','MENSUAL','TRIMESTRAL','ANUAL') THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Periodicidad inválida. Valores permitidos: META, DIARIO, SEMANAL, MENSUAL, TRIMESTRAL, ANUAL';
+        SET MESSAGE_TEXT = 'Periodicidad inválida. Valores permitidos: META, META_PROPUESTA, GASTO, DIARIO, SEMANAL, MENSUAL, TRIMESTRAL, ANUAL';
     END IF;
 
     IF NEW.valor <= 0 THEN

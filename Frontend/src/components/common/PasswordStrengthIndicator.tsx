@@ -34,6 +34,7 @@ export function PasswordStrengthIndicator({
 
   return (
     <div style={{ marginTop: 12, fontSize: 13 }}>
+      {/* Barra de fortaleza */}
       <div style={{ marginBottom: 8 }}>
         <div
           style={{
@@ -57,6 +58,7 @@ export function PasswordStrengthIndicator({
         </div>
       </div>
 
+      {/* Requisitos */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {requirements.map((req) => (
           <div

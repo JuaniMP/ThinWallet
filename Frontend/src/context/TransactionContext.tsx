@@ -99,9 +99,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         : "/transacciones";
 
       const response = await api.get<BackendTransaccion[]>(endpoint);
-      const mapped = (Array.isArray(response) ? response : []).map(
-        mapToFrontend,
-      );
+      const mapped = (Array.isArray(response) ? response : [])
+        .sort((a, b) => b.idTransaccion - a.idTransaccion)
+        .map(mapToFrontend);
       setTransactions(mapped);
     } catch (err) {
       console.error("Error fetching transactions:", err);

@@ -112,9 +112,9 @@ function AppRoutes() {
       <Route
         path="/transactions/new"
         element={
-          <NonGhostRoute>
+          <PrivateRoute>
             <NewTransaction />
-          </NonGhostRoute>
+          </PrivateRoute>
         }
       />
       <Route

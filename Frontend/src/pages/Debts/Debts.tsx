@@ -247,7 +247,7 @@ export function Debts() {
                             ? userNames[item.idUsuarioAcreedor]
                             : `Deuda #${idx + 1}`}
                         </h4>
-                        <p className="card-amount">{fmt(item.monto ?? 0, "COP")}</p>
+                        <p className="card-amount">{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}</p>
                         <button
                           className="action-btn"
                           onClick={() => handleConfirm(item.idDeuda)}
@@ -293,7 +293,7 @@ export function Debts() {
                             <p>{item.estadoPago ?? "PENDIENTE"}</p>
                           </div>
                         </div>
-                        <p className="card-amount">{fmt(item.monto ?? 0, "COP")}</p>
+                        <p className="card-amount">{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}</p>
                         <button
                           className="action-btn"
                           onClick={() => handleConfirm(item.idDeuda)}
@@ -338,7 +338,7 @@ export function Debts() {
                             : (item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]) || `Acreedor #${idx + 1}`}
                         </h5>
                         <p className="item-desc">{item.estadoPago}</p>
-                        <p className="item-amount">{fmt(item.monto ?? 0, "COP")}</p>
+                        <p className="item-amount">{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}</p>
                       </div>
                     ))}
                   </div>
