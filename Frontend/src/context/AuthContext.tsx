@@ -54,27 +54,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const login = async (credentials: LoginRequest) => {
-    const userData = await authService.login(credentials);
-    const authToken = `session-${Date.now()}`;
-
-    localStorage.setItem("token", authToken);
-    localStorage.setItem("user", JSON.stringify(userData));
-
-    setToken(authToken);
-    setUser(userData);
-
+    const { token: jwt, usuario } = await authService.login(credentials);
+    localStorage.setItem("token", jwt);
+    localStorage.setItem("user", JSON.stringify(usuario));
+    setToken(jwt);
+    setUser(usuario);
   };
 
   const loginWithToken = async (tokenValue: string) => {
-    const userData = await authService.loginWithToken(tokenValue);
-    const authToken = `session-token-${Date.now()}`;
-    localStorage.setItem("token", authToken);
-    localStorage.setItem("user", JSON.stringify(userData));
+    const { token: jwt, usuario } = await authService.loginWithToken(tokenValue);
+    localStorage.setItem("token", jwt);
+    localStorage.setItem("user", JSON.stringify(usuario));
     localStorage.setItem("userToken", tokenValue);
-    setToken(authToken);
-    setUser(userData);
-
-    return userData;
+    setToken(jwt);
+    setUser(usuario);
+    return usuario;
   };
 
   const register = async (data: RegisterRequest) => {

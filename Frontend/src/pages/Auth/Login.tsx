@@ -72,12 +72,12 @@ export function Login() {
         {/* Brand Identity */}
         <div className="auth-brand">
           <h1>THIN WALLET</h1>
-          <p>The Botanical Archivist / Finanzas</p>
+          <p>Tu billetera inteligente / Finanzas personales</p>
         </div>
 
         {/* Login Card */}
         <div className="auth-card neo-shadow">
-          <h2>Acceso Archivista</h2>
+          <h2>Acceso de Usuario</h2>
 
           {error && <div className="error-alert">{error}</div>}
 
@@ -189,9 +189,9 @@ export function Login() {
             <div className="line" />
           </div>
           <p>
-            Diseñado para el minimalismo financiero.
+            Controla tus gastos, organiza tus círculos y alcanza tus metas financieras.
             <br />
-            Edición Neo-Brutalista 2024.
+            v1.2.0 — 2026
           </p>
         </div>
       </main>
