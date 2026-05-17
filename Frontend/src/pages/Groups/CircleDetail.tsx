@@ -27,7 +27,23 @@ export function CircleDetail() {
   const [history, setHistory] = useState<Transaccion[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tokenFromStorage, setTokenFromStorage] = useState<string | null>(null);
+  const [expulsando, setExpulsando] = useState<number | null>(null);
   const isGhost = user?.idTipoUsuario === 3;
+
+  const handleExpulsar = async (idUsuario: number) => {
+    if (!id) return;
+    setExpulsando(idUsuario);
+    try {
+      await circleService.expulsarMiembro(Number(id), idUsuario);
+      setDetail((prev) =>
+        prev ? { ...prev, invitados: prev.invitados.filter((i) => i.idUsuario !== idUsuario) } : prev
+      );
+    } catch {
+      // silently ignore
+    } finally {
+      setExpulsando(null);
+    }
+  };
 
   // Modal registrar gasto
   const [showGastoModal, setShowGastoModal] = useState(false);
@@ -401,7 +417,20 @@ export function CircleDetail() {
                 <div className="guest-token-grid">
                   {detail.invitados.map((invitado) => (
                     <article key={invitado.idUsuario} className="guest-token-item">
-                      <h4>{invitado.nombreCompleto}</h4>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <h4 style={{ margin: 0 }}>{invitado.nombreCompleto}</h4>
+                        {!isGhost && (
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            style={{ padding: "4px 10px", fontSize: "0.72rem", marginLeft: 8, flexShrink: 0 }}
+                            disabled={expulsando === invitado.idUsuario}
+                            onClick={() => void handleExpulsar(invitado.idUsuario)}
+                          >
+                            {expulsando === invitado.idUsuario ? "..." : "Eliminar"}
+                          </button>
+                        )}
+                      </div>
                       <p className="guest-type">{invitado.tipoUsuario?.toUpperCase() === "FANTASMA" ? "Invitado fantasma" : (invitado.tipoUsuario || "Registrado")}</p>
                       {invitado.correo && !invitado.correo.includes("thinwallet.local") && (
                         <p className="guest-email">{invitado.correo}</p>
