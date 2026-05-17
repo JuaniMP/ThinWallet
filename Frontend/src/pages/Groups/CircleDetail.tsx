@@ -12,6 +12,24 @@ import type { CirculoDetalle, Transaccion, Category } from "../../types";
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80";
 
+const PRESET_IMAGES = [
+  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1530521954074-e64f6810b32d?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1464863979621-258859e62245?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=800&q=80",
+];
+
 const fmt = (v: number) =>
   v.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -194,19 +212,55 @@ export function CircleDetail() {
                   <span className="material-symbols-outlined">edit</span>
                 </button>
                 {editingImage && (
-                  <div className="circle-hero-editor">
-                    <input
-                      value={draftImage}
-                      onChange={(event) => setDraftImage(event.target.value)}
-                      placeholder="Pega URL de imagen"
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={handleSaveImage}
-                    >
-                      Guardar
-                    </button>
+                  <div className="circle-hero-editor" style={{ display: "block", padding: "16px" }}>
+                    <p style={{ fontSize: "0.78rem", fontWeight: 600, marginBottom: 10, color: "var(--on-surface-variant)", letterSpacing: "0.05em" }}>
+                      ELIGE UNA PORTADA
+                    </p>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(5, 1fr)",
+                      gap: 8,
+                      marginBottom: 14,
+                    }}>
+                      {PRESET_IMAGES.map((url) => (
+                        <button
+                          key={url}
+                          type="button"
+                          onClick={() => { setDraftImage(url); }}
+                          style={{
+                            padding: 0,
+                            border: draftImage === url ? "3px solid var(--primary)" : "3px solid transparent",
+                            borderRadius: 6,
+                            overflow: "hidden",
+                            cursor: "pointer",
+                            aspectRatio: "16/9",
+                            background: "none",
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input
+                        value={draftImage}
+                        onChange={(event) => setDraftImage(event.target.value)}
+                        placeholder="O pega una URL personalizada"
+                        style={{ flex: 1, fontSize: "0.8rem" }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handleSaveImage}
+                        style={{ flexShrink: 0 }}
+                      >
+                        Guardar
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
