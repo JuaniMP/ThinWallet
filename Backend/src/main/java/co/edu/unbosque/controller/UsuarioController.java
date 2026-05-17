@@ -1,5 +1,6 @@
 package co.edu.unbosque.controller;
 
+import co.edu.unbosque.dto.LoginResponse;
 import co.edu.unbosque.dto.UsuarioBusquedaResponse;
 import co.edu.unbosque.entity.Usuario;
 import co.edu.unbosque.entity.CirculoGasto;
@@ -13,6 +14,7 @@ import co.edu.unbosque.request.NuevaPasswordRequest;
 import co.edu.unbosque.request.UsuarioCirculoRequest;
 
 import co.edu.unbosque.request.SaldoResponse;
+import co.edu.unbosque.service.JwtService;
 import co.edu.unbosque.service.UsuarioService;
 import co.edu.unbosque.service.SaldoService;
 import co.edu.unbosque.service.CirculoGastoService;
@@ -42,6 +44,7 @@ public class UsuarioController {
     private final CirculoGastoService circuloGastoService;
     private final UsuarioCirculoService usuarioCirculoService;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @GetMapping
     public ResponseEntity<List<Usuario>> getAll() {
@@ -97,7 +100,8 @@ public class UsuarioController {
                     if (usuario.getEstado() == 0) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Debe verificar su correo para iniciar sesion");
                     }
-                    return ResponseEntity.ok(usuario);
+                    String token = jwtService.generateToken(usuario.getIdUsuario(), usuario.getCorreo());
+                    return ResponseEntity.ok(new LoginResponse(token, usuario));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
     }
@@ -113,8 +117,10 @@ public class UsuarioController {
         // Intento 1: ¿Es un token personal de un usuario invitado (tokenReclamo)?
         Optional<Usuario> usuarioOpt = usuarioService.loginWithToken(tokenInvitacion);
         if (usuarioOpt.isPresent()) {
-            log.info("Token personal valido para usuario: {}", usuarioOpt.get().getCorreo());
-            return ResponseEntity.ok(usuarioOpt.get());
+            Usuario u = usuarioOpt.get();
+            log.info("Token personal valido para usuario: {}", u.getCorreo());
+            String token = jwtService.generateToken(u.getIdUsuario(), u.getCorreo());
+            return ResponseEntity.ok(new LoginResponse(token, u));
         }
 
         // Intento 2: ¿Es el token de un Círculo de Gasto?
@@ -144,7 +150,8 @@ public class UsuarioController {
             usuarioCirculoService.create(ucReq);
 
             log.info("Nuevo invitado {} creado al vuelo por token de círculo", nuevoInvitado.getCorreo());
-            return ResponseEntity.ok(nuevoInvitado);
+            String token = jwtService.generateToken(nuevoInvitado.getIdUsuario(), nuevoInvitado.getCorreo());
+            return ResponseEntity.ok(new LoginResponse(token, nuevoInvitado));
         }
 
         log.warn("Token invalido: {}", tokenInvitacion);
