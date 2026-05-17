@@ -2249,6 +2249,11 @@
   color: var(--on-tertiary-container);
 }
 
+.type-btn.active.transfer {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
 .payment-method.type-selector {
   display: grid;
   grid-template-columns: 1fr 1fr;

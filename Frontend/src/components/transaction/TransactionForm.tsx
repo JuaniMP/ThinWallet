@@ -158,7 +158,13 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
       )}
 
       <div className="input-group">
-        <label>Método de Pago</label>
+        <label>
+          {type === "RETIRO"
+            ? "Método de Retiro"
+            : type === "DEPOSITO"
+            ? "Método de Depósito"
+            : "Método"}
+        </label>
         <div className="type-selector payment-method">
           <button
             type="button"
@@ -175,6 +181,14 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           >
             <span className="material-symbols-outlined">credit_card</span>
             Tarjeta
+          </button>
+          <button
+            type="button"
+            className={`type-btn payment-btn ${paymentMethodId === 3 ? "active transfer" : ""}`}
+            onClick={() => setPaymentMethodId(3)}
+          >
+            <span className="material-symbols-outlined">swap_horiz</span>
+            Transferencia
           </button>
         </div>
       </div>
