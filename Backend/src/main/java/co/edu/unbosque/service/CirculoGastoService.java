@@ -314,6 +314,21 @@ public class CirculoGastoService {
             ucReq.setRolUsuario("INVITADO");
             usuarioCirculoService.create(ucReq);
 
+            if (notificacionService != null) {
+                try {
+                    notificacionService.crear(
+                            guardado.getIdUsuario(),
+                            "Te invitaron a un círculo",
+                            "Fuiste añadido al círculo \"" + circulo.getNombre() + "\"",
+                            "INVITACION_CIRCULO",
+                            circulo.getIdCirculoGasto(),
+                            circulo.getNombre()
+                    );
+                } catch (Exception e) {
+                    log.warn("No se pudo crear notificacion para invitado {}: {}", guardado.getIdUsuario(), e.getMessage());
+                }
+            }
+
             log.info("Invitado '{}' creado y vinculado al círculo {}", nombre, circulo.getIdCirculoGasto());
         }
     }
@@ -419,6 +434,21 @@ public class CirculoGastoService {
         if (actividadCirculoService != null) {
             actividadCirculoService.registrarEvento(idCirculo, "MIEMBRO_EXPULSADO", idUsuario,
                     Map.of("rol_anterior", vinculo.getRolUsuario() != null ? vinculo.getRolUsuario() : "MIEMBRO"));
+        }
+
+        if (notificacionService != null) {
+            try {
+                notificacionService.crear(
+                        idUsuario,
+                        "Te removieron de un círculo",
+                        "Ya no eres parte del círculo \"" + circulo.getNombre() + "\"",
+                        "EXPULSION_CIRCULO",
+                        idCirculo,
+                        circulo.getNombre()
+                );
+            } catch (Exception e) {
+                log.warn("No se pudo notificar expulsión al usuario {}: {}", idUsuario, e.getMessage());
+            }
         }
 
         populateTipo(circulo);

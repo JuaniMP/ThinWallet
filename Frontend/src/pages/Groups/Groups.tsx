@@ -18,6 +18,7 @@ export function Groups() {
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState("");
   const [invitados, setInvitados] = useState([""]);
+  const [createError, setCreateError] = useState("");
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinToken, setJoinToken] = useState("");
@@ -28,6 +29,7 @@ export function Groups() {
     setNombre("");
     setTipo("");
     setInvitados([""]);
+    setCreateError("");
     setShowModal(true);
   };
 
@@ -137,7 +139,11 @@ export function Groups() {
   };
 
   const handleCreate = async () => {
-    if (!nombre || !tipo || !user) return;
+    setCreateError("");
+    if (!nombre.trim()) { setCreateError("El nombre del grupo es obligatorio"); return; }
+    if (nombre.trim().length < 3) { setCreateError("El nombre debe tener al menos 3 caracteres"); return; }
+    if (!tipo) { setCreateError("Selecciona un tipo de círculo"); return; }
+    if (!user) return;
     setLoading(true);
     try {
       const response = await circleService.createCircle({
@@ -171,7 +177,7 @@ export function Groups() {
         setCircles(updated);
       }
     } catch (error) {
-      console.error("Error creando círculo", error);
+      setCreateError(error instanceof Error ? error.message : "Error al crear el círculo");
     } finally {
       setLoading(false);
     }
@@ -454,6 +460,11 @@ export function Groups() {
                 </div>
 
                 <div className="modal-footer">
+                  {createError && (
+                    <p style={{ color: "var(--danger, #e53e3e)", fontSize: "0.85rem", margin: "0 0 8px", padding: "0 4px" }}>
+                      {createError}
+                    </p>
+                  )}
                   <div className="group-modal-actions">
                     <button
                       type="button"
@@ -464,8 +475,8 @@ export function Groups() {
                     </button>
                     <button
                       type="button"
-                      onClick={handleCreate}
-                      disabled={loading || !nombre.trim() || !tipo}
+                      onClick={() => void handleCreate()}
+                      disabled={loading}
                       className="submit-btn neo-shadow"
                     >
                       {loading ? "Creando..." : "Crear círculo"}

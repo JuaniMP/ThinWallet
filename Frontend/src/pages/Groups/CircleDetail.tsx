@@ -7,7 +7,19 @@ import { categoryService } from "../../services/categoryService";
 import { useAuth } from "../../context/AuthContext";
 import { validateAmount, validateDescription } from "../../utils/validators";
 import { MoneyInput } from "../../components/common/MoneyInput";
+import { api } from "../../services/api";
 import type { CirculoDetalle, Transaccion, Category } from "../../types";
+
+interface MetaGrupal {
+  idGasto: number;
+  nombre: string;
+  valor: number;
+  montoActual: number;
+  periodicidad: string;
+  aceptaciones: number[];
+  totalMiembros: number;
+  idUsuarioCreador: number;
+}
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80";
@@ -30,6 +42,90 @@ export function CircleDetail() {
   const [tokenFromStorage, setTokenFromStorage] = useState<string | null>(null);
   const [expulsando, setExpulsando] = useState<number | null>(null);
   const isGhost = user?.estado === 0;
+
+  // Metas grupales
+  const [metasGrupales, setMetasGrupales] = useState<MetaGrupal[]>([]);
+  const [showMetaForm, setShowMetaForm] = useState(false);
+  const [metaForm, setMetaForm] = useState({ nombre: "", valor: 0 });
+  const [metaError, setMetaError] = useState("");
+  const [metaSaving, setMetaSaving] = useState(false);
+  const [abonoMeta, setAbonoMeta] = useState<{ idGasto: number; monto: number } | null>(null);
+  const [editandoMeta, setEditandoMeta] = useState<{ idGasto: number; nombre: string; valor: number } | null>(null);
+
+  const loadMetasGrupales = async (idCirculo: string) => {
+    try {
+      const data = await api.get<MetaGrupal[]>(`/gastos/circulo/${idCirculo}/metas-grupales`);
+      setMetasGrupales(Array.isArray(data) ? data : []);
+    } catch { /* silencioso */ }
+  };
+
+  const handleProponerMeta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !user?.idUsuario) return;
+    setMetaError("");
+    if (!metaForm.nombre.trim()) { setMetaError("El nombre es obligatorio"); return; }
+    if (metaForm.valor <= 0) { setMetaError("El valor debe ser mayor a 0"); return; }
+    setMetaSaving(true);
+    try {
+      await api.post(`/gastos/circulo/${id}/meta-grupal?idUsuario=${user.idUsuario}`, {
+        nombre: metaForm.nombre.trim(),
+        valor: metaForm.valor,
+        periodicidad: "META_PROPUESTA",
+      });
+      setMetaForm({ nombre: "", valor: 0 });
+      setShowMetaForm(false);
+      await loadMetasGrupales(id);
+    } catch (err) {
+      setMetaError(err instanceof Error ? err.message : "Error al proponer meta");
+    } finally {
+      setMetaSaving(false);
+    }
+  };
+
+  const handleAceptarMeta = async (idGasto: number) => {
+    if (!user?.idUsuario) return;
+    try {
+      await api.put(`/gastos/${idGasto}/meta-grupal/aceptar?idUsuario=${user.idUsuario}`, {});
+      if (id) await loadMetasGrupales(id);
+    } catch { /* silencioso */ }
+  };
+
+  const handleRechazarMeta = async (idGasto: number) => {
+    if (!user?.idUsuario) return;
+    try {
+      await api.put(`/gastos/${idGasto}/meta-grupal/rechazar?idUsuario=${user.idUsuario}`, {});
+      if (id) await loadMetasGrupales(id);
+    } catch { /* silencioso */ }
+  };
+
+  const handleAbonar = async () => {
+    if (!abonoMeta || !user?.idUsuario) return;
+    const meta = metasGrupales.find((m) => m.idGasto === abonoMeta.idGasto);
+    if (!meta) return;
+    const restante = (meta.valor ?? 0) - (meta.montoActual ?? 0);
+    if (abonoMeta.monto <= 0 || abonoMeta.monto > restante) return;
+    try {
+      await api.put(`/gastos/${abonoMeta.idGasto}/meta-grupal/abonar?idUsuario=${user.idUsuario}&monto=${abonoMeta.monto}`, {});
+      setAbonoMeta(null);
+      if (id) await loadMetasGrupales(id);
+    } catch { /* silencioso */ }
+  };
+
+  const handleGuardarEdicionMeta = async () => {
+    if (!editandoMeta) return;
+    try {
+      await api.put(`/gastos/${editandoMeta.idGasto}`, {
+        nombre: editandoMeta.nombre,
+        valor: editandoMeta.valor,
+        periodicidad: "META",
+        idUsuarioCreador: user?.idUsuario,
+        idCirculoGasto: Number(id),
+        idCategoria: 23,
+      });
+      setEditandoMeta(null);
+      if (id) await loadMetasGrupales(id);
+    } catch { /* silencioso */ }
+  };
 
   const handleExpulsar = async (idUsuario: number) => {
     if (!id) return;
@@ -60,6 +156,12 @@ export function CircleDetail() {
     const nameError = validateDescription(gastoForm.nombre);
     if (nameError) {
       setGastoError(nameError);
+      return;
+    }
+
+    // Validar categoría
+    if (!gastoForm.idCategoria) {
+      setGastoError("Selecciona una categoría");
       return;
     }
 
@@ -136,6 +238,7 @@ export function CircleDetail() {
     };
 
     void load();
+    if (id) void loadMetasGrupales(id);
   }, [id]);
 
   const totalGastos = useMemo(
@@ -294,7 +397,196 @@ export function CircleDetail() {
                       : "N/A"}
                   </strong>
                 </div>
+                <div>
+                  <span>Creador</span>
+                  <strong>{detail.nombreCreador || "—"}</strong>
+                </div>
               </div>
+            </section>
+
+            {/* METAS GRUPALES */}
+            <section className="circle-panel neo-shadow">
+              <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3>Metas del círculo</h3>
+                {!isGhost && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ fontSize: "0.78rem", padding: "6px 14px" }}
+                    onClick={() => { setShowMetaForm((v) => !v); setMetaError(""); }}
+                  >
+                    {showMetaForm ? "Cancelar" : "+ Proponer meta"}
+                  </button>
+                )}
+              </div>
+
+              {showMetaForm && (
+                <form onSubmit={(e) => void handleProponerMeta(e)} style={{ marginBottom: 16 }}>
+                  <div className="input-group">
+                    <label>Nombre de la meta</label>
+                    <input
+                      type="text"
+                      value={metaForm.nombre}
+                      onChange={(e) => setMetaForm((f) => ({ ...f, nombre: e.target.value }))}
+                      placeholder="Ej: Viaje a Cartagena"
+                      required
+                    />
+                  </div>
+                  <MoneyInput
+                    label="Monto objetivo (COP)"
+                    name="valorMeta"
+                    value={metaForm.valor || ""}
+                    onChange={(v) => setMetaForm((f) => ({ ...f, valor: v }))}
+                    placeholder="0"
+                    required
+                  />
+                  {metaError && <p className="error-msg">{metaError}</p>}
+                  <button type="submit" className="btn btn-primary" disabled={metaSaving} style={{ width: "100%" }}>
+                    {metaSaving ? "Proponiendo..." : "Proponer meta"}
+                  </button>
+                </form>
+              )}
+
+              {metasGrupales.length === 0 ? (
+                <p style={{ color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>No hay metas grupales aún.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {metasGrupales.map((meta) => {
+                    const progreso = Math.min(100, Math.round(((meta.montoActual ?? 0) / meta.valor) * 100));
+                    const yoAcepte = meta.aceptaciones?.includes(user?.idUsuario ?? -1);
+                    const isPropuesta = meta.periodicidad === "META_PROPUESTA";
+                    return (
+                      <div key={meta.idGasto} style={{ border: "2px solid var(--primary)", padding: 14, background: "var(--surface-container-low)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <strong style={{ fontSize: "0.9rem" }}>{meta.nombre}</strong>
+                          <span style={{
+                            fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px",
+                            background: isPropuesta ? "var(--accent)" : "var(--primary)",
+                            color: isPropuesta ? "var(--primary)" : "var(--background)",
+                          }}>
+                            {isPropuesta ? `PROPUESTA (${meta.aceptaciones?.length ?? 0}/${meta.totalMiembros ?? "?"})` : "ACTIVA"}
+                          </span>
+                        </div>
+
+                        {/* Barra de progreso — solo metas activas */}
+                        {!isPropuesta && (
+                          <>
+                            <div style={{ background: "var(--outline-variant)", height: 8, marginBottom: 4 }}>
+                              <div style={{ width: `${progreso}%`, height: "100%", background: "var(--primary)", transition: "width 0.4s" }} />
+                            </div>
+                            <p style={{ fontSize: "0.78rem", marginBottom: 8, color: "var(--on-surface-variant)" }}>
+                              {fmt(meta.montoActual ?? 0)} / {fmt(meta.valor)} ({progreso}%)
+                            </p>
+                          </>
+                        )}
+
+                        {/* Acciones según estado */}
+                        {isPropuesta && (
+                          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                            {!yoAcepte && (
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                style={{ flex: 1, fontSize: "0.78rem", padding: "6px" }}
+                                onClick={() => void handleAceptarMeta(meta.idGasto)}
+                              >
+                                Aceptar
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ flex: 1, fontSize: "0.78rem", padding: "6px", borderColor: "var(--error, #b00020)", color: "var(--error, #b00020)" }}
+                              onClick={() => void handleRechazarMeta(meta.idGasto)}
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        )}
+
+                        {!isPropuesta && (
+                          <>
+                            {/* Editar — solo creador del círculo, inline */}
+                            {editandoMeta?.idGasto === meta.idGasto ? (
+                              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                                <input
+                                  type="text"
+                                  value={editandoMeta.nombre}
+                                  onChange={(e) => setEditandoMeta((m) => m ? { ...m, nombre: e.target.value } : m)}
+                                  style={{ border: "2px solid var(--primary)", padding: "6px 10px", background: "var(--surface)", borderRadius: 0, fontSize: "0.85rem" }}
+                                />
+                                <MoneyInput
+                                  name="editValorMeta"
+                                  value={editandoMeta.valor}
+                                  onChange={(v) => setEditandoMeta((m) => m ? { ...m, valor: v } : m)}
+                                  placeholder="Monto objetivo"
+                                />
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button type="button" className="btn btn-primary" style={{ flex: 1, fontSize: "0.78rem" }} onClick={() => void handleGuardarEdicionMeta()}>Guardar</button>
+                                  <button type="button" className="btn btn-secondary" style={{ fontSize: "0.78rem" }} onClick={() => setEditandoMeta(null)}>Cancelar</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                                {/* Abonar — todos los usuarios */}
+                                {abonoMeta?.idGasto === meta.idGasto ? (
+                                  <>
+                                    <div style={{ flex: 1, minWidth: 140 }}>
+                                      <MoneyInput
+                                        name="abonoMonto"
+                                        value={abonoMeta.monto || ""}
+                                        onChange={(v) => setAbonoMeta({ idGasto: meta.idGasto, monto: Math.min(v, meta.valor - (meta.montoActual ?? 0)) })}
+                                        placeholder={`Máx. ${fmt(meta.valor - (meta.montoActual ?? 0))}`}
+                                      />
+                                    </div>
+                                    <button type="button" className="btn btn-primary" style={{ fontSize: "0.78rem", alignSelf: "flex-end", marginBottom: 4 }} onClick={() => void handleAbonar()}>Abonar</button>
+                                    <button type="button" className="btn btn-secondary" style={{ fontSize: "0.78rem", alignSelf: "flex-end", marginBottom: 4 }} onClick={() => setAbonoMeta(null)}>✕</button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, fontSize: "0.78rem" }}
+                                    onClick={() => setAbonoMeta({ idGasto: meta.idGasto, monto: 0 })}
+                                  >
+                                    Abonar
+                                  </button>
+                                )}
+                                {/* Editar / Eliminar — solo creador del círculo */}
+                                {detail?.idUsuarioCreador === user?.idUsuario && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      style={{ fontSize: "0.78rem" }}
+                                      onClick={() => setEditandoMeta({ idGasto: meta.idGasto, nombre: meta.nombre, valor: meta.valor })}
+                                    >
+                                      Editar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      style={{ fontSize: "0.78rem", borderColor: "var(--error, #b00020)", color: "var(--error, #b00020)" }}
+                                      onClick={async () => {
+                                        try {
+                                          await api.delete(`/gastos/${meta.idGasto}`);
+                                          setMetasGrupales((prev) => prev.filter((m) => m.idGasto !== meta.idGasto));
+                                        } catch { /* silencioso */ }
+                                      }}
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* HISTORY SECTION */}
