@@ -417,17 +417,29 @@ export function CircleDetail() {
                 <div className="guest-token-grid">
                   {detail.invitados.map((invitado) => (
                     <article key={invitado.idUsuario} className="guest-token-item">
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                         <h4 style={{ margin: 0 }}>{invitado.nombreCompleto}</h4>
                         {!isGhost && (
                           <button
                             type="button"
-                            className="btn btn-danger"
-                            style={{ padding: "4px 10px", fontSize: "0.72rem", marginLeft: 8, flexShrink: 0 }}
+                            title="Eliminar del círculo"
                             disabled={expulsando === invitado.idUsuario}
                             onClick={() => void handleExpulsar(invitado.idUsuario)}
+                            style={{
+                              background: "none",
+                              border: "1px solid var(--error, #b00020)",
+                              color: "var(--error, #b00020)",
+                              borderRadius: "6px",
+                              padding: "2px 8px",
+                              fontSize: "0.7rem",
+                              cursor: "pointer",
+                              opacity: expulsando === invitado.idUsuario ? 0.5 : 1,
+                              letterSpacing: "0.04em",
+                              flexShrink: 0,
+                              marginLeft: 8,
+                            }}
                           >
-                            {expulsando === invitado.idUsuario ? "..." : "Eliminar"}
+                            {expulsando === invitado.idUsuario ? "···" : "✕"}
                           </button>
                         )}
                       </div>
