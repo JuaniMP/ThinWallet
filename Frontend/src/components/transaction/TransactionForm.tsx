@@ -2,10 +2,7 @@ import { useState } from "react";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { MoneyInput } from "../common/MoneyInput";
-import {
-  SUPPORTED_CURRENCIES,
-  type CurrencyCode,
-} from "../../context/CurrencyContext";
+import { SUPPORTED_CURRENCIES, type CurrencyCode } from "../../context/CurrencyContext";
 import { CategorySelect } from "../category/CategorySelect";
 import {
   validateAmount,
@@ -184,29 +181,24 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
 
       <CategorySelect type={type} value={categoryId} onChange={setCategoryId} />
 
-      <div className="amount-currency-row">
-        <MoneyInput
-          label="Monto"
-          name="amount"
-          value={amount}
-          onChange={setAmount}
-          prefix={moneda}
-          required
-        />
-        <div className="input-group">
-          <label htmlFor="moneda">Moneda</label>
-          <select
-            id="moneda"
-            value={moneda}
-            onChange={(e) => setMoneda(e.target.value as CurrencyCode)}
-          >
-            {SUPPORTED_CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
+      <MoneyInput
+        label="Monto"
+        name="amount"
+        value={amount}
+        onChange={setAmount}
+        required
+      />
+      <div className="input-group">
+        <label htmlFor="moneda">Moneda</label>
+        <select
+          id="moneda"
+          value={moneda}
+          onChange={(e) => setMoneda(e.target.value as CurrencyCode)}
+        >
+          {SUPPORTED_CURRENCIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       <Input

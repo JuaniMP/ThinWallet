@@ -110,21 +110,19 @@ export function Register() {
             </div>
             <div className="hero-text">
               <h2>
-                THE
+                THIN
                 <br />
-                BOTANICAL
-                <br />
-                ARCHIVIST.
+                WALLET.
               </h2>
               <p>
-                Organiza tus activos digitales con la precisión de un herbario
-                real. Estructura, seguridad y crecimiento orgánico.
+                Controla tus gastos, organiza tus círculos y alcanza tus metas
+                financieras con facilidad.
               </p>
             </div>
           </div>
           <div style={{ position: "relative", zIndex: 10 }}>
             <div className="version-badge">
-              <p>Version 2.0.4 - 2024</p>
+              <p>v1.2.0 — 2026</p>
             </div>
           </div>
         </section>
@@ -134,7 +132,7 @@ export function Register() {
           <header>
             <h3>NUEVA CUENTA</h3>
             <div className="accent-bar" />
-            <p>Empieza a cultivar tu patrimonio hoy mismo.</p>
+            <p>Crea tu cuenta y empieza a gestionar tus finanzas personales.</p>
           </header>
 
           {error && <div className="error-alert">{error}</div>}

@@ -158,7 +158,7 @@ export function Verify() {
           <p>
             Tu seguridad es nuestra prioridad.
             <br />
-            Edición Neo-Brutalista 2024.
+            v1.2.0 — 2026
           </p>
         </div>
       </main>

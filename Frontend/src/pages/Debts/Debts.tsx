@@ -366,7 +366,6 @@ export function Debts() {
                     name="monto"
                     value={form.monto}
                     onChange={(v) => setForm((f) => ({ ...f, monto: v }))}
-                    prefix={form.moneda}
                     placeholder="0"
                     required
                   />
