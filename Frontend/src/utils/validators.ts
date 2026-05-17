@@ -164,5 +164,4 @@ export function validateDescription(
   if (description.trim().length > maxLength) {
     return `La descripción no puede exceder ${maxLength} caracteres`;
   }
-  return null;
-}
+  return null;}
