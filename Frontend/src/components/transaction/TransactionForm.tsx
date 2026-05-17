@@ -190,6 +190,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           name="amount"
           value={amount}
           onChange={setAmount}
+          prefix={moneda}
           required
         />
         <div className="input-group">
