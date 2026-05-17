@@ -8,6 +8,7 @@ import co.edu.unbosque.repository.CategoriaRepository;
 import co.edu.unbosque.repository.GastoRepository;
 import co.edu.unbosque.repository.TipoMovimientoRepository;
 import co.edu.unbosque.repository.TransaccionRepository;
+import co.edu.unbosque.repository.UsuarioCirculoRepository;
 import co.edu.unbosque.request.TransaccionRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class TransaccionService {
     private final TipoMovimientoRepository tipoMovimientoRepository;
     private final CategoriaRepository categoriaRepository;
     private final GastoRepository gastoRepository;
+    private final UsuarioCirculoRepository usuarioCirculoRepository;
 
     @Autowired(required = false)
     private ActividadCirculoService actividadCirculoService;
@@ -40,6 +42,9 @@ public class TransaccionService {
 
     @Autowired(required = false)
     private SseEventBus eventBus;
+
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -177,6 +182,26 @@ public class TransaccionService {
         }
 
         if (eventBus != null) eventBus.publicarSaldo(saved.getIdUsuario());
+
+        // Notificar a los demás miembros del círculo
+        if (notificacionService != null && saved.getIdCirculoGasto() != null) {
+            try {
+                usuarioCirculoRepository.findByCirculoGasto_IdCirculoGasto(saved.getIdCirculoGasto())
+                        .stream()
+                        .map(uc -> uc.getId().getIdUsuario())
+                        .filter(uid -> !uid.equals(saved.getIdUsuario()))
+                        .forEach(uid -> notificacionService.crear(
+                                uid,
+                                "Nuevo gasto en el círculo",
+                                "Se registró \"" + saved.getNombre() + "\" por $" + saved.getMontoOriginal().longValue() + " " + saved.getMonedaOriginal(),
+                                "GASTO_CIRCULO",
+                                saved.getIdCirculoGasto(),
+                                null
+                        ));
+            } catch (Exception e) {
+                log.warn("No se pudo notificar gasto en círculo {}: {}", saved.getIdCirculoGasto(), e.getMessage());
+            }
+        }
 
         return saved;
     }

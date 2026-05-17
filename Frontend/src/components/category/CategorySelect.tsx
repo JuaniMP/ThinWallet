@@ -11,7 +11,7 @@ interface BackendCategoria {
 }
 
 interface CategorySelectProps {
-  type: "DEPOSITO" | "RETIRO";
+  type: "DEPOSITO" | "RETIRO" | null;
   value: number | "";
   onChange: (categoryId: number) => void;
 }
@@ -82,6 +82,7 @@ export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
   const visibleCategories = useMemo(() => {
     return categories.filter((cat) => {
       const matchesType =
+        !type ||
         !cat.tipoCategoria ||
         cat.tipoCategoria === type ||
         cat.tipoCategoria === "AMBOS";
@@ -136,7 +137,7 @@ export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreated={handleCreated}
-        defaultTipo={type}
+        defaultTipo={type ?? "RETIRO"}
       />
     </div>
   );

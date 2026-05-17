@@ -22,7 +22,7 @@ export function Layout({ children }: LayoutProps) {
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   const isGhost = user?.estado === 0;
-  const ghostBlocked = ["/dashboard", "/transactions/new", "/goals", "/reports"];
+  const ghostBlocked = ["/dashboard", "/goals", "/reports"];
 
   const navItems = [
     { path: "/dashboard", icon: "home", label: "INICIO" },
@@ -125,6 +125,16 @@ export function Layout({ children }: LayoutProps) {
 
   const iconoPorTipo = (tipo: string) => {
     if (tipo === "INVITACION_CIRCULO") return "group_add";
+    if (tipo === "GASTO_CIRCULO") return "receipt_long";
+    if (tipo === "DEUDA_ASIGNADA") return "account_balance_wallet";
+    if (tipo === "DEUDA_PAGADA") return "check_circle";
+    if (tipo === "META_CUMPLIDA") return "savings";
+    if (tipo === "EXPULSION_CIRCULO") return "person_remove";
+    if (tipo === "META_GRUPAL_PROPUESTA") return "flag";
+    if (tipo === "META_GRUPAL_ACTIVADA") return "rocket_launch";
+    if (tipo === "META_GRUPAL_RECHAZADA") return "cancel";
+    if (tipo === "META_GRUPAL_CUMPLIDA") return "emoji_events";
+    if (tipo === "GASTO_PROGRAMADO_RECORDATORIO") return "event_repeat";
     return "notifications";
   };
 

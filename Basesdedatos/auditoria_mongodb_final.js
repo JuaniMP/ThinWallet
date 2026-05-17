@@ -7,6 +7,7 @@
  * Un TRANSACCION_REALIZADA trae monto, categoría y modalidad.
  * Un MIEMBRO_EXPULSADO trae motivo y rol anterior.
  * Un GASTO_PROGRAMADO_CREADO trae periodicidad y fecha de fin.
+ * Un META_GRUPAL_PROPUESTA trae nombre y valor objetivo de la meta.
  * Esa variabilidad estructural no cabe limpiamente en columnas relacionales.
  *
  * PATRONES APLICADOS:
@@ -20,7 +21,7 @@
 // 1. CREAR BASE DE DATOS Y COLECCIONES
 // ============================================
 
-use gestion_gastos_audit;
+use thinwallet_db;
 
 // Colección 1: Historial de eventos por círculo (Bucket Pattern)
 db.createCollection("actividad_circulo_diaria");
@@ -399,7 +400,23 @@ registrarEvento(CIRCULO_1, "GASTO_PROGRAMADO_CREADO", 101, {
 });
 actualizarIndicadores(CIRCULO_1, "GASTO_PROGRAMADO_CREADO", {});
 
-print("✓ 57 eventos registrados para Círculo 1");
+// Simular ciclo completo de meta grupal
+registrarEvento(CIRCULO_1, "META_GRUPAL_PROPUESTA", 101, {
+  nombre: "Fondo de emergencias",
+  valor: 500000
+});
+
+registrarEvento(CIRCULO_1, "META_GRUPAL_ACTIVADA", 102, {
+  nombre: "Fondo de emergencias",
+  valor: 500000
+});
+
+registrarEvento(CIRCULO_1, "META_GRUPAL_CUMPLIDA", 103, {
+  nombre: "Fondo de emergencias",
+  valor: 500000
+});
+
+print("✓ 60 eventos registrados para Círculo 1 (incluye ciclo de meta grupal)");
 
 // Simular eventos del Círculo 2: Viaje a Cartagena
 print("\nRegistrando eventos para 'Viaje a Cartagena'...");
@@ -557,8 +574,44 @@ const evolucionTransacciones = db.actividad_circulo_diaria.aggregate([
 
 printjson(evolucionTransacciones);
 
+// Consulta 6: Historial de metas grupales del círculo
+print("\n6. Historial de metas grupales en 'Gastos del Hogar':");
+const metasGrupales = db.actividad_circulo_diaria.aggregate([
+  {
+    $match: {
+      id_circulo: CIRCULO_1
+    }
+  },
+  { $unwind: "$eventos" },
+  {
+    $match: {
+      "eventos.tipo_evento": {
+        $in: [
+          "META_GRUPAL_PROPUESTA",
+          "META_GRUPAL_ACTIVADA",
+          "META_GRUPAL_RECHAZADA",
+          "META_GRUPAL_CUMPLIDA"
+        ]
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      tipo: "$eventos.tipo_evento",
+      usuario: "$eventos.id_usuario",
+      nombre_meta: "$eventos.contexto.nombre",
+      valor_meta: "$eventos.contexto.valor",
+      fecha: "$eventos.timestamp"
+    }
+  },
+  { $sort: { fecha: 1 } }
+]).toArray();
+
+printjson(metasGrupales);
+
 print("\n=== SCRIPT COMPLETADO EXITOSAMENTE ===");
 print("\nColecciones creadas:");
 print("  • actividad_circulo_diaria (Bucket Pattern)");
 print("  • indicadores_circulo (Approximation Pattern)");
-print("\nPara ejecutar: mongosh gestion_gastos_audit < auditoria_mongodb_final.js");
+print("\nPara ejecutar: mongosh thinwallet_db < auditoria_mongodb_final.js");

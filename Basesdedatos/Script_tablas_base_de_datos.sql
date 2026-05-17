@@ -152,7 +152,7 @@ CREATE TABLE auditoria_sistema (
     id_usuario INT NULL,
     tabla_afectada VARCHAR(50) NOT NULL,
     registro_id VARCHAR(50) NOT NULL, 
-    accion ENUM('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT') NOT NULL,
+    accion VARCHAR(50) NOT NULL,
     valores_anteriores JSON,
     valores_nuevos JSON,
     direccion_ip VARCHAR(45),

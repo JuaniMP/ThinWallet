@@ -195,6 +195,7 @@ export interface Deuda {
   idTransaccion?: number;
   idUsuarioDeudor?: number;
   idUsuarioAcreedor?: number;
+  moneda?: string;
 }
 
 export interface Gasto {

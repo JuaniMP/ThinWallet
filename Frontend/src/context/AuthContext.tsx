@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(authToken);
     setUser(userData);
-
   };
 
   const loginWithToken = async (tokenValue: string) => {
@@ -73,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("userToken", tokenValue);
     setToken(authToken);
     setUser(userData);
-
     return userData;
   };
 

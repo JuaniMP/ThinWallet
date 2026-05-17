@@ -9,6 +9,7 @@ import {
   SUPPORTED_CURRENCIES,
   type CurrencyCode,
 } from "../../context/CurrencyContext";
+import { validatePassword, validateName, validateUsername, validateEmail } from "../../utils/validators";
 import type { User } from "../../types";
 
 export function Profile() {
@@ -44,12 +45,14 @@ export function Profile() {
   const handleCambiarPass = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassError("");
-    if (passForm.nuevaContrasena !== passForm.confirmar) {
-      setPassError("Las contraseñas nuevas no coinciden");
+    if (!passForm.contrasenaActual) {
+      setPassError("Ingresa tu contraseña actual");
       return;
     }
-    if (passForm.nuevaContrasena.length < 6) {
-      setPassError("La nueva contraseña debe tener al menos 6 caracteres");
+    const passErr = validatePassword(passForm.nuevaContrasena);
+    if (passErr) { setPassError(passErr); return; }
+    if (passForm.nuevaContrasena !== passForm.confirmar) {
+      setPassError("Las contraseñas nuevas no coinciden");
       return;
     }
     if (!authUser?.idUsuario) return;
@@ -94,8 +97,16 @@ export function Profile() {
   const handleEditPerfil = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authUser?.idUsuario) return;
-    setEditSaving(true);
     setEditError("");
+    const nombresErr = validateName(editForm.nombres, "Nombres");
+    if (nombresErr) { setEditError(nombresErr); return; }
+    const apellidosErr = validateName(editForm.apellidos, "Apellidos");
+    if (apellidosErr) { setEditError(apellidosErr); return; }
+    if (editForm.nombreUsuario) {
+      const usernameErr = validateUsername(editForm.nombreUsuario);
+      if (usernameErr) { setEditError(usernameErr); return; }
+    }
+    setEditSaving(true);
     try {
       const updated = await authService.updatePerfil(authUser.idUsuario, editForm);
       setProfileData(updated);
@@ -122,6 +133,16 @@ export function Profile() {
   const handleReclamar = async (e: React.FormEvent) => {
     e.preventDefault();
     setReclamarError("");
+    const nombresErr = validateName(reclamarForm.nombres, "Nombres");
+    if (nombresErr) { setReclamarError(nombresErr); return; }
+    const apellidosErr = validateName(reclamarForm.apellidos, "Apellidos");
+    if (apellidosErr) { setReclamarError(apellidosErr); return; }
+    const usernameErr = validateUsername(reclamarForm.nombreUsuario);
+    if (usernameErr) { setReclamarError(usernameErr); return; }
+    const emailErr = validateEmail(reclamarForm.correo);
+    if (emailErr) { setReclamarError(emailErr); return; }
+    const passErr = validatePassword(reclamarForm.contrasena);
+    if (passErr) { setReclamarError(passErr); return; }
     try {
       const usuario = await api.post<User>("/usuarios/reclamar-perfil", {
         tokenReclamo: authUser?.tokenReclamo,
@@ -192,18 +213,6 @@ export function Profile() {
     },
   ];
 
-  const securityItems = [
-    {
-      label: "Two-Factor Authentication",
-      desc: "Habilitado via Authenticator App",
-      icon: "check_circle",
-    },
-    {
-      label: "Compartir Datos",
-      desc: "Limitado a servicios esenciales",
-      icon: "toggle_on",
-    },
-  ];
 
   return (
     <Layout>
@@ -325,7 +334,7 @@ export function Profile() {
                       </div>
                       <div className="input-group">
                         <label>Contraseña</label>
-                        <input type="password" value={reclamarForm.contrasena} onChange={(e) => setReclamarForm((f) => ({ ...f, contrasena: e.target.value }))} required minLength={6} />
+                        <input type="password" value={reclamarForm.contrasena} onChange={(e) => setReclamarForm((f) => ({ ...f, contrasena: e.target.value }))} required />
                       </div>
                       {reclamarError && <p className="error-msg">{reclamarError}</p>}
                       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -370,17 +379,6 @@ export function Profile() {
             Mis Finanzas
             {isGhost && <span className="material-symbols-outlined" style={{ fontSize: "1rem", color: "var(--on-surface-variant)" }}>lock</span>}
           </h4>
-          <div
-            className="section-row"
-            style={{ cursor: isGhost ? "not-allowed" : "pointer" }}
-            onClick={() => !isGhost && window.location.assign("/goals")}
-          >
-            <div>
-              <p className="row-label">Metas de Ahorro</p>
-              <p className="row-desc">Gestiona tus objetivos financieros</p>
-            </div>
-            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>savings</span>
-          </div>
           <div
             className="section-row"
             style={{ cursor: isGhost ? "not-allowed" : "pointer" }}
@@ -453,10 +451,10 @@ export function Profile() {
               <form
                 ref={passFormRef}
                 onSubmit={(e) => void handleCambiarPass(e)}
-                style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}
+                style={{ width: "100%", display: "flex", flexDirection: "column", gap: 0, marginTop: 8 }}
               >
-                <label style={{ fontSize: "0.85rem" }}>
-                  Contraseña actual
+                <div className="input-group">
+                  <label>Contraseña actual</label>
                   <input
                     type="password"
                     value={passForm.contrasenaActual}
@@ -464,9 +462,9 @@ export function Profile() {
                     required
                     autoComplete="current-password"
                   />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Nueva contraseña
+                </div>
+                <div className="input-group">
+                  <label>Nueva contraseña</label>
                   <input
                     type="password"
                     value={passForm.nuevaContrasena}
@@ -475,9 +473,9 @@ export function Profile() {
                     minLength={6}
                     autoComplete="new-password"
                   />
-                </label>
-                <label style={{ fontSize: "0.85rem" }}>
-                  Confirmar nueva contraseña
+                </div>
+                <div className="input-group">
+                  <label>Confirmar nueva contraseña</label>
                   <input
                     type="password"
                     value={passForm.confirmar}
@@ -486,39 +484,25 @@ export function Profile() {
                     minLength={6}
                     autoComplete="new-password"
                   />
-                </label>
+                </div>
                 {passError && <p className="error-msg">{passError}</p>}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button type="submit" className="btn btn-primary" disabled={passLoading} style={{ fontSize: "0.85rem" }}>
-                    {passLoading ? "Guardando..." : "Guardar contraseña"}
-                  </button>
+                <div style={{ display: "flex", gap: 0, marginTop: 4, borderTop: "2px solid var(--primary)" }}>
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ fontSize: "0.85rem" }}
+                    style={{ flex: 1, borderRadius: 0, borderRight: "1px solid var(--primary)" }}
                     onClick={() => { setShowCambiarPass(false); setPassError(""); }}
                   >
                     Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={passLoading} style={{ flex: 2, borderRadius: 0 }}>
+                    {passLoading ? "Guardando..." : "Guardar contraseña"}
                   </button>
                 </div>
               </form>
             )}
           </div>
 
-          {securityItems.map((item) => (
-            <div key={item.label} className="section-row">
-              <div>
-                <p className="row-label">{item.label}</p>
-                <p className="row-desc">{item.desc}</p>
-              </div>
-              <span
-                className="material-symbols-outlined"
-                style={{ color: "var(--primary)" }}
-              >
-                {item.icon}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
 

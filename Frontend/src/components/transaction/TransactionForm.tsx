@@ -12,6 +12,7 @@ import {
   validateDescription,
   validateCurrency,
 } from "../../utils/validators";
+import { useAuth } from "../../context/AuthContext";
 
 interface TransactionFormProps {
   onSubmit: (data: {
@@ -28,17 +29,38 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
+  const { user } = useAuth();
+  const isGhost = user?.estado === 0;
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<"DEPOSITO" | "RETIRO">("RETIRO");
+  const [type, setType] = useState<"DEPOSITO" | "RETIRO" | null>(isGhost ? "DEPOSITO" : null);
+  const [ghostRetiroMsg, setGhostRetiroMsg] = useState(false);
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [paymentMethodId, setPaymentMethodId] = useState<number>(1);
+  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
   const [moneda, setMoneda] = useState<CurrencyCode>("COP");
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Validar tipo de movimiento
+    if (!type) {
+      setError("Selecciona Retiro o Depósito");
+      return;
+    }
+
+    // Validar método de pago
+    if (!paymentMethodId) {
+      setError("Selecciona un método de pago");
+      return;
+    }
+
+    // Validar categoría
+    if (!categoryId) {
+      setError("Selecciona una categoría");
+      return;
+    }
 
     // Validar monto
     const amountError = validateAmount(amount);
@@ -51,12 +73,6 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
     const descError = validateDescription(description);
     if (descError) {
       setError(descError);
-      return;
-    }
-
-    // Validar categoría
-    if (!categoryId) {
-      setError("Por favor subministra una categoría válida");
       return;
     }
 
@@ -113,6 +129,8 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           type="button"
           className={`type-btn ${type === "RETIRO" ? "active expense" : ""}`}
           onClick={() => {
+            if (isGhost) { setGhostRetiroMsg(true); return; }
+            setGhostRetiroMsg(false);
             setType("RETIRO");
             setCategoryId("");
           }}
@@ -123,6 +141,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           type="button"
           className={`type-btn ${type === "DEPOSITO" ? "active income" : ""}`}
           onClick={() => {
+            setGhostRetiroMsg(false);
             setType("DEPOSITO");
             setCategoryId("");
           }}
@@ -130,6 +149,16 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           Depósito
         </button>
       </div>
+      {ghostRetiroMsg && (
+        <div style={{ margin: "12px 0", padding: "14px 16px", borderLeft: "4px solid var(--primary)", background: "var(--surface-container-low)" }}>
+          <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--primary)", marginBottom: 6 }}>
+            Cuenta invitada
+          </p>
+          <p style={{ margin: 0, fontSize: "0.84rem", color: "var(--on-surface-variant)", lineHeight: 1.5 }}>
+            No puedes registrar gastos personales sin una cuenta activa. Solo puedes registrar depósitos o gastos dentro de un círculo.
+          </p>
+        </div>
+      )}
 
       <div className="input-group">
         <label>Método de Pago</label>
@@ -161,7 +190,6 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
           name="amount"
           value={amount}
           onChange={setAmount}
-          prefix={moneda}
           required
         />
         <div className="input-group">
@@ -186,7 +214,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         name="description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        maxLength={500}
+        maxLength={200}
         required
       />
 

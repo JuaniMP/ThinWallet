@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import { Button } from "../../components/common/Button";
 import { Input } from "../../components/common/Input";
+import { validateEmail, validatePassword } from "../../utils/validators";
 
 export function ForgotPassword() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -20,6 +21,8 @@ export function ForgotPassword() {
     e.preventDefault();
     setError("");
     setMessage("");
+    const emailErr = validateEmail(correo);
+    if (emailErr) { setError(emailErr); return; }
     setIsLoading(true);
 
     try {
@@ -40,6 +43,7 @@ export function ForgotPassword() {
     e.preventDefault();
     setError("");
     setMessage("");
+    if (!codigo.trim() || codigo.trim().length < 4) { setError("Ingresa el código de verificación"); return; }
     setIsLoading(true);
 
     try {
@@ -60,6 +64,8 @@ export function ForgotPassword() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    const passErr = validatePassword(nuevaContrasena);
+    if (passErr) { setError(passErr); return; }
     if (nuevaContrasena !== confirmarContrasena) {
       setError("Las contraseñas no coinciden");
       return;

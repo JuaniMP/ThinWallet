@@ -34,6 +34,16 @@ public class DeudaService {
     @Autowired(required = false)
     private SseEventBus eventBus;
 
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
+
+    private void populateMoneda(Deuda deuda) {
+        if (deuda.getIdTransaccion() != null) {
+            transaccionRepository.findById(deuda.getIdTransaccion())
+                    .ifPresent(t -> deuda.setMoneda(t.getMonedaOriginal()));
+        }
+    }
+
     private void publicarSaldos(Long... usuarios) {
         if (eventBus == null) return;
         for (Long u : usuarios) {
@@ -43,27 +53,35 @@ public class DeudaService {
 
     @Transactional(readOnly = true)
     public List<Deuda> findAll() {
-        return deudaRepository.findAll();
+        List<Deuda> list = deudaRepository.findAll();
+        list.forEach(this::populateMoneda);
+        return list;
     }
 
     @Transactional(readOnly = true)
     public Optional<Deuda> findById(Long id) {
-        return deudaRepository.findById(id);
+        return deudaRepository.findById(id).map(d -> { populateMoneda(d); return d; });
     }
 
     @Transactional(readOnly = true)
     public List<Deuda> findByUsuarioDeudor(Long idUsuarioDeudor) {
-        return deudaRepository.findByDeudor(idUsuarioDeudor);
+        List<Deuda> list = deudaRepository.findByDeudor(idUsuarioDeudor);
+        list.forEach(this::populateMoneda);
+        return list;
     }
 
     @Transactional(readOnly = true)
     public List<Deuda> findByUsuarioAcreedor(Long idUsuarioAcreedor) {
-        return deudaRepository.findByAcreedor(idUsuarioAcreedor);
+        List<Deuda> list = deudaRepository.findByAcreedor(idUsuarioAcreedor);
+        list.forEach(this::populateMoneda);
+        return list;
     }
 
     @Transactional(readOnly = true)
     public List<Deuda> findByTransaccion(Long idTransaccion) {
-        return deudaRepository.findByIdTransaccion(idTransaccion);
+        List<Deuda> list = deudaRepository.findByIdTransaccion(idTransaccion);
+        list.forEach(this::populateMoneda);
+        return list;
     }
 
     @Transactional
@@ -99,6 +117,22 @@ public class DeudaService {
                 ctx.put("deudor", saved.getIdUsuarioDeudor());
                 actividadCirculoService.registrarEvento(idCirculo, "DEUDA_GENERADA",
                         saved.getIdUsuarioAcreedor(), ctx);
+            }
+        }
+
+        // Notificar al acreedor que alguien registró una deuda con él
+        if (notificacionService != null && saved.getIdUsuarioAcreedor() != null) {
+            try {
+                notificacionService.crear(
+                        saved.getIdUsuarioAcreedor(),
+                        "Te registraron una deuda",
+                        "Alguien indicó que te debe $" + saved.getMonto().longValue(),
+                        "DEUDA_ASIGNADA",
+                        null,
+                        null
+                );
+            } catch (Exception e) {
+                log.warn("No se pudo notificar deuda al acreedor {}: {}", saved.getIdUsuarioAcreedor(), e.getMessage());
             }
         }
 
@@ -138,6 +172,22 @@ public class DeudaService {
                     ctx.put("metodo_pago", saved.getMetodoPagoSugerido());
                     actividadCirculoService.registrarEvento(idCirculo, "DEUDA_PAGADA",
                             saved.getIdUsuarioDeudor(), ctx);
+                }
+            }
+
+            // Notificar al acreedor que le pagaron
+            if (notificacionService != null && saved.getIdUsuarioAcreedor() != null) {
+                try {
+                    notificacionService.crear(
+                            saved.getIdUsuarioAcreedor(),
+                            "Tu deuda fue pagada",
+                            "Se confirmó el pago de $" + saved.getMonto().longValue(),
+                            "DEUDA_PAGADA",
+                            null,
+                            null
+                    );
+                } catch (Exception e) {
+                    log.warn("No se pudo notificar pago al acreedor {}: {}", saved.getIdUsuarioAcreedor(), e.getMessage());
                 }
             }
 
