@@ -40,6 +40,7 @@ export function Input({
             onClick={() => setShowPassword((v) => !v)}
             style={{
               flexShrink: 0,
+              marginLeft: "auto",
               background: "none",
               border: "none",
               cursor: "pointer",
