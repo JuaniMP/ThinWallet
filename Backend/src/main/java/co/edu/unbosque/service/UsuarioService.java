@@ -32,6 +32,7 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenHashingService tokenHashingService;
+    private final FcmTokenStore fcmTokenStore;
 
     @Autowired(required = false)
     private AuditoriaSistemaService auditoriaService;
@@ -317,6 +318,10 @@ public class UsuarioService {
                     "RECLAMACION_PERFIL", "{\"tipo\":\"FANTASMA\"}", "{\"tipo\":\"CLIENTE\",\"correo\":\"" + correo + "\"}");
         }
         return reclamado;
+    }
+
+    public void actualizarFcmToken(Long idUsuario, String fcmToken) {
+        fcmTokenStore.guardar(idUsuario, fcmToken);
     }
 
     @Transactional

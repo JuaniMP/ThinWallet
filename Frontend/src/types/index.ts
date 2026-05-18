@@ -157,7 +157,7 @@ export interface CirculoDetalle {
 }
 
 export interface Notificacion {
-  id: string;
+  id: number;
   idUsuarioDestino: number;
   titulo: string;
   mensaje: string;
