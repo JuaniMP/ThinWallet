@@ -54,7 +54,7 @@ export function GastosHormiga() {
           </div>
         </div>
 
-        <div className="neo-shadow" style={{ padding: 16, marginBottom: 24 }}>
+        <div className="neo-shadow" style={{ padding: 20, marginBottom: 24 }}>
           <div
             style={{
               display: "grid",
@@ -68,19 +68,24 @@ export function GastosHormiga() {
               name="umbral"
               value={umbral}
               onChange={(v) => setUmbral(v)}
-              placeholder="Ej: 20,000"
+              placeholder="Ej: 50,000"
             />
-            <label>
-              Días a considerar
-              <input
-                type="number"
-                min={1}
-                max={365}
+            <div className="input-group">
+              <label htmlFor="dias-select">Período de análisis</label>
+              <select
+                id="dias-select"
                 value={dias}
-                onChange={(e) => setDias(Number(e.target.value) || 0)}
-                style={{ width: "100%" }}
-              />
-            </label>
+                onChange={(e) => setDias(Number(e.target.value))}
+              >
+                <option value={7}>Última semana (7 días)</option>
+                <option value={15}>Últimas 2 semanas (15 días)</option>
+                <option value={30}>Último mes (30 días)</option>
+                <option value={60}>Últimos 2 meses (60 días)</option>
+                <option value={90}>Últimos 3 meses (90 días)</option>
+                <option value={180}>Últimos 6 meses (180 días)</option>
+                <option value={365}>Último año (365 días)</option>
+              </select>
+            </div>
             <button
               className="btn-primary"
               onClick={() => void load()}
