@@ -49,7 +49,7 @@ export function GastosHormiga() {
       <div className="page-container">
         <div className="page-header">
           <div>
-            <p className="page-label">RF-10 — Detección de micro-gastos</p>
+            <p className="page-label">Análisis de Gastos</p>
             <h2 className="page-title">GASTOS HORMIGA</h2>
           </div>
         </div>
