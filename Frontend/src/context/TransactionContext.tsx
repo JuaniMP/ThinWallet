@@ -25,7 +25,11 @@ function mapToFrontend(t: BackendTransaccion): Transaction {
     userId: String(t.idUsuario),
     amount: t.montoOriginal * (t.tasaCambio ?? 1),
     description: t.nombre,
-    type: t.tipoCategoria === "DEPOSITO" ? "income" : "expense",
+    type:
+      t.tipoCategoria === "DEPOSITO" ||
+      (t.tipoCategoria === "AMBOS" && t.contexto === "DEPOSITO")
+        ? "income"
+        : "expense",
     categoryId: t.idCategoria ? String(t.idCategoria) : "",
     date: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -61,6 +65,7 @@ interface TransactionContextType {
     idTipoMovimiento: number;
     monedaOriginal?: string;
     tasaCambio?: number;
+    contexto?: string;
   }) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 }
@@ -120,6 +125,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     idTipoMovimiento: number;
     monedaOriginal?: string;
     tasaCambio?: number;
+    contexto?: string;
   }) => {
     setIsLoading(true);
     setError(null);
