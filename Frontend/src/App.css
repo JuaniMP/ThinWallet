@@ -91,7 +91,7 @@
   position: relative;
 }
 
-.input-wrapper .material-symbols-outlined {
+.input-wrapper > .material-symbols-outlined {
   position: absolute;
   left: var(--space-4);
   top: 50%;
