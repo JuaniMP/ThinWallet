@@ -83,8 +83,7 @@ export function Debts() {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
     try {
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, {});
-      await transactionService.create({
+      const tx = await transactionService.create({
         nombre: "Pago de deuda",
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "RETIRO",
@@ -92,6 +91,7 @@ export function Debts() {
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar pago");
@@ -105,8 +105,7 @@ export function Debts() {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
     try {
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, {});
-      await transactionService.create({
+      const tx = await transactionService.create({
         nombre: "Cobro de deuda",
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "DEPOSITO",
@@ -114,6 +113,7 @@ export function Debts() {
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar recepción");
