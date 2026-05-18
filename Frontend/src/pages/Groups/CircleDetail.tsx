@@ -155,6 +155,52 @@ export function CircleDetail() {
 
   const isAdmin = detail?.idUsuarioCreador === user?.idUsuario;
 
+  // Mesadas
+  const [showMesadaForm, setShowMesadaForm] = useState(false);
+  const [mesadaForm, setMesadaForm] = useState({ idUsuarioDestino: "", monto: 0 });
+  const [mesadaError, setMesadaError] = useState("");
+  const [mesadaSaving, setMesadaSaving] = useState(false);
+
+  const handleEnviarMesada = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMesadaError("");
+    if (!mesadaForm.idUsuarioDestino) { setMesadaError("Selecciona un miembro"); return; }
+    const amountError = validateAmount(mesadaForm.monto);
+    if (amountError) { setMesadaError(amountError); return; }
+    if (!user?.idUsuario || !detail) return;
+    setMesadaSaving(true);
+    try {
+      // RETIRO para el admin (sale dinero de su cuenta)
+      await transactionService.create({
+        nombre: `Mesada enviada a ${detail.invitados.find((i) => String(i.idUsuario) === mesadaForm.idUsuarioDestino)?.nombreCompleto ?? "miembro"}`,
+        montoOriginal: mesadaForm.monto,
+        monedaOriginal: detail.monedaBase ?? "COP",
+        tasaCambio: 1,
+        tipoMovimiento: "MESADA_ENVIADA",
+        idUsuario: user.idUsuario,
+        idCirculoGasto: detail.idCirculoGasto,
+        contexto: `Mesada para usuario ${mesadaForm.idUsuarioDestino}`,
+      });
+      // DEPOSITO para el destinatario (recibe dinero en su cuenta)
+      await transactionService.create({
+        nombre: `Mesada recibida de ${user.nombres} ${user.apellidos}`.trim(),
+        montoOriginal: mesadaForm.monto,
+        monedaOriginal: detail.monedaBase ?? "COP",
+        tasaCambio: 1,
+        tipoMovimiento: "MESADA_RECIBIDA",
+        idUsuario: Number(mesadaForm.idUsuarioDestino),
+        idCirculoGasto: detail.idCirculoGasto,
+        contexto: `Mesada del círculo ${detail.nombre}`,
+      });
+      setMesadaForm({ idUsuarioDestino: "", monto: 0 });
+      setShowMesadaForm(false);
+    } catch (err) {
+      setMesadaError(err instanceof Error ? err.message : "Error al enviar mesada");
+    } finally {
+      setMesadaSaving(false);
+    }
+  };
+
   const handleModalidadChange = (mod: string) => {
     const m = mod as "" | "IGUALITARIA" | "PORCENTAJE" | "MONTO_FIJO";
     setModalidadDivision(m);
@@ -234,6 +280,7 @@ export function CircleDetail() {
         idCirculoGasto: Number(id),
         idCategoria: gastoForm.idCategoria ? Number(gastoForm.idCategoria) : undefined,
         idTipoMovimiento: 2,
+        tasaCambio: 1,
         modalidadDivision: modalidadDivision || undefined,
       });
 
@@ -665,6 +712,60 @@ export function CircleDetail() {
                 </div>
               )}
             </section>
+
+            {/* MESADAS — solo admin en círculos con permiteMesadas */}
+            {isAdmin && detail.permiteMesadas && detail.invitados.length > 0 && (
+              <section className="circle-panel neo-shadow">
+                <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h3>Mesadas</h3>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ fontSize: "0.78rem", padding: "6px 14px" }}
+                    onClick={() => { setShowMesadaForm((v) => !v); setMesadaError(""); setMesadaForm({ idUsuarioDestino: "", monto: 0 }); }}
+                  >
+                    {showMesadaForm ? "Cancelar" : "+ Enviar mesada"}
+                  </button>
+                </div>
+
+                {showMesadaForm && (
+                  <form onSubmit={(e) => void handleEnviarMesada(e)} style={{ marginTop: 12 }}>
+                    <div className="input-group">
+                      <label>Destinatario</label>
+                      <select
+                        value={mesadaForm.idUsuarioDestino}
+                        onChange={(e) => setMesadaForm((f) => ({ ...f, idUsuarioDestino: e.target.value }))}
+                        required
+                      >
+                        <option value="" disabled>Seleccionar miembro</option>
+                        {detail.invitados.map((inv) => (
+                          <option key={inv.idUsuario} value={inv.idUsuario}>{inv.nombreCompleto}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <MoneyInput
+                      label={`Monto (${detail.monedaBase ?? "COP"})`}
+                      name="montoMesada"
+                      value={mesadaForm.monto || ""}
+                      onChange={(v) => setMesadaForm((f) => ({ ...f, monto: v }))}
+                      placeholder="0"
+                      required
+                    />
+                    {mesadaError && <p className="error-msg">{mesadaError}</p>}
+                    <button type="submit" className="btn btn-primary" disabled={mesadaSaving} style={{ width: "100%", marginTop: 8 }}>
+                      {mesadaSaving ? "Enviando..." : "Enviar mesada"}
+                    </button>
+                  </form>
+                )}
+
+                {!showMesadaForm && (
+                  <p style={{ color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>
+                    Como administrador puedes enviar mesadas a los miembros del círculo.
+                    El monto se registrará como retiro en tu cuenta y como ingreso en la del destinatario.
+                  </p>
+                )}
+              </section>
+            )}
 
             {/* HISTORY SECTION */}
             <section className="circle-history-panel neo-shadow">

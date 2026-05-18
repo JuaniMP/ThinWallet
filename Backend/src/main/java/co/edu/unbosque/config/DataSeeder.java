@@ -29,6 +29,8 @@ public class DataSeeder implements ApplicationRunner {
         seedTipoMovimiento("TRANSFERENCIA");
         seedCategoria("Cobro de deuda", "DEPOSITO");
         seedCategoria("Pago de deuda", "RETIRO");
+        seedCategoria("Mesada recibida", "DEPOSITO");
+        seedCategoria("Mesada enviada", "RETIRO");
         log.info("DataSeeder – datos base verificados");
     }
 

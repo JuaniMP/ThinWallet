@@ -124,6 +124,24 @@ public class TransaccionService {
                                 .filter(c -> "RETIRO".equalsIgnoreCase(c.getTipoCategoria()))
                                 .findFirst().map(Categoria::getIdCategoria).orElse(1L));
             }
+            if ("MESADA_RECIBIDA".equals(tipo)) {
+                return todas.stream()
+                        .filter(c -> "Mesada recibida".equalsIgnoreCase(c.getNombre()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .filter(c -> "DEPOSITO".equalsIgnoreCase(c.getTipoCategoria()))
+                                .findFirst().map(Categoria::getIdCategoria).orElse(1L));
+            }
+            if ("MESADA_ENVIADA".equals(tipo)) {
+                return todas.stream()
+                        .filter(c -> "Mesada enviada".equalsIgnoreCase(c.getNombre()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .filter(c -> "RETIRO".equalsIgnoreCase(c.getTipoCategoria()))
+                                .findFirst().map(Categoria::getIdCategoria).orElse(1L));
+            }
             // "RETIRO"/"GASTO"/"EGRESO" → buscar categoría RETIRO
             // "DEPOSITO"/"INGRESO" → buscar categoría DEPOSITO
             String tipoCategoriaBuscado = tipo.equals("DEPOSITO") || tipo.equals("INGRESO") ? "DEPOSITO" : "RETIRO";
