@@ -58,8 +58,10 @@ public class DeudaController {
     }
 
     @PutMapping("/{id}/confirmar")
-    public ResponseEntity<Deuda> confirmarPago(@PathVariable Long id) {
-        return deudaService.confirmarPago(id)
+    public ResponseEntity<Deuda> confirmarPago(@PathVariable Long id,
+                                               @RequestBody(required = false) Map<String, Long> body) {
+        Long idTransaccion = (body != null) ? body.get("idTransaccion") : null;
+        return deudaService.confirmarPago(id, idTransaccion)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

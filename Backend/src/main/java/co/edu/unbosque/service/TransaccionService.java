@@ -99,13 +99,22 @@ public class TransaccionService {
                 .orElse(2L);
     }
 
-    /** Si idCategoria es null, usa la primera categoría disponible. Nunca deja null en BD. */
-    private Long resolverIdCategoria(Long idCategoria) {
+    /** Si idCategoria es null, busca una categoría del tipo correcto (RETIRO/DEPOSITO). Nunca deja null en BD. */
+    private Long resolverIdCategoria(Long idCategoria, String tipoMovimiento) {
         if (idCategoria != null) return idCategoria;
-        return categoriaRepository.findAll().stream()
-                .findFirst()
-                .map(Categoria::getIdCategoria)
-                .orElse(1L);
+        List<Categoria> todas = categoriaRepository.findAll();
+        if (tipoMovimiento != null) {
+            String tipo = tipoMovimiento.toUpperCase();
+            // "RETIRO"/"GASTO"/"EGRESO" → buscar categoría RETIRO
+            // "DEPOSITO"/"INGRESO" → buscar categoría DEPOSITO
+            String tipoCategoriaBuscado = tipo.equals("DEPOSITO") || tipo.equals("INGRESO") ? "DEPOSITO" : "RETIRO";
+            return todas.stream()
+                    .filter(c -> tipoCategoriaBuscado.equalsIgnoreCase(c.getTipoCategoria()))
+                    .findFirst()
+                    .map(Categoria::getIdCategoria)
+                    .orElseGet(() -> todas.stream().findFirst().map(Categoria::getIdCategoria).orElse(1L));
+        }
+        return todas.stream().findFirst().map(Categoria::getIdCategoria).orElse(1L);
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
@@ -167,7 +176,7 @@ public class TransaccionService {
         transaccion.setContexto(request.getContexto());
         transaccion.setIdUsuario(request.getIdUsuario());
         transaccion.setIdCirculoGasto(request.getIdCirculoGasto());
-        transaccion.setIdCategoria(resolverIdCategoria(request.getIdCategoria()));
+        transaccion.setIdCategoria(resolverIdCategoria(request.getIdCategoria(), request.getTipoMovimiento()));
         transaccion.setIdGasto(idGasto);
         transaccion.setIdTipoMovimiento(idTipoMovimiento);
         Transaccion saved = transaccionRepository.save(transaccion);
