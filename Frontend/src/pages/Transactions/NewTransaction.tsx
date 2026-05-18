@@ -16,6 +16,7 @@ export function NewTransaction() {
     idTipoMovimiento: number;
     monedaOriginal: string;
     tasaCambio: number;
+    contexto?: string;
   }) => {
     await createTransaction(data);
     navigate("/dashboard");
