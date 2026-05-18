@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,11 +10,22 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const messaging = getMessaging(app);
+let messaging: Messaging | null = null;
+
+try {
+  if (firebaseConfig.apiKey && firebaseConfig.messagingSenderId) {
+    const app = initializeApp(firebaseConfig);
+    messaging = getMessaging(app);
+  }
+} catch {
+  // Firebase no configurado — push notifications deshabilitadas
+}
+
+export { messaging, onMessage };
 
 export async function requestFcmToken(): Promise<string | null> {
   try {
+    if (!messaging) return null;
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return null;
     const token = await getToken(messaging, {
@@ -25,5 +36,3 @@ export async function requestFcmToken(): Promise<string | null> {
     return null;
   }
 }
-
-export { onMessage };
