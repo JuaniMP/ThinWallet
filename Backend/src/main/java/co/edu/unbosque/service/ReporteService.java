@@ -6,6 +6,7 @@ import co.edu.unbosque.entity.Gasto;
 import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.repository.DeudaRepository;
 import co.edu.unbosque.repository.GastoRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -35,6 +36,7 @@ public class ReporteService {
     private final TransaccionRepository transaccionRepository;
     private final DeudaRepository deudaRepository;
     private final GastoRepository gastoRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DeviceRgb COLOR_HEADER = new DeviceRgb(83, 97, 57);   // verde primario
@@ -62,16 +64,29 @@ public class ReporteService {
                 .setFontSize(9).setFontColor(ColorConstants.GRAY)
                 .setTextAlignment(TextAlignment.CENTER).setMarginBottom(20));
 
-        // Resumen
-        BigDecimal totalIngresos = txs.stream()
-                .filter(t -> "DEPOSITO".equalsIgnoreCase(t.getTipoMovimiento()) || "INGRESO".equalsIgnoreCase(t.getTipoMovimiento()))
-                .map(t -> t.getMontoOriginal() != null ? t.getMontoOriginal() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Resumen: usar categoria.tipo_categoria para distinguir ingresos de gastos
+        // (tipoMovimiento es @Transient y viene null al cargar desde el repositorio)
+        String sqlResumen = """
+                SELECT
+                    SUM(CASE WHEN UPPER(c.tipo_categoria) = 'DEPOSITO'
+                              OR (UPPER(c.tipo_categoria) = 'AMBOS' AND UPPER(t.contexto) = 'DEPOSITO')
+                             THEN t.monto_original ELSE 0 END) AS total_ingresos,
+                    SUM(CASE WHEN UPPER(c.tipo_categoria) NOT IN ('DEPOSITO')
+                              AND NOT (UPPER(c.tipo_categoria) = 'AMBOS' AND UPPER(t.contexto) = 'DEPOSITO')
+                             THEN t.monto_original ELSE 0 END) AS total_gastos
+                FROM transaccion t
+                INNER JOIN categoria c ON t.id_categoria = c.id_categoria
+                WHERE t.id_usuario = ?
+                  AND t.id_circulo_gasto IS NULL
+                """;
 
-        BigDecimal totalGastos = txs.stream()
-                .filter(t -> "RETIRO".equalsIgnoreCase(t.getTipoMovimiento()) || "GASTO".equalsIgnoreCase(t.getTipoMovimiento()))
-                .map(t -> t.getMontoOriginal() != null ? t.getMontoOriginal() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal[] resumenVals = jdbcTemplate.queryForObject(sqlResumen, (rs, rn) -> new BigDecimal[]{
+                rs.getBigDecimal("total_ingresos"),
+                rs.getBigDecimal("total_gastos")
+        }, idUsuario);
+
+        BigDecimal totalIngresos = resumenVals != null && resumenVals[0] != null ? resumenVals[0] : BigDecimal.ZERO;
+        BigDecimal totalGastos   = resumenVals != null && resumenVals[1] != null ? resumenVals[1] : BigDecimal.ZERO;
 
         doc.add(new Paragraph("RESUMEN FINANCIERO").setFontSize(13).setBold().setFontColor(COLOR_HEADER).setMarginBottom(6));
         Table resumen = new Table(UnitValue.createPercentArray(new float[]{50, 50})).useAllAvailableWidth();

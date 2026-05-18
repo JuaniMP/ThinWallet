@@ -147,7 +147,8 @@ export function GastosHormiga() {
             <div className="loading">Analizando…</div>
           ) : !data || data.transacciones.length === 0 ? (
             <p className="empty">
-              No se detectaron gastos hormiga bajo este umbral.
+              No hay transacciones por debajo de {fmt(umbral, "COP")} en los últimos {dias} días.
+              Prueba aumentando el umbral o el período de análisis.
             </p>
           ) : (
             <div>
