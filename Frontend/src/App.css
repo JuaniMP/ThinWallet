@@ -99,6 +99,27 @@
   color: var(--primary);
 }
 
+/* Password wrapper: the border/bg moves to the wrapper so the eye stays inside */
+.input-wrapper--password {
+  display: flex;
+  align-items: center;
+  background: var(--surface-container-low);
+  border: 2px solid var(--primary);
+  transition: background-color 0.2s;
+}
+
+.input-wrapper--password input {
+  border: none !important;
+  background: transparent !important;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.input-wrapper--password:focus-within {
+  background: var(--surface-container);
+}
+
 .input-group input,
 .input-group select,
 .input-group textarea {
