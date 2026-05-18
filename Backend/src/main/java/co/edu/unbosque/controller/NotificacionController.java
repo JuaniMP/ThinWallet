@@ -1,9 +1,8 @@
 package co.edu.unbosque.controller;
 
-import co.edu.unbosque.document.Notificacion;
+import co.edu.unbosque.entity.Notificacion;
 import co.edu.unbosque.service.NotificacionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +12,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/notificaciones")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "mongodb.enabled", havingValue = "true")
 public class NotificacionController {
 
     private final NotificacionService notificacionService;
@@ -29,7 +27,7 @@ public class NotificacionController {
     }
 
     @PutMapping("/{id}/leer")
-    public ResponseEntity<?> marcarLeida(@PathVariable String id) {
+    public ResponseEntity<?> marcarLeida(@PathVariable Long id) {
         return notificacionService.marcarLeida(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -42,7 +40,7 @@ public class NotificacionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         notificacionService.delete(id);
         return ResponseEntity.noContent().build();
     }

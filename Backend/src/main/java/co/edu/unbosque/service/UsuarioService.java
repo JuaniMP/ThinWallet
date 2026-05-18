@@ -320,6 +320,14 @@ public class UsuarioService {
     }
 
     @Transactional
+    public void actualizarFcmToken(Long idUsuario, String fcmToken) {
+        usuarioRepository.findById(idUsuario).ifPresent(u -> {
+            u.setFcmToken(fcmToken);
+            usuarioRepository.save(u);
+        });
+    }
+
+    @Transactional
     public void delete(Long id) {
         usuarioRepository.deleteById(id);
     }
