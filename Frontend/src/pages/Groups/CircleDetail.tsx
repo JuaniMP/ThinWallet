@@ -10,6 +10,8 @@ import { MoneyInput } from "../../components/common/MoneyInput";
 import { api } from "../../services/api";
 import type { CirculoDetalle, Transaccion, Category } from "../../types";
 
+type DivisionItem = { idUsuario: number; nombre: string; monto: number; porcentaje: number };
+
 interface MetaGrupal {
   idGasto: number;
   nombre: string;
@@ -148,6 +150,43 @@ export function CircleDetail() {
   const [gastoError, setGastoError] = useState("");
   const [gastoSaving, setGastoSaving] = useState(false);
 
+  const [modalidadDivision, setModalidadDivision] = useState<"" | "IGUALITARIA" | "PORCENTAJE" | "MONTO_FIJO">("");
+  const [divisiones, setDivisiones] = useState<DivisionItem[]>([]);
+
+  const isAdmin = detail?.idUsuarioCreador === user?.idUsuario;
+
+  const handleModalidadChange = (mod: string) => {
+    const m = mod as "" | "IGUALITARIA" | "PORCENTAJE" | "MONTO_FIJO";
+    setModalidadDivision(m);
+    if (!detail || detail.invitados.length === 0) return;
+    if (m === "IGUALITARIA") {
+      const totalMiembros = detail.invitados.length + 1;
+      const parte = gastoForm.monto / totalMiembros;
+      setDivisiones(detail.invitados.map((inv) => ({
+        idUsuario: inv.idUsuario,
+        nombre: inv.nombreCompleto,
+        monto: parte,
+        porcentaje: 100 / totalMiembros,
+      })));
+    } else if (m === "PORCENTAJE" || m === "MONTO_FIJO") {
+      setDivisiones(detail.invitados.map((inv) => ({
+        idUsuario: inv.idUsuario,
+        nombre: inv.nombreCompleto,
+        monto: 0,
+        porcentaje: 0,
+      })));
+    } else {
+      setDivisiones([]);
+    }
+  };
+
+  useEffect(() => {
+    if (modalidadDivision !== "IGUALITARIA" || !detail || detail.invitados.length === 0) return;
+    const totalMiembros = detail.invitados.length + 1;
+    const parte = gastoForm.monto / totalMiembros;
+    setDivisiones((prev) => prev.map((d) => ({ ...d, monto: parte, porcentaje: 100 / totalMiembros })));
+  }, [gastoForm.monto, modalidadDivision, detail]);
+
   const handleRegistrarGasto = async (e: React.FormEvent) => {
     e.preventDefault();
     setGastoError("");
@@ -174,10 +213,20 @@ export function CircleDetail() {
     }
 
     if (!user?.idUsuario) return;
+
+    // Validate PORCENTAJE doesn't exceed 100%
+    if (modalidadDivision === "PORCENTAJE") {
+      const totalPct = divisiones.reduce((s, d) => s + d.porcentaje, 0);
+      if (totalPct > 100) {
+        setGastoError("El total de porcentajes no puede superar 100%");
+        return;
+      }
+    }
+
     setGastoSaving(true);
     setGastoError("");
     try {
-      await transactionService.create({
+      const saved = await transactionService.create({
         nombre: gastoForm.nombre.trim(),
         montoOriginal: monto,
         monedaOriginal: gastoForm.moneda,
@@ -185,8 +234,36 @@ export function CircleDetail() {
         idCirculoGasto: Number(id),
         idCategoria: gastoForm.idCategoria ? Number(gastoForm.idCategoria) : undefined,
         idTipoMovimiento: 2,
+        modalidadDivision: modalidadDivision || undefined,
       });
+
+      // Create a debt for each member with a non-zero share
+      if (modalidadDivision && divisiones.length > 0 && saved.idTransaccion) {
+        for (const div of divisiones) {
+          const montoDeuda =
+            modalidadDivision === "PORCENTAJE"
+              ? Math.round(monto * div.porcentaje / 100)
+              : div.monto;
+          if (montoDeuda > 0) {
+            try {
+              await api.post("/deudas", {
+                monto: montoDeuda,
+                porcentajeDivision: modalidadDivision === "PORCENTAJE" ? div.porcentaje : null,
+                estadoPago: "PENDIENTE",
+                idTransaccion: saved.idTransaccion,
+                idUsuarioDeudor: div.idUsuario,
+                idUsuarioAcreedor: user.idUsuario,
+              });
+            } catch {
+              // continue creating remaining debts even if one fails
+            }
+          }
+        }
+      }
+
       setGastoForm({ nombre: "", monto: 0, idCategoria: "", moneda: "COP" });
+      setModalidadDivision("");
+      setDivisiones([]);
       setShowGastoModal(false);
       // Reload history
       const txs = await transactionService.getByCirculo(Number(id));
@@ -639,7 +716,7 @@ export function CircleDetail() {
               <button
                 className="btn btn-primary"
                 type="button"
-                onClick={() => { setGastoForm({ nombre: "", monto: 0, idCategoria: "", moneda: "COP" }); setGastoError(""); setShowGastoModal(true); }}
+                onClick={() => { setGastoForm({ nombre: "", monto: 0, idCategoria: "", moneda: "COP" }); setGastoError(""); setModalidadDivision(""); setDivisiones([]); setShowGastoModal(true); }}
               >
                 Registrar gasto
               </button>
@@ -830,6 +907,88 @@ export function CircleDetail() {
                   ))}
                 </select>
               </label>
+              {isAdmin && detail && detail.invitados.length > 0 && (
+                <label style={{ marginTop: 8 }}>
+                  Modalidad de división
+                  <select
+                    value={modalidadDivision}
+                    onChange={(e) => handleModalidadChange(e.target.value)}
+                  >
+                    <option value="">Sin división (gasto personal)</option>
+                    <option value="IGUALITARIA">Igualitaria (partes iguales)</option>
+                    <option value="PORCENTAJE">Por porcentaje</option>
+                    <option value="MONTO_FIJO">Monto fijo por persona</option>
+                  </select>
+                </label>
+              )}
+
+              {modalidadDivision && divisiones.length > 0 && (
+                <div style={{ marginTop: 8, border: "2px solid var(--outline-variant)", padding: "10px 12px" }}>
+                  <p style={{ fontSize: "0.78rem", fontWeight: 700, marginBottom: 10, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Deuda asignada a cada miembro
+                  </p>
+                  {divisiones.map((div, i) => (
+                    <div key={div.idUsuario} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <span style={{ flex: 1, fontSize: "0.83rem" }}>{div.nombre}</span>
+                      {modalidadDivision === "IGUALITARIA" && (
+                        <strong style={{ fontSize: "0.83rem", color: "var(--primary)" }}>{fmt(div.monto)}</strong>
+                      )}
+                      {modalidadDivision === "PORCENTAJE" && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={div.porcentaje || ""}
+                            onChange={(e) => {
+                              const pct = Math.min(100, Math.max(0, Number(e.target.value)));
+                              setDivisiones((prev) => prev.map((d, j) => j === i ? { ...d, porcentaje: pct } : d));
+                            }}
+                            style={{ width: 56, border: "2px solid var(--primary)", background: "var(--surface)", padding: "4px 6px", textAlign: "right" }}
+                            placeholder="0"
+                          />
+                          <span style={{ fontSize: "0.8rem" }}>%</span>
+                          {div.porcentaje > 0 && (
+                            <span style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)" }}>
+                              ≈ {fmt(Math.round(gastoForm.monto * div.porcentaje / 100))}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {modalidadDivision === "MONTO_FIJO" && (
+                        <input
+                          type="text"
+                          value={div.monto ? div.monto.toLocaleString("es-CO") : ""}
+                          onChange={(e) => {
+                            const v = Number(e.target.value.replace(/[^\d]/g, ""));
+                            setDivisiones((prev) => prev.map((d, j) => j === i ? { ...d, monto: v } : d));
+                          }}
+                          style={{ width: 110, border: "2px solid var(--primary)", background: "var(--surface)", padding: "4px 8px", textAlign: "right" }}
+                          placeholder="0"
+                        />
+                      )}
+                    </div>
+                  ))}
+                  {modalidadDivision === "PORCENTAJE" && (() => {
+                    const totalPct = divisiones.reduce((s, d) => s + d.porcentaje, 0);
+                    return (
+                      <p style={{ fontSize: "0.75rem", marginTop: 4, color: totalPct > 100 ? "var(--error, #b00020)" : "var(--on-surface-variant)" }}>
+                        Total: {totalPct}%{totalPct > 100 ? " — excede 100%" : totalPct < 100 ? ` (admin retiene ${100 - totalPct}%)` : ""}
+                      </p>
+                    );
+                  })()}
+                  {modalidadDivision === "MONTO_FIJO" && (() => {
+                    const totalFijo = divisiones.reduce((s, d) => s + d.monto, 0);
+                    return (
+                      <p style={{ fontSize: "0.75rem", marginTop: 4, color: totalFijo > gastoForm.monto ? "var(--error, #b00020)" : "var(--on-surface-variant)" }}>
+                        Total asignado: {fmt(totalFijo)}{totalFijo > gastoForm.monto ? " — excede el monto del gasto" : ""}
+                      </p>
+                    );
+                  })()}
+                </div>
+              )}
+
               {gastoError && <p className="error-msg">{gastoError}</p>}
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowGastoModal(false)}>
