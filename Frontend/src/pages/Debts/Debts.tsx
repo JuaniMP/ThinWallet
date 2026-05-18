@@ -18,12 +18,6 @@ type NewDeudaForm = {
   moneda: CurrencyCode;
 };
 
-function metodoToTipo(metodo?: string): number {
-  if (metodo === "TARJETA") return 2;
-  if (metodo === "TRANSFERENCIA") return 3;
-  return 1; // EFECTIVO
-}
-
 export function Debts() {
   const { user } = useAuth();
   const { format: fmt, currency: prefCurrency } = useCurrency();
@@ -95,7 +89,6 @@ export function Debts() {
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "RETIRO",
         idUsuario: user.idUsuario,
-        idTipoMovimiento: metodoToTipo(debt.metodoPagoSugerido),
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
@@ -118,7 +111,6 @@ export function Debts() {
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "DEPOSITO",
         idUsuario: user.idUsuario,
-        idTipoMovimiento: metodoToTipo(debt.metodoPagoSugerido),
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
