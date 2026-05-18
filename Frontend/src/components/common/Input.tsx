@@ -28,10 +28,7 @@ export function Input({
           id={inputId}
           type={isPassword ? (showPassword ? "text" : "password") : type}
           className={error ? "input-error" : ""}
-          style={{
-            ...(!icon ? { paddingLeft: "16px" } : {}),
-            ...(isPassword ? { paddingRight: "40px" } : {}),
-          }}
+          style={!icon ? { paddingLeft: "16px" } : undefined}
           {...props}
         />
         {isPassword && (
