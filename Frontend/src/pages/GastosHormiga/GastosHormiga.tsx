@@ -17,15 +17,15 @@ export function GastosHormiga() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = async (u = umbral, d = dias) => {
     if (!user?.idUsuario) return;
     setLoading(true);
     setError("");
     try {
       const res = await gastosHormigaService.getByUsuario(
         user.idUsuario,
-        umbral,
-        dias,
+        u,
+        d,
       );
       setData(res);
     } catch {
@@ -68,6 +68,7 @@ export function GastosHormiga() {
               name="umbral"
               value={umbral}
               onChange={(v) => setUmbral(v)}
+              onBlur={() => void load(umbral, dias)}
               placeholder="Ej: 50,000"
             />
             <div className="input-group">
@@ -75,7 +76,11 @@ export function GastosHormiga() {
               <select
                 id="dias-select"
                 value={dias}
-                onChange={(e) => setDias(Number(e.target.value))}
+                onChange={(e) => {
+                  const d = Number(e.target.value);
+                  setDias(d);
+                  void load(umbral, d);
+                }}
               >
                 <option value={7}>Última semana (7 días)</option>
                 <option value={15}>Últimas 2 semanas (15 días)</option>
@@ -88,7 +93,7 @@ export function GastosHormiga() {
             </div>
             <button
               className="btn-primary"
-              onClick={() => void load()}
+              onClick={() => void load(umbral, dias)}
               disabled={loading}
             >
               {loading ? "Cargando…" : "Analizar"}
