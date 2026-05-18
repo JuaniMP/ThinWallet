@@ -1,9 +1,6 @@
 package co.edu.unbosque.controller;
 
-import co.edu.unbosque.document.Notificacion;
-import co.edu.unbosque.service.NotificacionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,37 +10,30 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/notificaciones")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "mongodb.enabled", havingValue = "true")
 public class NotificacionController {
 
-    private final NotificacionService notificacionService;
-
     @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<List<Notificacion>> getByUsuario(@PathVariable Long idUsuario) {
-        return ResponseEntity.ok(notificacionService.findByUsuario(idUsuario));
+    public ResponseEntity<List<?>> getByUsuario(@PathVariable Long idUsuario) {
+        return ResponseEntity.ok(List.of());
     }
 
     @GetMapping("/usuario/{idUsuario}/no-leidas-count")
     public ResponseEntity<Map<String, Long>> countNoLeidas(@PathVariable Long idUsuario) {
-        return ResponseEntity.ok(Map.of("count", notificacionService.countNoLeidas(idUsuario)));
+        return ResponseEntity.ok(Map.of("count", 0L));
     }
 
     @PutMapping("/{id}/leer")
-    public ResponseEntity<?> marcarLeida(@PathVariable String id) {
-        return notificacionService.marcarLeida(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Void> marcarLeida(@PathVariable Long id) {
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/usuario/{idUsuario}/leer-todas")
     public ResponseEntity<Void> marcarTodasLeidas(@PathVariable Long idUsuario) {
-        notificacionService.marcarTodasLeidas(idUsuario);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        notificacionService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         return ResponseEntity.noContent().build();
     }
 }

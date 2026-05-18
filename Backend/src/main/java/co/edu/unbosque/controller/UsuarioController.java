@@ -270,4 +270,15 @@ public class UsuarioController {
         usuarioService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/fcm-token")
+    public ResponseEntity<Void> registrarFcmToken(@PathVariable Long id,
+                                                   @RequestBody Map<String, String> body) {
+        String fcmToken = body.get("fcmToken");
+        if (fcmToken == null || fcmToken.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        usuarioService.actualizarFcmToken(id, fcmToken);
+        return ResponseEntity.noContent().build();
+    }
 }
