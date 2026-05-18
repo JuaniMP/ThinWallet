@@ -24,6 +24,12 @@ tailscale --socket=/tmp/tailscaled.sock status || true
 
 echo ">>> Iniciando Spring Boot (SOCKS5 = localhost:1055)..."
 exec java \
+  -Xms128m \
+  -Xmx384m \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=200 \
+  -XX:+ExitOnOutOfMemoryError \
+  -Djava.security.egd=file:/dev/./urandom \
   -DsocksProxyHost=localhost \
   -DsocksProxyPort=1055 \
   "-DsocksNonProxyHosts=localhost|127.0.0.1|0.0.0.0" \
