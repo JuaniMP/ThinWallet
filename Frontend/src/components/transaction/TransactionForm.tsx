@@ -21,6 +21,7 @@ interface TransactionFormProps {
     idTipoMovimiento: number;
     monedaOriginal: string;
     tasaCambio: number;
+    contexto?: string;
   }) => Promise<void>;
   isLoading?: boolean;
 }
@@ -33,6 +34,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
   const [type, setType] = useState<"DEPOSITO" | "RETIRO" | null>(isGhost ? "DEPOSITO" : null);
   const [ghostRetiroMsg, setGhostRetiroMsg] = useState(false);
   const [categoryId, setCategoryId] = useState<number | "">("");
+  const [categoryTipo, setCategoryTipo] = useState<string | null>(null);
   const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
   const [moneda, setMoneda] = useState<CurrencyCode>("COP");
   const [error, setError] = useState("");
@@ -107,6 +109,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         idTipoMovimiento: paymentMethodId,
         monedaOriginal: moneda,
         tasaCambio: 1,
+        contexto: categoryTipo === "AMBOS" ? type ?? undefined : undefined,
       });
 
       setAmount(0);
@@ -130,6 +133,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
             setGhostRetiroMsg(false);
             setType("RETIRO");
             setCategoryId("");
+            setCategoryTipo(null);
           }}
         >
           Retiro
@@ -141,6 +145,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
             setGhostRetiroMsg(false);
             setType("DEPOSITO");
             setCategoryId("");
+            setCategoryTipo(null);
           }}
         >
           Depósito
@@ -198,7 +203,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         value={categoryId}
         onChange={setCategoryId}
         onTypeHint={(tipo) => {
-          // Si la categoría es AMBOS y aún no se eligió tipo, auto-seleccionar Retiro (gasto)
+          setCategoryTipo(tipo);
           if (tipo === "AMBOS" && !type) setType("RETIRO");
         }}
       />
