@@ -90,6 +90,7 @@ export function Debts() {
         idUsuario: user.idUsuario,
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
+        contexto: `Pago de deuda #${debt.idDeuda}`,
       });
       await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
@@ -112,6 +113,7 @@ export function Debts() {
         idUsuario: user.idUsuario,
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
+        contexto: `Cobro de deuda #${debt.idDeuda}`,
       });
       await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();

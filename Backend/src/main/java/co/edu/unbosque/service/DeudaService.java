@@ -156,6 +156,7 @@ public class DeudaService {
         return deudaRepository.findById(id).map(deuda -> {
             deuda.setEstadoPago("CONFIRMADO");
             deuda.setFechaConfirmada(LocalDateTime.now());
+            deuda.setFechaPago(LocalDateTime.now());
             if (idTransaccion != null) deuda.setIdTransaccion(idTransaccion);
             Deuda saved = deudaRepository.save(deuda);
 
