@@ -28,12 +28,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // Fallback: token in query param for EventSource (SSE) and file-download requests
+        String token = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else {
+            String queryToken = request.getParameter("token");
+            if (queryToken != null && !queryToken.isBlank()) {
+                token = queryToken;
+            }
+        }
+
+        if (token == null) {
             chain.doFilter(request, response);
             return;
         }
-
-        String token = authHeader.substring(7);
         if (jwtService.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             String correo = jwtService.getCorreo(token);
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
