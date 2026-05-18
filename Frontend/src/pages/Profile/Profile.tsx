@@ -401,17 +401,6 @@ export function Profile() {
             </div>
             <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>pest_control</span>
           </div>
-          <div
-            className="section-row"
-            style={{ cursor: isGhost ? "not-allowed" : "pointer", borderTop: "1px solid var(--outline-variant)" }}
-            onClick={() => !isGhost && window.location.assign("/cierre-mensual")}
-          >
-            <div>
-              <p className="row-label">Cierre Mensual</p>
-              <p className="row-desc">Cierra el ciclo y genera gastos recurrentes</p>
-            </div>
-            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>event_available</span>
-          </div>
         </div>
 
         {/* ID de usuario */}
