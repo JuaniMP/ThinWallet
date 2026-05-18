@@ -18,12 +18,6 @@ type NewDeudaForm = {
   moneda: CurrencyCode;
 };
 
-function metodoToTipo(metodo?: string): number {
-  if (metodo === "TARJETA") return 2;
-  if (metodo === "TRANSFERENCIA") return 3;
-  return 1; // EFECTIVO
-}
-
 export function Debts() {
   const { user } = useAuth();
   const { format: fmt, currency: prefCurrency } = useCurrency();
@@ -89,16 +83,15 @@ export function Debts() {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
     try {
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, {});
-      await transactionService.create({
+      const tx = await transactionService.create({
         nombre: "Pago de deuda",
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "RETIRO",
         idUsuario: user.idUsuario,
-        idTipoMovimiento: metodoToTipo(debt.metodoPagoSugerido),
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar pago");
@@ -112,16 +105,15 @@ export function Debts() {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
     try {
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, {});
-      await transactionService.create({
+      const tx = await transactionService.create({
         nombre: "Cobro de deuda",
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "DEPOSITO",
         idUsuario: user.idUsuario,
-        idTipoMovimiento: metodoToTipo(debt.metodoPagoSugerido),
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar recepción");

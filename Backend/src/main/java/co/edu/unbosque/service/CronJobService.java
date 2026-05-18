@@ -2,6 +2,7 @@ package co.edu.unbosque.service;
 
 import co.edu.unbosque.entity.Gasto;
 import co.edu.unbosque.entity.Transaccion;
+import co.edu.unbosque.repository.CategoriaRepository;
 import co.edu.unbosque.repository.GastoRepository;
 import co.edu.unbosque.repository.TransaccionRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class CronJobService {
 
     private final GastoRepository gastoRepository;
     private final TransaccionRepository transaccionRepository;
+    private final CategoriaRepository categoriaRepository;
 
     /**
      * Ejecuta gastos programados recurrentes cada día a medianoche.
@@ -47,7 +49,10 @@ public class CronJobService {
             tx.setTipoMovimiento("GASTO");
             tx.setIdUsuario(gasto.getIdUsuarioCreador());
             tx.setIdCirculoGasto(gasto.getIdCirculoGasto());
-            tx.setIdCategoria(gasto.getIdCategoria());
+            Long idCat = gasto.getIdCategoria() != null ? gasto.getIdCategoria()
+                    : categoriaRepository.findAll().stream().findFirst()
+                            .map(c -> c.getIdCategoria()).orElse(1L);
+            tx.setIdCategoria(idCat);
             tx.setContexto("gasto_programado:" + gasto.getIdGasto());
             transaccionRepository.save(tx);
 
