@@ -22,7 +22,7 @@ export function Layout({ children }: LayoutProps) {
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   const isGhost = user?.estado === 0;
-  const ghostBlocked = ["/dashboard", "/transactions/new", "/goals", "/reports"];
+  const ghostBlocked = ["/dashboard", "/goals", "/reports"];
 
   const navItems = [
     { path: "/dashboard", icon: "home", label: "INICIO" },
