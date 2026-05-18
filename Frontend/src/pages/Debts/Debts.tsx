@@ -18,12 +18,6 @@ type NewDeudaForm = {
   moneda: CurrencyCode;
 };
 
-function metodoToTipo(metodo?: string): number {
-  if (metodo === "TARJETA") return 2;
-  if (metodo === "TRANSFERENCIA") return 3;
-  return 1; // EFECTIVO
-}
-
 export function Debts() {
   const { user } = useAuth();
   const { format: fmt, currency: prefCurrency } = useCurrency();
