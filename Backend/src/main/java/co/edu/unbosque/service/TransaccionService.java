@@ -99,6 +99,15 @@ public class TransaccionService {
                 .orElse(2L);
     }
 
+    /** Si idCategoria es null, usa la primera categoría disponible. Nunca deja null en BD. */
+    private Long resolverIdCategoria(Long idCategoria) {
+        if (idCategoria != null) return idCategoria;
+        return categoriaRepository.findAll().stream()
+                .findFirst()
+                .map(Categoria::getIdCategoria)
+                .orElse(1L);
+    }
+
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -158,7 +167,7 @@ public class TransaccionService {
         transaccion.setContexto(request.getContexto());
         transaccion.setIdUsuario(request.getIdUsuario());
         transaccion.setIdCirculoGasto(request.getIdCirculoGasto());
-        transaccion.setIdCategoria(request.getIdCategoria());
+        transaccion.setIdCategoria(resolverIdCategoria(request.getIdCategoria()));
         transaccion.setIdGasto(idGasto);
         transaccion.setIdTipoMovimiento(idTipoMovimiento);
         Transaccion saved = transaccionRepository.save(transaccion);
