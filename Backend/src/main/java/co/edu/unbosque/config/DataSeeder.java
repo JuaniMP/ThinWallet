@@ -48,6 +48,7 @@ public class DataSeeder implements ApplicationRunner {
             cat.setNombre(nombre);
             cat.setTipoCategoria(tipoCategoria);
             cat.setExclusivaPerfilSolo(false);
+            cat.setFrecuenciaUso(0);
             cat.setEstado(1);
             Categoria saved = categoriaRepository.save(cat);
             log.info("DataSeeder – categoría '{}' ({}) creada con id={}", nombre, tipoCategoria, saved.getIdCategoria());
