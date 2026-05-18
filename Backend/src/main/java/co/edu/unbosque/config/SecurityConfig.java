@@ -1,5 +1,6 @@
 package co.edu.unbosque.config;
 
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,6 +54,10 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
             )
             .authorizeHttpRequests(auth -> auth
+                // Los dispatches ASYNC (SSE) no re-evalúan seguridad —
+                // la respuesta ya está comprometida y Spring Security no puede
+                // escribir un 401/403, lo que genera el error "response already committed".
+                .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                 .anyRequest().authenticated()
             )

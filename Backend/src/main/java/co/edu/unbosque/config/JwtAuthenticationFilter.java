@@ -1,6 +1,7 @@
 package co.edu.unbosque.config;
 
 import co.edu.unbosque.service.JwtService;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,14 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Saltar el filtro JWT en dispatches ASYNC (SSE): la autenticación ya fue
+        // validada en el dispatch REQUEST original; re-procesarla en ASYNC causa
+        // "response already committed" porque el stream SSE ya inició.
+        return request.getDispatcherType() == DispatcherType.ASYNC;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
