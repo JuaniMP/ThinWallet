@@ -22,7 +22,7 @@ export function Input({
   return (
     <div className={`input-group ${className}`}>
       {label && <label htmlFor={inputId}>{label}</label>}
-      <div className="input-wrapper">
+      <div className={`input-wrapper${isPassword ? " input-wrapper--password" : ""}`}>
         {icon && <span className="material-symbols-outlined">{icon}</span>}
         <input
           id={inputId}
@@ -39,17 +39,14 @@ export function Input({
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             style={{
-              position: "absolute",
-              right: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
+              flexShrink: 0,
               background: "none",
               border: "none",
               cursor: "pointer",
-              padding: "0",
+              padding: "0 10px",
               display: "flex",
               alignItems: "center",
-              color: "var(--on-surface-variant, #666)",
+              color: "var(--primary)",
             }}
             tabIndex={-1}
             aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
