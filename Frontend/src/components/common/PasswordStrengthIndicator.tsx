@@ -8,7 +8,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
     { test: /[a-z]/.test(password), label: "Una letra minúscula" },
     { test: /[A-Z]/.test(password), label: "Una letra mayúscula" },
     { test: /\d/.test(password), label: "Un número" },
-    { test: /@$!%*?&/.test(password), label: "Carácter especial (@$!%*?&)" },
+    { test: /[@$!%*?&]/.test(password), label: "Carácter especial (@$!%*?&)" },
   ];
 
   const metCount = requirements.filter((r) => r.test).length;
