@@ -201,6 +201,13 @@ public class TransaccionService {
         Transaccion saved = transaccionRepository.save(transaccion);
         populateTipo(saved);
 
+        if (saved.getIdCategoria() != null) {
+            categoriaRepository.findById(saved.getIdCategoria()).ifPresent(cat -> {
+                cat.setFrecuenciaUso((cat.getFrecuenciaUso() == null ? 0 : cat.getFrecuenciaUso()) + 1);
+                categoriaRepository.save(cat);
+            });
+        }
+
         if (auditoriaService != null) {
             auditoriaService.registrar(saved.getIdUsuario(), "transaccion", saved.getIdTransaccion(),
                     "INSERT", null,
