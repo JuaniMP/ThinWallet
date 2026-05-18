@@ -52,6 +52,6 @@ public class Usuario {
     @Column(name = "estado")
     private Integer estado;
 
-    @Column(name = "fcm_token", length = 500)
+    @Transient
     private String fcmToken;
 }
