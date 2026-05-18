@@ -95,7 +95,6 @@ export function Debts() {
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "RETIRO",
         idUsuario: user.idUsuario,
-        idTipoMovimiento: metodoToTipo(debt.metodoPagoSugerido),
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
@@ -118,7 +117,6 @@ export function Debts() {
         montoOriginal: debt.monto ?? 0,
         tipoMovimiento: "DEPOSITO",
         idUsuario: user.idUsuario,
-        idTipoMovimiento: metodoToTipo(debt.metodoPagoSugerido),
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
       });
