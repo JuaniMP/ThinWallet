@@ -81,8 +81,7 @@ export function Reports() {
     });
     return Object.values(map)
       .map((v) => ({ ...v, total: v.income + v.expense }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 7);
+      .sort((a, b) => b.total - a.total);
   }, [transactions, categories]);
 
   const paymentData = useMemo(() => {
