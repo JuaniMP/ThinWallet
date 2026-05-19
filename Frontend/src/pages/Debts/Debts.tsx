@@ -86,11 +86,10 @@ export function Debts() {
       const tx = await transactionService.create({
         nombre: "Pago de deuda",
         montoOriginal: debt.monto ?? 0,
-        tipoMovimiento: "PAGO_DEUDA",
+        tipoMovimiento: "RETIRO",
         idUsuario: user.idUsuario,
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
-        contexto: `Pago de deuda #${debt.idDeuda}`,
       });
       await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
@@ -109,11 +108,10 @@ export function Debts() {
       const tx = await transactionService.create({
         nombre: "Cobro de deuda",
         montoOriginal: debt.monto ?? 0,
-        tipoMovimiento: "COBRO_DEUDA",
+        tipoMovimiento: "DEPOSITO",
         idUsuario: user.idUsuario,
         monedaOriginal: debt.moneda ?? "COP",
         tasaCambio: 1,
-        contexto: `Cobro de deuda #${debt.idDeuda}`,
       });
       await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
