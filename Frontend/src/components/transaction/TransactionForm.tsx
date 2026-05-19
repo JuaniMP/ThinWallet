@@ -203,7 +203,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         value={categoryId}
         onChange={setCategoryId}
         onTypeHint={(tipo) => {
-          setCategoryTipo(tipo);
+          // Si la categoría es AMBOS y aún no se eligió tipo, auto-seleccionar Retiro (gasto)
           if (tipo === "AMBOS" && !type) setType("RETIRO");
         }}
       />

@@ -36,15 +36,17 @@ export function Input({
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             style={{
-              flexShrink: 0,
-              marginLeft: "auto",
+              position: "absolute",
+              right: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
               background: "none",
               border: "none",
               cursor: "pointer",
-              padding: "0 10px",
+              padding: "0",
               display: "flex",
               alignItems: "center",
-              color: "var(--primary)",
+              color: "var(--on-surface-variant, #666)",
             }}
             tabIndex={-1}
             aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
