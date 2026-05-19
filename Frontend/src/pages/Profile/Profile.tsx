@@ -129,9 +129,11 @@ export function Profile() {
   });
   const [reclamarError, setReclamarError] = useState("");
   const [reclamarOk, setReclamarOk] = useState(false);
+  const [reclamarLoading, setReclamarLoading] = useState(false);
 
   const handleReclamar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (reclamarLoading) return;
     setReclamarError("");
     const nombresErr = validateName(reclamarForm.nombres, "Nombres");
     if (nombresErr) { setReclamarError(nombresErr); return; }
@@ -143,6 +145,7 @@ export function Profile() {
     if (emailErr) { setReclamarError(emailErr); return; }
     const passErr = validatePassword(reclamarForm.contrasena);
     if (passErr) { setReclamarError(passErr); return; }
+    setReclamarLoading(true);
     try {
       const usuario = await api.post<User>("/usuarios/reclamar-perfil", {
         tokenReclamo: authUser?.tokenReclamo,
@@ -156,6 +159,8 @@ export function Profile() {
       setReclamarError(
         err instanceof Error ? err.message : "Error al reclamar perfil",
       );
+    } finally {
+      setReclamarLoading(false);
     }
   };
 
@@ -339,7 +344,7 @@ export function Profile() {
                       {reclamarError && <p className="error-msg">{reclamarError}</p>}
                       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                         <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowReclamar(false)}>Cancelar</button>
-                        <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Confirmar y reclamar</button>
+                        <button type="submit" className="btn btn-primary" style={{ flex: 2 }} disabled={reclamarLoading}>{reclamarLoading ? "Procesando..." : "Confirmar y reclamar"}</button>
                       </div>
                     </form>
                   )}
