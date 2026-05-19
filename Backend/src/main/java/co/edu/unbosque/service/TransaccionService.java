@@ -99,6 +99,61 @@ public class TransaccionService {
                 .orElse(2L);
     }
 
+    /** Si idCategoria es null, busca una categoría del tipo correcto (RETIRO/DEPOSITO). Nunca deja null en BD. */
+    private Long resolverIdCategoria(Long idCategoria, String tipoMovimiento) {
+        if (idCategoria != null) return idCategoria;
+        List<Categoria> todas = categoriaRepository.findAll();
+        if (tipoMovimiento != null) {
+            String tipo = tipoMovimiento.toUpperCase();
+            // Categorías dedicadas para deudas
+            if ("COBRO_DEUDA".equals(tipo)) {
+                return todas.stream()
+                        .filter(c -> "Cobro de deuda".equalsIgnoreCase(c.getNombre()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .filter(c -> "DEPOSITO".equalsIgnoreCase(c.getTipoCategoria()))
+                                .findFirst().map(Categoria::getIdCategoria).orElse(1L));
+            }
+            if ("PAGO_DEUDA".equals(tipo)) {
+                return todas.stream()
+                        .filter(c -> "Pago de deuda".equalsIgnoreCase(c.getNombre()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .filter(c -> "RETIRO".equalsIgnoreCase(c.getTipoCategoria()))
+                                .findFirst().map(Categoria::getIdCategoria).orElse(1L));
+            }
+            if ("MESADA_RECIBIDA".equals(tipo)) {
+                return todas.stream()
+                        .filter(c -> "Mesada recibida".equalsIgnoreCase(c.getNombre()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .filter(c -> "DEPOSITO".equalsIgnoreCase(c.getTipoCategoria()))
+                                .findFirst().map(Categoria::getIdCategoria).orElse(1L));
+            }
+            if ("MESADA_ENVIADA".equals(tipo)) {
+                return todas.stream()
+                        .filter(c -> "Mesada enviada".equalsIgnoreCase(c.getNombre()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .filter(c -> "RETIRO".equalsIgnoreCase(c.getTipoCategoria()))
+                                .findFirst().map(Categoria::getIdCategoria).orElse(1L));
+            }
+            // "RETIRO"/"GASTO"/"EGRESO" → buscar categoría RETIRO
+            // "DEPOSITO"/"INGRESO" → buscar categoría DEPOSITO
+            String tipoCategoriaBuscado = tipo.equals("DEPOSITO") || tipo.equals("INGRESO") ? "DEPOSITO" : "RETIRO";
+            return todas.stream()
+                    .filter(c -> tipoCategoriaBuscado.equalsIgnoreCase(c.getTipoCategoria()))
+                    .findFirst()
+                    .map(Categoria::getIdCategoria)
+                    .orElseGet(() -> todas.stream().findFirst().map(Categoria::getIdCategoria).orElse(1L));
+        }
+        return todas.stream().findFirst().map(Categoria::getIdCategoria).orElse(1L);
+    }
+
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -158,11 +213,18 @@ public class TransaccionService {
         transaccion.setContexto(request.getContexto());
         transaccion.setIdUsuario(request.getIdUsuario());
         transaccion.setIdCirculoGasto(request.getIdCirculoGasto());
-        transaccion.setIdCategoria(request.getIdCategoria());
+        transaccion.setIdCategoria(resolverIdCategoria(request.getIdCategoria(), request.getTipoMovimiento()));
         transaccion.setIdGasto(idGasto);
         transaccion.setIdTipoMovimiento(idTipoMovimiento);
         Transaccion saved = transaccionRepository.save(transaccion);
         populateTipo(saved);
+
+        if (saved.getIdCategoria() != null) {
+            categoriaRepository.findById(saved.getIdCategoria()).ifPresent(cat -> {
+                cat.setFrecuenciaUso((cat.getFrecuenciaUso() == null ? 0 : cat.getFrecuenciaUso()) + 1);
+                categoriaRepository.save(cat);
+            });
+        }
 
         if (auditoriaService != null) {
             auditoriaService.registrar(saved.getIdUsuario(), "transaccion", saved.getIdTransaccion(),

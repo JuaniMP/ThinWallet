@@ -27,6 +27,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +82,19 @@ public class UsuarioController {
         return saldoService.calcularSaldo(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * RQ-07 / RQ-13 — Balance neto vía {@code fn_balance_usuario_periodo}.
+     */
+    @GetMapping("/{id}/balance")
+    public ResponseEntity<BigDecimal> getBalance(
+            @PathVariable Long id,
+            @RequestParam(required = false) LocalDate fechaInicio,
+            @RequestParam(required = false) LocalDate fechaFin) {
+        LocalDate inicio = fechaInicio != null ? fechaInicio : LocalDate.now().withDayOfMonth(1);
+        LocalDate fin    = fechaFin    != null ? fechaFin    : LocalDate.now();
+        return ResponseEntity.ok(saldoService.balancePorPeriodo(id, inicio, fin));
     }
 
     @PostMapping("/register")
@@ -268,6 +283,17 @@ public class UsuarioController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         usuarioService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/fcm-token")
+    public ResponseEntity<Void> registrarFcmToken(@PathVariable Long id,
+                                                   @RequestBody Map<String, String> body) {
+        String fcmToken = body.get("fcmToken");
+        if (fcmToken == null || fcmToken.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        usuarioService.actualizarFcmToken(id, fcmToken);
         return ResponseEntity.noContent().build();
     }
 }

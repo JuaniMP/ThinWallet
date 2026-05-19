@@ -24,7 +24,8 @@ export function useSaldoStream(
 
   useEffect(() => {
     if (!idUsuario) return;
-    const url = `${API_URL}/eventos/saldos/${idUsuario}`;
+    const token = localStorage.getItem("token");
+    const url = `${API_URL}/eventos/saldos/${idUsuario}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
     let es: EventSource | null = null;
     try {
       es = new EventSource(url);

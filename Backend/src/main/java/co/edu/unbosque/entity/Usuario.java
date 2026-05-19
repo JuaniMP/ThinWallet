@@ -51,4 +51,7 @@ public class Usuario {
 
     @Column(name = "estado")
     private Integer estado;
+
+    @Transient
+    private String fcmToken;
 }

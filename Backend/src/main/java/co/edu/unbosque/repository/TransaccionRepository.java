@@ -18,6 +18,8 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     @Query(value = "SELECT COALESCE(SUM(CASE " +
             "WHEN c.tipo_categoria = 'DEPOSITO' THEN t.monto_original * COALESCE(t.tasa_cambio, 1.0) " +
             "WHEN c.tipo_categoria = 'RETIRO' THEN -1 * t.monto_original * COALESCE(t.tasa_cambio, 1.0) " +
+            "WHEN c.tipo_categoria = 'AMBOS' AND t.contexto = 'DEPOSITO' THEN t.monto_original * COALESCE(t.tasa_cambio, 1.0) " +
+            "WHEN c.tipo_categoria = 'AMBOS' AND t.contexto = 'RETIRO' THEN -1 * t.monto_original * COALESCE(t.tasa_cambio, 1.0) " +
             "ELSE 0 END), 0) " +
             "FROM transaccion t " +
             "JOIN categoria c ON t.id_categoria = c.id_categoria " +

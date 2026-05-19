@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { api } from "../../services/api";
+import { transactionService } from "../../services/transactionService";
 import { MoneyInput } from "../../components/common/MoneyInput";
 import {
   useCurrency,
@@ -49,7 +50,6 @@ export function Debts() {
       setPayables(payList);
       setReceivables(recList);
 
-      // Fetch names for all unique user IDs involved
       const ids = new Set<number>();
       payList.forEach((d) => { if (d.idUsuarioAcreedor) ids.add(d.idUsuarioAcreedor); });
       recList.forEach((d) => { if (d.idUsuarioDeudor) ids.add(d.idUsuarioDeudor); });
@@ -78,13 +78,45 @@ export function Debts() {
     fetchDebts();
   }, [user?.idUsuario]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleConfirm = async (idDeuda: number) => {
-    setConfirmingId(idDeuda);
+  /** Yo pago una deuda → RETIRO en mi cuenta */
+  const handleConfirmPayment = async (debt: Deuda) => {
+    if (!user?.idUsuario) return;
+    setConfirmingId(debt.idDeuda);
     try {
-      await api.put(`/deudas/${idDeuda}/confirmar`, {});
+      const tx = await transactionService.create({
+        nombre: "Pago de deuda",
+        montoOriginal: debt.monto ?? 0,
+        tipoMovimiento: "RETIRO",
+        idUsuario: user.idUsuario,
+        monedaOriginal: debt.moneda ?? "COP",
+        tasaCambio: 1,
+      });
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar pago");
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  /** Alguien me paga → DEPÓSITO en mi cuenta */
+  const handleConfirmReceive = async (debt: Deuda) => {
+    if (!user?.idUsuario) return;
+    setConfirmingId(debt.idDeuda);
+    try {
+      const tx = await transactionService.create({
+        nombre: "Cobro de deuda",
+        montoOriginal: debt.monto ?? 0,
+        tipoMovimiento: "DEPOSITO",
+        idUsuario: user.idUsuario,
+        monedaOriginal: debt.moneda ?? "COP",
+        tasaCambio: 1,
+      });
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
+      await fetchDebts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al confirmar recepción");
     } finally {
       setConfirmingId(null);
     }
@@ -118,12 +150,7 @@ export function Debts() {
         estadoPago: "PENDIENTE",
         moneda: form.moneda,
       });
-      setForm({
-        monto: 0,
-        idUsuarioAcreedor: "",
-        metodoPagoSugerido: "EFECTIVO",
-        moneda: prefCurrency,
-      });
+      setForm({ monto: 0, idUsuarioAcreedor: "", metodoPagoSugerido: "EFECTIVO", moneda: prefCurrency });
       setShowForm(false);
       await fetchDebts();
     } catch (err) {
@@ -149,10 +176,8 @@ export function Debts() {
     .slice(0, 5);
 
   const totalPayable = pendingPayables.reduce((s, d) => s + (d.monto ?? 0), 0);
-  const totalReceivable = pendingReceivables.reduce(
-    (s, d) => s + (d.monto ?? 0),
-    0,
-  );
+  const totalReceivable = pendingReceivables.reduce((s, d) => s + (d.monto ?? 0), 0);
+  const netBalance = totalReceivable - totalPayable;
 
   return (
     <Layout>
@@ -170,92 +195,105 @@ export function Debts() {
           {isLoading ? (
             <div className="loading">Cargando deudas...</div>
           ) : (
-            <div className="debt-summary">
-              <div className="summary-card bg-high neo-shadow">
-                <div className="card-top">
-                  <span className="material-symbols-outlined">outbound</span>
-                  <span className="tag">Pendiente</span>
+            <>
+              <div className="debt-summary">
+                {/* Cobrar primero: entra dinero */}
+                <div className="summary-card bg-secondary neo-shadow">
+                  <div className="card-top">
+                    <span className="material-symbols-outlined">receipt_long</span>
+                    <span className="tag">Por Recibir</span>
+                  </div>
+                  <h3>Cuentas por Cobrar</h3>
+                  <p className="amount">{fmt(totalReceivable, "COP")}</p>
+                  <p style={{ fontSize: "0.75rem", opacity: 0.7, marginTop: "4px" }}>
+                    {pendingReceivables.length} pendiente(s)
+                  </p>
                 </div>
-                <h3>Cuentas por Pagar</h3>
-                <p className="amount">{fmt(totalPayable, "COP")}</p>
-                <p
-                  style={{
-                    fontSize: "0.75rem",
-                    opacity: 0.7,
-                    marginTop: "4px",
-                  }}
-                >
-                  {pendingPayables.length} deuda(s)
-                </p>
-              </div>
-              <div className="summary-card bg-secondary neo-shadow">
-                <div className="card-top">
-                  <span className="material-symbols-outlined">
-                    receipt_long
-                  </span>
-                  <span className="tag">Por Recibir</span>
+
+                {/* Pagar segundo: sale dinero */}
+                <div className="summary-card bg-high neo-shadow">
+                  <div className="card-top">
+                    <span className="material-symbols-outlined">outbound</span>
+                    <span className="tag">Por Pagar</span>
+                  </div>
+                  <h3>Cuentas por Pagar</h3>
+                  <p className="amount">{fmt(totalPayable, "COP")}</p>
+                  <p style={{ fontSize: "0.75rem", opacity: 0.7, marginTop: "4px" }}>
+                    {pendingPayables.length} pendiente(s)
+                  </p>
                 </div>
-                <h3>Cuentas por Cobrar</h3>
-                <p className="amount">{fmt(totalReceivable, "COP")}</p>
-                <p
-                  style={{
-                    fontSize: "0.75rem",
-                    opacity: 0.7,
-                    marginTop: "4px",
-                  }}
-                >
-                  {pendingReceivables.length} deuda(s)
-                </p>
               </div>
-            </div>
+
+              {/* Balance neto */}
+              <div className="debt-net-balance" style={{ marginTop: "16px" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "1rem", verticalAlign: "middle", marginRight: 6 }}>
+                  {netBalance >= 0 ? "trending_up" : "trending_down"}
+                </span>
+                <span>
+                  Balance neto:{" "}
+                  <strong style={{ color: netBalance >= 0 ? "var(--secondary)" : "var(--error)" }}>
+                    {netBalance >= 0 ? "+" : ""}{fmt(netBalance, "COP")}
+                  </strong>
+                </span>
+              </div>
+            </>
           )}
         </section>
 
         {!isLoading && (
           <div className="debts-content">
             <div className="debts-column">
-              {/* Cuentas por Pagar */}
+
+              {/* ── CUENTAS POR COBRAR (arriba: alguien me debe a mí) ── */}
               <div>
                 <div className="section-heading">
-                  <div className="accent-bar primary" />
-                  <h3>Cuentas por Pagar</h3>
+                  <div className="accent-bar secondary" />
+                  <h3>Cuentas por Cobrar</h3>
                 </div>
-                {pendingPayables.length === 0 ? (
-                  <p className="empty">No tienes deudas pendientes de pago</p>
+                <p className="debt-section-hint">
+                  <span className="material-symbols-outlined" style={{ fontSize: "0.875rem", verticalAlign: "middle" }}>info</span>
+                  {" "}Al confirmar la recepción, el dinero se suma a tu saldo.
+                </p>
+                {pendingReceivables.length === 0 ? (
+                  <p className="empty">No tienes cobros pendientes</p>
                 ) : (
                   <div className="debts-grid">
-                    {pendingPayables.map((item, idx) => (
-                      <div key={item.idDeuda} className="debt-card">
-                        <div className="card-date">
-                          <span className="date-badge normal">
-                            {item.estadoPago ?? "PENDIENTE"}
-                          </span>
-                          {item.metodoPagoSugerido && (
-                            <span
-                              style={{
-                                fontSize: "0.625rem",
-                                fontWeight: 700,
-                                opacity: 0.7,
-                              }}
-                            >
-                              {item.metodoPagoSugerido}
+                    {pendingReceivables.map((item, idx) => (
+                      <div key={item.idDeuda} className="debt-card debt-card--receive">
+                        <div className="debt-card__header">
+                          <div className="debt-card__avatar">
+                            <span className="material-symbols-outlined">person</span>
+                          </div>
+                          <div className="debt-card__person">
+                            <h4>
+                              {item.idUsuarioDeudor && userNames[item.idUsuarioDeudor]
+                                ? userNames[item.idUsuarioDeudor]
+                                : `Cobro #${idx + 1}`}
+                            </h4>
+                            <span className="debt-card__badge debt-card__badge--pending">
+                              {item.estadoPago ?? "PENDIENTE"}
                             </span>
+                          </div>
+                          {item.metodoPagoSugerido && (
+                            <span className="debt-card__method">{item.metodoPagoSugerido}</span>
                           )}
                         </div>
-                        <h4>
-                          {item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]
-                            ? userNames[item.idUsuarioAcreedor]
-                            : `Deuda #${idx + 1}`}
-                        </h4>
-                        <p className="card-amount">{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}</p>
+                        <p className="debt-card__amount debt-card__amount--income">
+                          +{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
+                        </p>
                         <button
-                          className="action-btn"
-                          onClick={() => handleConfirm(item.idDeuda)}
+                          className="action-btn action-btn--receive"
+                          onClick={() => handleConfirmReceive(item)}
                           disabled={confirmingId === item.idDeuda}
                         >
-                          {confirmingId === item.idDeuda
-                            ? "Confirmando..."
-                            : "Marcar como Pagado"}
+                          {confirmingId === item.idDeuda ? (
+                            "Procesando..."
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined">check</span>
+                              Confirmar Recepción
+                            </>
+                          )}
                         </button>
                       </div>
                     ))}
@@ -263,45 +301,56 @@ export function Debts() {
                 )}
               </div>
 
-              {/* Cuentas por Cobrar */}
-              <div style={{ paddingTop: "32px" }}>
+              {/* ── CUENTAS POR PAGAR (abajo: yo le debo a alguien) ── */}
+              <div style={{ paddingTop: "40px" }}>
                 <div className="section-heading">
-                  <div className="accent-bar secondary" />
-                  <h3>Cuentas por Cobrar</h3>
+                  <div className="accent-bar primary" />
+                  <h3>Cuentas por Pagar</h3>
                 </div>
-                {pendingReceivables.length === 0 ? (
-                  <p className="empty">No tienes cobros pendientes</p>
+                <p className="debt-section-hint">
+                  <span className="material-symbols-outlined" style={{ fontSize: "0.875rem", verticalAlign: "middle" }}>info</span>
+                  {" "}Al marcar como pagado, el dinero se descuenta de tu saldo.
+                </p>
+                {pendingPayables.length === 0 ? (
+                  <p className="empty">No tienes deudas pendientes de pago</p>
                 ) : (
                   <div className="debts-grid">
-                    {pendingReceivables.map((item, idx) => (
-                      <div
-                        key={item.idDeuda}
-                        className="receivable-card neo-shadow"
-                      >
-                        <div className="profile-row">
-                          <div className="icon-placeholder">
-                            <span className="material-symbols-outlined">
-                              person
+                    {pendingPayables.map((item, idx) => (
+                      <div key={item.idDeuda} className="debt-card debt-card--pay">
+                        <div className="debt-card__header">
+                          <div className="debt-card__avatar debt-card__avatar--pay">
+                            <span className="material-symbols-outlined">person</span>
+                          </div>
+                          <div className="debt-card__person">
+                            <h4>
+                              {item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]
+                                ? userNames[item.idUsuarioAcreedor]
+                                : `Deuda #${idx + 1}`}
+                            </h4>
+                            <span className="debt-card__badge debt-card__badge--pending">
+                              {item.estadoPago ?? "PENDIENTE"}
                             </span>
                           </div>
-                          <div>
-                            <h4>
-                              {item.idUsuarioDeudor && userNames[item.idUsuarioDeudor]
-                                ? userNames[item.idUsuarioDeudor]
-                                : `Cobro #${idx + 1}`}
-                            </h4>
-                            <p>{item.estadoPago ?? "PENDIENTE"}</p>
-                          </div>
+                          {item.metodoPagoSugerido && (
+                            <span className="debt-card__method">{item.metodoPagoSugerido}</span>
+                          )}
                         </div>
-                        <p className="card-amount">{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}</p>
+                        <p className="debt-card__amount debt-card__amount--expense">
+                          -{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
+                        </p>
                         <button
-                          className="action-btn"
-                          onClick={() => handleConfirm(item.idDeuda)}
+                          className="action-btn action-btn--pay"
+                          onClick={() => handleConfirmPayment(item)}
                           disabled={confirmingId === item.idDeuda}
                         >
-                          {confirmingId === item.idDeuda
-                            ? "Procesando..."
-                            : "Confirmar Recepción"}
+                          {confirmingId === item.idDeuda ? (
+                            "Confirmando..."
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined">payments</span>
+                              Marcar como Pagado
+                            </>
+                          )}
                         </button>
                       </div>
                     ))}
@@ -311,9 +360,7 @@ export function Debts() {
             </div>
 
             {/* Right sidebar */}
-            <aside
-              style={{ display: "flex", flexDirection: "column", gap: "24px" }}
-            >
+            <aside style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div className="history-card">
                 <div className="card-header">
                   <h3>Historial</h3>
@@ -327,9 +374,7 @@ export function Debts() {
                       <div key={item.idDeuda} className="history-item">
                         <p className="item-date">
                           {item.fechaConfirmada
-                            ? new Date(item.fechaConfirmada).toLocaleDateString(
-                                "es-ES",
-                              )
+                            ? new Date(item.fechaConfirmada).toLocaleDateString("es-ES")
                             : item.estadoPago}
                         </p>
                         <h5>
@@ -338,7 +383,10 @@ export function Debts() {
                             : (item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]) || `Acreedor #${idx + 1}`}
                         </h5>
                         <p className="item-desc">{item.estadoPago}</p>
-                        <p className="item-amount">{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}</p>
+                        <p className={`item-amount ${item.idUsuarioAcreedor === user?.idUsuario ? "item-amount--income" : "item-amount--expense"}`}>
+                          {item.idUsuarioAcreedor === user?.idUsuario ? "+" : "-"}
+                          {fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -351,10 +399,7 @@ export function Debts() {
                   Registra un compromiso de pago con otro usuario para mantener
                   tus finanzas al día.
                 </p>
-                <button
-                  className="neo-shadow"
-                  onClick={() => setShowForm((v) => !v)}
-                >
+                <button className="neo-shadow" onClick={() => setShowForm((v) => !v)}>
                   {showForm ? "CANCELAR" : "AÑADIR DEUDA"}
                 </button>
               </div>
@@ -373,17 +418,10 @@ export function Debts() {
                     <label>Moneda</label>
                     <select
                       value={form.moneda}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          moneda: e.target.value as CurrencyCode,
-                        }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, moneda: e.target.value as CurrencyCode }))}
                     >
                       {SUPPORTED_CURRENCIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
+                        <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
                   </div>
@@ -395,12 +433,7 @@ export function Debts() {
                         type="number"
                         placeholder="ID del usuario al que le debes"
                         value={form.idUsuarioAcreedor}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            idUsuarioAcreedor: e.target.value,
-                          }))
-                        }
+                        onChange={(e) => setForm((f) => ({ ...f, idUsuarioAcreedor: e.target.value }))}
                         required
                       />
                     </div>
@@ -409,23 +442,14 @@ export function Debts() {
                     <label>Método de Pago</label>
                     <select
                       value={form.metodoPagoSugerido}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          metodoPagoSugerido: e.target.value,
-                        }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, metodoPagoSugerido: e.target.value }))}
                     >
                       <option value="EFECTIVO">Efectivo</option>
                       <option value="TARJETA">Tarjeta</option>
                       <option value="TRANSFERENCIA">Transferencia</option>
                     </select>
                   </div>
-                  <button
-                    type="submit"
-                    className="btn btn-primary neo-shadow"
-                    disabled={submitting}
-                  >
+                  <button type="submit" className="btn btn-primary neo-shadow" disabled={submitting}>
                     {submitting ? "Guardando..." : "Registrar Deuda"}
                   </button>
                 </form>
