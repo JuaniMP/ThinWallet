@@ -29,6 +29,16 @@ public class CoachController {
         return ResponseEntity.ok(coachService.recomendar(idUsuario, ingresoMensual));
     }
 
+    /**
+     * RQ-11 — Recomendación 50/30/20 calculada directamente por {@code fn_recomendar_ahorro} en MySQL.
+     */
+    @GetMapping("/recomendacion-bd/{idUsuario}")
+    public ResponseEntity<String> recomendacionBD(
+            @PathVariable Long idUsuario,
+            @RequestParam(required = false) BigDecimal ingresoMensual) {
+        return ResponseEntity.ok(coachService.recomendarConFuncionBD(idUsuario, ingresoMensual));
+    }
+
     @GetMapping("/reglas")
     public ResponseEntity<List<String>> reglas() {
         return ResponseEntity.ok(coachService.reglasReferencia());
