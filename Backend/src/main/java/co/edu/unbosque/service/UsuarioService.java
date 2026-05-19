@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
@@ -287,7 +288,7 @@ public class UsuarioService {
      * RQ-05 — Reclamación de perfil: convierte una cuenta fantasma (tipo FANTASMA)
      * en una cuenta real. Invoca {@code sp_reclamar_perfil_fantasma}.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Usuario reclamarPerfil(String tokenReclamo, String nombres, String apellidos,
                                    String nombreUsuario, String correo, String contrasena) {
         String hashContrasena = passwordEncoder.encode(contrasena);
