@@ -8,22 +8,14 @@ import co.edu.unbosque.request.DeudaRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.SqlOutParameter;
-import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.sql.Types;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -32,7 +24,6 @@ public class DeudaService {
 
     private final DeudaRepository deudaRepository;
     private final TransaccionRepository transaccionRepository;
-    private final JdbcTemplate jdbcTemplate;
 
     @Autowired(required = false)
     private ActividadCirculoService actividadCirculoService;
@@ -160,122 +151,21 @@ public class DeudaService {
         });
     }
 
-    /**
-     * RQ-08 — Paso 1: el deudor registra que pagó.
-     * Invoca {@code sp_pagar_deuda}: PENDIENTE → CONFIRMADA_PENDIENTE.
-     */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public Map<String, Object> pagarDeuda(Long idDeuda, String metodoPago) {
-        Map<String, Object> out = jdbcTemplate.call(con -> {
-            var cs = con.prepareCall("{call sp_pagar_deuda(?, ?, ?, ?)}");
-            cs.setLong(1, idDeuda);
-            cs.setString(2, metodoPago != null ? metodoPago : "TRANSFERENCIA");
-            cs.registerOutParameter(3, Types.INTEGER);
-            cs.registerOutParameter(4, Types.VARCHAR);
-            return cs;
-        }, Arrays.asList(
-                new SqlParameter("p_id_deuda", Types.INTEGER),
-                new SqlParameter("p_metodo_pago", Types.VARCHAR),
-                new SqlOutParameter("p_resultado", Types.INTEGER),
-                new SqlOutParameter("p_mensaje", Types.VARCHAR)
-        ));
-
-        Integer resultado = (Integer) out.get("p_resultado");
-        String mensaje = (String) out.get("p_mensaje");
-        log.info("sp_pagar_deuda idDeuda={} resultado={} msg={}", idDeuda, resultado, mensaje);
-
-        if (resultado == null || resultado == 0) {
-            throw new IllegalStateException(mensaje != null ? mensaje : "Error al procesar pago");
-        }
-
-        deudaRepository.findById(idDeuda).ifPresent(deuda -> {
-            publicarSaldos(deuda.getIdUsuarioDeudor(), deuda.getIdUsuarioAcreedor());
-            if (actividadCirculoService != null) {
-                Long idCirculo = resolverCirculoDeTransaccion(deuda.getIdTransaccion());
-                if (idCirculo != null) {
-                    Map<String, Object> ctx = new HashMap<>();
-                    ctx.put("monto", deuda.getMonto());
-                    ctx.put("metodo_pago", metodoPago);
-                    actividadCirculoService.registrarEvento(idCirculo, "DEUDA_PAGADA",
-                            deuda.getIdUsuarioDeudor(), ctx);
-                }
-            }
-        });
-
-        return Map.of("resultado", resultado, "mensaje", mensaje != null ? mensaje : "");
-    }
-
-    /**
-     * RQ-08 — Paso 2: el acreedor confirma recepción del pago.
-     * Invoca {@code sp_confirmar_pago_deuda}: CONFIRMADA_PENDIENTE → PAGADA.
-     * Si la deuda está en PENDIENTE, primero la transiciona via sp_pagar_deuda.
-     */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional
     public Optional<Deuda> confirmarPago(Long id, Long idTransaccion) {
-        // Auto-transición: si está PENDIENTE, primero ejecutar sp_pagar_deuda
-        deudaRepository.findById(id).ifPresent(d -> {
-            if ("PENDIENTE".equals(d.getEstadoPago())) {
-                try {
-                    pagarDeuda(id, d.getMetodoPagoSugerido() != null ? d.getMetodoPagoSugerido() : "TRANSFERENCIA");
-                } catch (Exception e) {
-                    log.warn("Auto-pago previo a confirmar fallido para deuda {}: {}", id, e.getMessage());
-                }
-            }
-        });
+        return deudaRepository.findById(id).map(deuda -> {
+            deuda.setEstadoPago("CONFIRMADO");
+            deuda.setFechaConfirmada(LocalDateTime.now());
+            deuda.setFechaPago(LocalDateTime.now());
+            if (idTransaccion != null) deuda.setIdTransaccion(idTransaccion);
+            Deuda saved = deudaRepository.save(deuda);
 
-
-        Map<String, Object> out = jdbcTemplate.call(con -> {
-            var cs = con.prepareCall("{call sp_confirmar_pago_deuda(?, ?, ?)}");
-            cs.setLong(1, id);
-            cs.registerOutParameter(2, Types.INTEGER);
-            cs.registerOutParameter(3, Types.VARCHAR);
-            return cs;
-        }, Arrays.asList(
-                new SqlParameter("p_id_deuda", Types.INTEGER),
-                new SqlOutParameter("p_resultado", Types.INTEGER),
-                new SqlOutParameter("p_mensaje", Types.VARCHAR)
-        ));
-
-        Integer resultado = (Integer) out.get("p_resultado");
-        String mensaje = (String) out.get("p_mensaje");
-        log.info("sp_confirmar_pago_deuda idDeuda={} resultado={} msg={}", id, resultado, mensaje);
-
-        if (resultado == null || resultado == 0) {
-            throw new IllegalStateException(mensaje != null ? mensaje : "Error al confirmar pago");
-        }
-
-        // El SP ya commiteó la transición a PAGADA. Cualquier fallo posterior
-        // (auditoría, Mongo, notificación, SSE) NO debe romper la respuesta
-        // del endpoint — el estado autoritativo ya está en la BD.
-        Optional<Deuda> deudaOpt;
-        try {
-            deudaOpt = deudaRepository.findById(id);
-        } catch (Exception e) {
-            log.warn("No se pudo recargar deuda {} tras confirmar pago: {}", id, e.getMessage());
-            return Optional.empty();
-        }
-
-        deudaOpt.ifPresent(saved -> {
-            if (idTransaccion != null) saved.setIdTransaccion(idTransaccion);
-            // Side-effects en hilo separado: nunca bloquean ni rompen la respuesta.
-            CompletableFuture.runAsync(() -> ejecutarSideEffectsConfirmar(saved));
-        });
-
-        return deudaOpt;
-    }
-
-    /** Side-effects post-confirmación: auditoría, MongoDB, notificación, SSE. Tolerante a fallos. */
-    private void ejecutarSideEffectsConfirmar(Deuda saved) {
-        try {
             if (auditoriaService != null) {
                 auditoriaService.registrar(saved.getIdUsuarioDeudor(), "deuda", saved.getIdDeuda(),
-                        "CONFIRMAR_PAGO", "{\"estado\":\"CONFIRMADA_PENDIENTE\"}",
-                        "{\"estado\":\"PAGADA\",\"monto\":" + saved.getMonto() + "}");
+                        "CONFIRMAR_PAGO", "{\"estado\":\"PENDIENTE\"}",
+                        "{\"estado\":\"CONFIRMADO\",\"monto\":" + saved.getMonto() + "}");
             }
-        } catch (Exception e) {
-            log.warn("Auditoría falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
-        }
-        try {
+
             if (actividadCirculoService != null) {
                 Long idCirculo = resolverCirculoDeTransaccion(saved.getIdTransaccion());
                 if (idCirculo != null) {
@@ -286,37 +176,26 @@ public class DeudaService {
                             saved.getIdUsuarioDeudor(), ctx);
                 }
             }
-        } catch (Exception e) {
-            log.warn("Mongo actividad falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
-        }
-        try {
-            if (notificacionService != null && saved.getIdUsuarioAcreedor() != null && saved.getMonto() != null) {
-                notificacionService.crear(
-                        saved.getIdUsuarioAcreedor(),
-                        "Tu deuda fue pagada",
-                        "Se confirmó el pago de $" + saved.getMonto().longValue(),
-                        "DEUDA_PAGADA", null, null);
-            }
-        } catch (Exception e) {
-            log.warn("Notificación falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
-        }
-        try {
-            publicarSaldos(saved.getIdUsuarioDeudor(), saved.getIdUsuarioAcreedor());
-        } catch (Exception e) {
-            log.warn("SSE publicarSaldos falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
-        }
-    }
 
-    /**
-     * RQ-07 — Balance de deudas pendientes de un usuario en un círculo.
-     * Invoca {@code fn_calcular_deuda_usuario}.
-     */
-    @Transactional(readOnly = true)
-    public BigDecimal calcularDeudaUsuario(Long idUsuario, Long idCirculo) {
-        BigDecimal deuda = jdbcTemplate.queryForObject(
-                "SELECT fn_calcular_deuda_usuario(?, ?)",
-                BigDecimal.class, idUsuario, idCirculo);
-        return deuda != null ? deuda : BigDecimal.ZERO;
+            // Notificar al acreedor que le pagaron
+            if (notificacionService != null && saved.getIdUsuarioAcreedor() != null) {
+                try {
+                    notificacionService.crear(
+                            saved.getIdUsuarioAcreedor(),
+                            "Tu deuda fue pagada",
+                            "Se confirmó el pago de $" + saved.getMonto().longValue(),
+                            "DEUDA_PAGADA",
+                            null,
+                            null
+                    );
+                } catch (Exception e) {
+                    log.warn("No se pudo notificar pago al acreedor {}: {}", saved.getIdUsuarioAcreedor(), e.getMessage());
+                }
+            }
+
+            publicarSaldos(saved.getIdUsuarioDeudor(), saved.getIdUsuarioAcreedor());
+            return saved;
+        });
     }
 
     @Transactional
