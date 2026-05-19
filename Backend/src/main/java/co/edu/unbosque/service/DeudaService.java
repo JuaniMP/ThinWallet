@@ -221,6 +221,7 @@ public class DeudaService {
             }
         });
 
+
         Map<String, Object> out = jdbcTemplate.call(con -> {
             var cs = con.prepareCall("{call sp_confirmar_pago_deuda(?, ?, ?)}");
             cs.setLong(1, id);
