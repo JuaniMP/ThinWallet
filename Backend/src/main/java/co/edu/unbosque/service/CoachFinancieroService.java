@@ -171,10 +171,15 @@ public class CoachFinancieroService {
     public String recomendarConFuncionBD(Long idUsuario, BigDecimal ingresoMensual) {
         BigDecimal ingreso = (ingresoMensual != null && ingresoMensual.signum() > 0)
                 ? ingresoMensual : inferirIngresoMensual(idUsuario);
-        String json = jdbcTemplate.queryForObject(
-                "SELECT fn_recomendar_ahorro(?, ?)", String.class, idUsuario, ingreso);
-        log.info("fn_recomendar_ahorro idUsuario={} ingreso={} -> {}", idUsuario, ingreso, json);
-        return json != null ? json : "{}";
+        try {
+            String json = jdbcTemplate.queryForObject(
+                    "SELECT fn_recomendar_ahorro(?, ?)", String.class, idUsuario, ingreso);
+            log.info("fn_recomendar_ahorro idUsuario={} ingreso={} -> {}", idUsuario, ingreso, json);
+            return json != null ? json : "{}";
+        } catch (Exception e) {
+            log.warn("fn_recomendar_ahorro no disponible: {}", e.getMessage());
+            return "{\"error\":\"fn_recomendar_ahorro no está desplegada en la BD. Ejecuta el script SQL en producción.\"}";
+        }
     }
 
     // Wrapper utilizado por el controller cuando el frontend pide la regla cruda
