@@ -206,9 +206,21 @@ public class DeudaService {
     /**
      * RQ-08 — Paso 2: el acreedor confirma recepción del pago.
      * Invoca {@code sp_confirmar_pago_deuda}: CONFIRMADA_PENDIENTE → PAGADA.
+     * Si la deuda está en PENDIENTE, primero la transiciona via sp_pagar_deuda.
      */
     @Transactional
     public Optional<Deuda> confirmarPago(Long id, Long idTransaccion) {
+        // Auto-transición: si está PENDIENTE, primero ejecutar sp_pagar_deuda
+        deudaRepository.findById(id).ifPresent(d -> {
+            if ("PENDIENTE".equals(d.getEstadoPago())) {
+                try {
+                    pagarDeuda(id, d.getMetodoPagoSugerido() != null ? d.getMetodoPagoSugerido() : "TRANSFERENCIA");
+                } catch (Exception e) {
+                    log.warn("Auto-pago previo a confirmar fallido para deuda {}: {}", id, e.getMessage());
+                }
+            }
+        });
+
         Map<String, Object> out = jdbcTemplate.call(con -> {
             var cs = con.prepareCall("{call sp_confirmar_pago_deuda(?, ?, ?)}");
             cs.setLong(1, id);
