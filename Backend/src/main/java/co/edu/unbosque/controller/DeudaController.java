@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +78,30 @@ public class DeudaController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    /**
+     * RQ-08 — Paso 1: el deudor registra que pagó. Invoca sp_pagar_deuda.
+     */
+    @PostMapping("/{id}/pagar")
+    public ResponseEntity<?> pagar(@PathVariable Long id,
+                                   @RequestBody(required = false) Map<String, String> body) {
+        String metodoPago = (body != null) ? body.get("metodoPago") : null;
+        try {
+            return ResponseEntity.ok(deudaService.pagarDeuda(id, metodoPago));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * RQ-07 — Balance de deudas pendientes de un usuario en un círculo.
+     * Invoca fn_calcular_deuda_usuario.
+     */
+    @GetMapping("/balance/{idUsuario}/circulo/{idCirculo}")
+    public ResponseEntity<BigDecimal> balanceDeuda(@PathVariable Long idUsuario,
+                                                   @PathVariable Long idCirculo) {
+        return ResponseEntity.ok(deudaService.calcularDeudaUsuario(idUsuario, idCirculo));
     }
 
     @DeleteMapping("/{id}")
