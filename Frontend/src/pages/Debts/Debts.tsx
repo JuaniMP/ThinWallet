@@ -82,16 +82,23 @@ export function Debts() {
   const handleConfirmPayment = async (debt: Deuda) => {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
+    setError(null);
     try {
-      const tx = await transactionService.create({
-        nombre: "Pago de deuda",
-        montoOriginal: debt.monto ?? 0,
-        tipoMovimiento: "RETIRO",
-        idUsuario: user.idUsuario,
-        monedaOriginal: debt.moneda ?? "COP",
-        tasaCambio: 1,
-      });
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
+      let idTransaccion: number | undefined;
+      try {
+        const tx = await transactionService.create({
+          nombre: "Pago de deuda",
+          montoOriginal: debt.monto ?? 0,
+          tipoMovimiento: "RETIRO",
+          idUsuario: user.idUsuario,
+          monedaOriginal: debt.moneda ?? "COP",
+          tasaCambio: 1,
+        });
+        idTransaccion = tx.idTransaccion;
+      } catch {
+        // Si falla la tx, igual confirmamos la deuda
+      }
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, idTransaccion ? { idTransaccion } : {});
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar pago");
@@ -104,16 +111,23 @@ export function Debts() {
   const handleConfirmReceive = async (debt: Deuda) => {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
+    setError(null);
     try {
-      const tx = await transactionService.create({
-        nombre: "Cobro de deuda",
-        montoOriginal: debt.monto ?? 0,
-        tipoMovimiento: "DEPOSITO",
-        idUsuario: user.idUsuario,
-        monedaOriginal: debt.moneda ?? "COP",
-        tasaCambio: 1,
-      });
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
+      let idTransaccion: number | undefined;
+      try {
+        const tx = await transactionService.create({
+          nombre: "Cobro de deuda",
+          montoOriginal: debt.monto ?? 0,
+          tipoMovimiento: "DEPOSITO",
+          idUsuario: user.idUsuario,
+          monedaOriginal: debt.moneda ?? "COP",
+          tasaCambio: 1,
+        });
+        idTransaccion = tx.idTransaccion;
+      } catch {
+        // Si falla la tx, igual confirmamos la deuda
+      }
+      await api.put(`/deudas/${debt.idDeuda}/confirmar`, idTransaccion ? { idTransaccion } : {});
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar recepción");
