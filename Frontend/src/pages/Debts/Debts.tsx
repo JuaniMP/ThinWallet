@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Layout } from "../../components/layout/Layout";
 import { api } from "../../services/api";
 import { transactionService } from "../../services/transactionService";
+import { deudaService } from "../../services/deudaService";
 import { MoneyInput } from "../../components/common/MoneyInput";
 import {
   useCurrency,
@@ -17,6 +18,9 @@ type NewDeudaForm = {
   metodoPagoSugerido: string;
   moneda: CurrencyCode;
 };
+
+const isFinalState = (e?: string) =>
+  e === "CONFIRMADO" || e === "PAGADO" || e === "PAGADA" || e === "RECHAZADO";
 
 export function Debts() {
   const { user } = useAuth();
@@ -42,8 +46,8 @@ export function Debts() {
     setError(null);
     try {
       const [pay, rec] = await Promise.all([
-        api.get<Deuda[]>(`/deudas/deudor/${user.idUsuario}`),
-        api.get<Deuda[]>(`/deudas/acreedor/${user.idUsuario}`),
+        deudaService.getByDeudor(user.idUsuario),
+        deudaService.getByAcreedor(user.idUsuario),
       ]);
       const payList = Array.isArray(pay) ? pay : [];
       const recList = Array.isArray(rec) ? rec : [];
@@ -78,42 +82,52 @@ export function Debts() {
     fetchDebts();
   }, [user?.idUsuario]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** Yo pago una deuda → RETIRO en mi cuenta */
-  const handleConfirmPayment = async (debt: Deuda) => {
+  /** RQ-08 paso 1 — Deudor: "ya pagué". Crea RETIRO y llama sp_pagar_deuda. */
+  const handleMarkPaid = async (debt: Deuda) => {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
     try {
-      const tx = await transactionService.create({
-        nombre: "Pago de deuda",
-        montoOriginal: debt.monto ?? 0,
-        tipoMovimiento: "RETIRO",
-        idUsuario: user.idUsuario,
-        monedaOriginal: debt.moneda ?? "COP",
-        tasaCambio: 1,
-      });
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
+      try {
+        await transactionService.create({
+          nombre: "Pago de deuda",
+          montoOriginal: debt.monto ?? 0,
+          tipoMovimiento: "RETIRO",
+          idUsuario: user.idUsuario,
+          monedaOriginal: debt.moneda ?? "COP",
+          tasaCambio: 1,
+        });
+      } catch {
+        // si la transacción falla, igual avanzamos el estado de la deuda
+      }
+      await deudaService.pagar(debt.idDeuda, debt.metodoPagoSugerido ?? "TRANSFERENCIA");
       await fetchDebts();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al confirmar pago");
+      setError(err instanceof Error ? err.message : "Error al marcar como pagado");
     } finally {
       setConfirmingId(null);
     }
   };
 
-  /** Alguien me paga → DEPÓSITO en mi cuenta */
+  /** RQ-08 paso 2 — Acreedor confirma recepción. Crea DEPÓSITO y llama sp_confirmar_pago_deuda. */
   const handleConfirmReceive = async (debt: Deuda) => {
     if (!user?.idUsuario) return;
     setConfirmingId(debt.idDeuda);
     try {
-      const tx = await transactionService.create({
-        nombre: "Cobro de deuda",
-        montoOriginal: debt.monto ?? 0,
-        tipoMovimiento: "DEPOSITO",
-        idUsuario: user.idUsuario,
-        monedaOriginal: debt.moneda ?? "COP",
-        tasaCambio: 1,
-      });
-      await api.put(`/deudas/${debt.idDeuda}/confirmar`, { idTransaccion: tx.idTransaccion });
+      let idTransaccion: number | undefined;
+      try {
+        const tx = await transactionService.create({
+          nombre: "Cobro de deuda",
+          montoOriginal: debt.monto ?? 0,
+          tipoMovimiento: "DEPOSITO",
+          idUsuario: user.idUsuario,
+          monedaOriginal: debt.moneda ?? "COP",
+          tasaCambio: 1,
+        });
+        idTransaccion = tx.idTransaccion;
+      } catch {
+        // si la transacción falla, igual avanzamos el estado de la deuda
+      }
+      await deudaService.confirmar(debt.idDeuda, idTransaccion);
       await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar recepción");
@@ -142,13 +156,12 @@ export function Debts() {
     setSubmitting(true);
     setError(null);
     try {
-      await api.post("/deudas", {
+      await deudaService.create({
         monto: form.monto,
         idUsuarioDeudor: user.idUsuario,
         idUsuarioAcreedor: acreedorId,
         metodoPagoSugerido: form.metodoPagoSugerido,
         estadoPago: "PENDIENTE",
-        moneda: form.moneda,
       });
       setForm({ monto: 0, idUsuarioAcreedor: "", metodoPagoSugerido: "EFECTIVO", moneda: prefCurrency });
       setShowForm(false);
@@ -160,14 +173,13 @@ export function Debts() {
     }
   };
 
-  const pendingPayables = payables.filter(
-    (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO" && d.estadoPago !== "PAGADA",
-  );
-  const pendingReceivables = receivables.filter(
-    (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO" && d.estadoPago !== "PAGADA",
-  );
+  // Deudor: pendientes incluyen PENDIENTE y CONFIRMADA_PENDIENTE
+  const pendingPayables = payables.filter((d) => !isFinalState(d.estadoPago));
+  // Acreedor: idem
+  const pendingReceivables = receivables.filter((d) => !isFinalState(d.estadoPago));
+
   const history = [...payables, ...receivables]
-    .filter((d) => d.estadoPago === "CONFIRMADO" || d.estadoPago === "PAGADO" || d.estadoPago === "PAGADA")
+    .filter((d) => isFinalState(d.estadoPago))
     .sort((a, b) =>
       (b.fechaConfirmada ?? b.fechaCreacion ?? "").localeCompare(
         a.fechaConfirmada ?? a.fechaCreacion ?? "",
@@ -197,7 +209,6 @@ export function Debts() {
           ) : (
             <>
               <div className="debt-summary">
-                {/* Cobrar primero: entra dinero */}
                 <div className="summary-card bg-secondary neo-shadow">
                   <div className="card-top">
                     <span className="material-symbols-outlined">receipt_long</span>
@@ -210,7 +221,6 @@ export function Debts() {
                   </p>
                 </div>
 
-                {/* Pagar segundo: sale dinero */}
                 <div className="summary-card bg-high neo-shadow">
                   <div className="card-top">
                     <span className="material-symbols-outlined">outbound</span>
@@ -224,7 +234,6 @@ export function Debts() {
                 </div>
               </div>
 
-              {/* Balance neto */}
               <div className="debt-net-balance" style={{ marginTop: "16px" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: "1rem", verticalAlign: "middle", marginRight: 6 }}>
                   {netBalance >= 0 ? "trending_up" : "trending_down"}
@@ -244,7 +253,7 @@ export function Debts() {
           <div className="debts-content">
             <div className="debts-column">
 
-              {/* ── CUENTAS POR COBRAR (arriba: alguien me debe a mí) ── */}
+              {/* CUENTAS POR COBRAR */}
               <div>
                 <div className="section-heading">
                   <div className="accent-bar secondary" />
@@ -252,56 +261,66 @@ export function Debts() {
                 </div>
                 <p className="debt-section-hint">
                   <span className="material-symbols-outlined" style={{ fontSize: "0.875rem", verticalAlign: "middle" }}>info</span>
-                  {" "}Al confirmar la recepción, el dinero se suma a tu saldo.
+                  {" "}Cuando el deudor marca como pagado, podrás confirmar la recepción.
                 </p>
                 {pendingReceivables.length === 0 ? (
                   <p className="empty">No tienes cobros pendientes</p>
                 ) : (
                   <div className="debts-grid">
-                    {pendingReceivables.map((item, idx) => (
-                      <div key={item.idDeuda} className="debt-card debt-card--receive">
-                        <div className="debt-card__header">
-                          <div className="debt-card__avatar">
-                            <span className="material-symbols-outlined">person</span>
+                    {pendingReceivables.map((item, idx) => {
+                      const awaiting = item.estadoPago === "CONFIRMADA_PENDIENTE";
+                      return (
+                        <div key={item.idDeuda} className="debt-card debt-card--receive">
+                          <div className="debt-card__header">
+                            <div className="debt-card__avatar">
+                              <span className="material-symbols-outlined">person</span>
+                            </div>
+                            <div className="debt-card__person">
+                              <h4>
+                                {item.idUsuarioDeudor && userNames[item.idUsuarioDeudor]
+                                  ? userNames[item.idUsuarioDeudor]
+                                  : `Cobro #${idx + 1}`}
+                              </h4>
+                              <span className="debt-card__badge debt-card__badge--pending">
+                                {item.estadoPago ?? "PENDIENTE"}
+                              </span>
+                            </div>
+                            {item.metodoPagoSugerido && (
+                              <span className="debt-card__method">{item.metodoPagoSugerido}</span>
+                            )}
                           </div>
-                          <div className="debt-card__person">
-                            <h4>
-                              {item.idUsuarioDeudor && userNames[item.idUsuarioDeudor]
-                                ? userNames[item.idUsuarioDeudor]
-                                : `Cobro #${idx + 1}`}
-                            </h4>
-                            <span className="debt-card__badge debt-card__badge--pending">
-                              {item.estadoPago ?? "PENDIENTE"}
-                            </span>
-                          </div>
-                          {item.metodoPagoSugerido && (
-                            <span className="debt-card__method">{item.metodoPagoSugerido}</span>
+                          <p className="debt-card__amount debt-card__amount--income">
+                            +{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
+                          </p>
+                          {awaiting ? (
+                            <button
+                              className="action-btn action-btn--receive"
+                              onClick={() => handleConfirmReceive(item)}
+                              disabled={confirmingId === item.idDeuda}
+                            >
+                              {confirmingId === item.idDeuda ? (
+                                "Procesando..."
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined">check</span>
+                                  Confirmar Recepción
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <button className="action-btn" disabled style={{ opacity: 0.6 }}>
+                              <span className="material-symbols-outlined">hourglass_empty</span>
+                              Esperando que el deudor pague
+                            </button>
                           )}
                         </div>
-                        <p className="debt-card__amount debt-card__amount--income">
-                          +{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
-                        </p>
-                        <button
-                          className="action-btn action-btn--receive"
-                          onClick={() => handleConfirmReceive(item)}
-                          disabled={confirmingId === item.idDeuda}
-                        >
-                          {confirmingId === item.idDeuda ? (
-                            "Procesando..."
-                          ) : (
-                            <>
-                              <span className="material-symbols-outlined">check</span>
-                              Confirmar Recepción
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* ── CUENTAS POR PAGAR (abajo: yo le debo a alguien) ── */}
+              {/* CUENTAS POR PAGAR */}
               <div style={{ paddingTop: "40px" }}>
                 <div className="section-heading">
                   <div className="accent-bar primary" />
@@ -309,57 +328,66 @@ export function Debts() {
                 </div>
                 <p className="debt-section-hint">
                   <span className="material-symbols-outlined" style={{ fontSize: "0.875rem", verticalAlign: "middle" }}>info</span>
-                  {" "}Al marcar como pagado, el dinero se descuenta de tu saldo.
+                  {" "}Al marcar como pagado, el dinero se descuenta de tu saldo y queda pendiente de confirmación por el acreedor.
                 </p>
                 {pendingPayables.length === 0 ? (
                   <p className="empty">No tienes deudas pendientes de pago</p>
                 ) : (
                   <div className="debts-grid">
-                    {pendingPayables.map((item, idx) => (
-                      <div key={item.idDeuda} className="debt-card debt-card--pay">
-                        <div className="debt-card__header">
-                          <div className="debt-card__avatar debt-card__avatar--pay">
-                            <span className="material-symbols-outlined">person</span>
+                    {pendingPayables.map((item, idx) => {
+                      const awaitingAcreedor = item.estadoPago === "CONFIRMADA_PENDIENTE";
+                      return (
+                        <div key={item.idDeuda} className="debt-card debt-card--pay">
+                          <div className="debt-card__header">
+                            <div className="debt-card__avatar debt-card__avatar--pay">
+                              <span className="material-symbols-outlined">person</span>
+                            </div>
+                            <div className="debt-card__person">
+                              <h4>
+                                {item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]
+                                  ? userNames[item.idUsuarioAcreedor]
+                                  : `Deuda #${idx + 1}`}
+                              </h4>
+                              <span className="debt-card__badge debt-card__badge--pending">
+                                {item.estadoPago ?? "PENDIENTE"}
+                              </span>
+                            </div>
+                            {item.metodoPagoSugerido && (
+                              <span className="debt-card__method">{item.metodoPagoSugerido}</span>
+                            )}
                           </div>
-                          <div className="debt-card__person">
-                            <h4>
-                              {item.idUsuarioAcreedor && userNames[item.idUsuarioAcreedor]
-                                ? userNames[item.idUsuarioAcreedor]
-                                : `Deuda #${idx + 1}`}
-                            </h4>
-                            <span className="debt-card__badge debt-card__badge--pending">
-                              {item.estadoPago ?? "PENDIENTE"}
-                            </span>
-                          </div>
-                          {item.metodoPagoSugerido && (
-                            <span className="debt-card__method">{item.metodoPagoSugerido}</span>
+                          <p className="debt-card__amount debt-card__amount--expense">
+                            -{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
+                          </p>
+                          {awaitingAcreedor ? (
+                            <button className="action-btn" disabled style={{ opacity: 0.6 }}>
+                              <span className="material-symbols-outlined">hourglass_top</span>
+                              Esperando confirmación del acreedor
+                            </button>
+                          ) : (
+                            <button
+                              className="action-btn action-btn--pay"
+                              onClick={() => handleMarkPaid(item)}
+                              disabled={confirmingId === item.idDeuda}
+                            >
+                              {confirmingId === item.idDeuda ? (
+                                "Procesando..."
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined">payments</span>
+                                  Marcar como Pagado
+                                </>
+                              )}
+                            </button>
                           )}
                         </div>
-                        <p className="debt-card__amount debt-card__amount--expense">
-                          -{fmt(item.monto ?? 0, (item.moneda ?? "COP") as Parameters<typeof fmt>[1])}
-                        </p>
-                        <button
-                          className="action-btn action-btn--pay"
-                          onClick={() => handleConfirmPayment(item)}
-                          disabled={confirmingId === item.idDeuda}
-                        >
-                          {confirmingId === item.idDeuda ? (
-                            "Confirmando..."
-                          ) : (
-                            <>
-                              <span className="material-symbols-outlined">payments</span>
-                              Marcar como Pagado
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right sidebar */}
             <aside style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div className="history-card">
                 <div className="card-header">
