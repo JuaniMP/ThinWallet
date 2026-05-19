@@ -12,10 +12,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlOutParameter;
+import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Types;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +37,8 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenHashingService tokenHashingService;
+    private final FcmTokenStore fcmTokenStore;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired(required = false)
     private AuditoriaSistemaService auditoriaService;
@@ -277,46 +284,58 @@ public class UsuarioService {
     }
 
     /**
-     * Reclamación de perfil: convierte una cuenta fantasma (tipo FANTASMA)
-     * en una cuenta real usando el tokenReclamo del usuario fantasma.
+     * RQ-05 — Reclamación de perfil: convierte una cuenta fantasma (tipo FANTASMA)
+     * en una cuenta real. Invoca {@code sp_reclamar_perfil_fantasma}.
      */
     @Transactional
     public Usuario reclamarPerfil(String tokenReclamo, String nombres, String apellidos,
                                    String nombreUsuario, String correo, String contrasena) {
-        Usuario fantasma = usuarioRepository.findAll().stream()
-                .filter(u -> tokenReclamo.equals(u.getTokenReclamo()))
-                .findFirst()
+        String hashContrasena = passwordEncoder.encode(contrasena);
+
+        Map<String, Object> out = jdbcTemplate.call(con -> {
+            var cs = con.prepareCall("{call sp_reclamar_perfil_fantasma(?, ?, ?, ?, ?, ?, ?, ?)}");
+            cs.setString(1, tokenReclamo);
+            cs.setString(2, nombres);
+            cs.setString(3, apellidos);
+            cs.setString(4, nombreUsuario);
+            cs.setString(5, correo);
+            cs.setString(6, hashContrasena);
+            cs.registerOutParameter(7, Types.INTEGER);
+            cs.registerOutParameter(8, Types.VARCHAR);
+            return cs;
+        }, Arrays.asList(
+                new SqlParameter("p_token_reclamo", Types.VARCHAR),
+                new SqlParameter("p_nombres", Types.VARCHAR),
+                new SqlParameter("p_apellidos", Types.VARCHAR),
+                new SqlParameter("p_nombre_usuario", Types.VARCHAR),
+                new SqlParameter("p_correo", Types.VARCHAR),
+                new SqlParameter("p_nueva_contrasena_hash", Types.VARCHAR),
+                new SqlOutParameter("p_resultado", Types.INTEGER),
+                new SqlOutParameter("p_mensaje", Types.VARCHAR)
+        ));
+
+        Integer resultado = (Integer) out.get("p_resultado");
+        String mensaje = (String) out.get("p_mensaje");
+        log.info("sp_reclamar_perfil_fantasma token={} resultado={} msg={}", tokenReclamo, resultado, mensaje);
+
+        if (resultado == null || resultado == 0) {
+            if (mensaje != null && mensaje.contains("correo")) throw new RuntimeException("CORREO_EN_USO");
+            if (mensaje != null && mensaje.contains("usuario")) throw new RuntimeException("NOMBRE_EN_USO");
+            throw new RuntimeException("TOKEN_INVALIDO");
+        }
+
+        Usuario reclamado = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("TOKEN_INVALIDO"));
 
-        if (usuarioRepository.findByCorreo(correo)
-                .filter(u -> !u.getIdUsuario().equals(fantasma.getIdUsuario()))
-                .isPresent()) {
-            throw new RuntimeException("CORREO_EN_USO");
-        }
-        if (usuarioRepository.findByNombreUsuario(nombreUsuario)
-                .filter(u -> !u.getIdUsuario().equals(fantasma.getIdUsuario()))
-                .isPresent()) {
-            throw new RuntimeException("NOMBRE_EN_USO");
-        }
-
-        TipoUsuario tipoCliente = tipoUsuarioRepository.findById(2L)
-                .orElseThrow(() -> new RuntimeException("Tipo de usuario 'Cliente' no existe"));
-
-        fantasma.setNombres(nombres);
-        fantasma.setApellidos(apellidos);
-        fantasma.setNombreUsuario(nombreUsuario);
-        fantasma.setCorreo(correo);
-        fantasma.setContrasenaHash(passwordEncoder.encode(contrasena));
-        fantasma.setTipoUsuario(tipoCliente);
-        fantasma.setEstado(1);
-        fantasma.setTokenReclamo(null);
-
-        Usuario reclamado = usuarioRepository.save(fantasma);
         if (auditoriaService != null) {
             auditoriaService.registrar(reclamado.getIdUsuario(), "usuario", reclamado.getIdUsuario(),
                     "RECLAMACION_PERFIL", "{\"tipo\":\"FANTASMA\"}", "{\"tipo\":\"CLIENTE\",\"correo\":\"" + correo + "\"}");
         }
         return reclamado;
+    }
+
+    public void actualizarFcmToken(Long idUsuario, String fcmToken) {
+        fcmTokenStore.guardar(idUsuario, fcmToken);
     }
 
     @Transactional

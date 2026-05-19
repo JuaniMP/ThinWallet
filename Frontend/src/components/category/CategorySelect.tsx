@@ -14,6 +14,8 @@ interface CategorySelectProps {
   type: "DEPOSITO" | "RETIRO" | null;
   value: number | "";
   onChange: (categoryId: number) => void;
+  /** Called with the selected category's tipoCategoria so the parent can react (e.g. auto-set RETIRO for AMBOS) */
+  onTypeHint?: (tipo: string | null) => void;
 }
 
 const CUSTOM_CATEGORIES_STORAGE_KEY = "customCategoriesByUser";
@@ -58,7 +60,7 @@ function addOwnedCustomId(userId: number | null, idCategoria: number): void {
   }
 }
 
-export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
+export function CategorySelect({ type, value, onChange, onTypeHint }: CategorySelectProps) {
   const [categories, setCategories] = useState<BackendCategoria[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const userId = useMemo(() => getCurrentUserId(), []);
@@ -120,7 +122,14 @@ export function CategorySelect({ type, value, onChange }: CategorySelectProps) {
       <select
         id="categoria"
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(e) => {
+          const id = Number(e.target.value);
+          onChange(id);
+          if (onTypeHint) {
+            const selected = visibleCategories.find((c) => c.idCategoria === id);
+            onTypeHint(selected?.tipoCategoria ?? null);
+          }
+        }}
         required
       >
         <option value="" disabled>

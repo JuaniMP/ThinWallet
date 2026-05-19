@@ -7,4 +7,7 @@ export const usuarioService = {
     if (excludeId != null) params.set("excludeId", String(excludeId));
     return api.get<UsuarioBusqueda[]>(`/usuarios/buscar?${params.toString()}`);
   },
+
+  registrarFcmToken: (idUsuario: number, fcmToken: string) =>
+    api.put<void>(`/usuarios/${idUsuario}/fcm-token`, { fcmToken }),
 };

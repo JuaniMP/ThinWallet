@@ -8,11 +8,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
- * Inicializa colecciones e índices en gestion_gastos_audit al arrancar.
- * Idempotente: solo crea si no existen.
+ * Inicializa colecciones e índices en gestion_gastos_audit al arrancar (async).
+ * Idempotente: solo crea si no existen. No bloquea el startup.
  */
 @Component
 @Slf4j
@@ -23,6 +24,11 @@ public class MongoInitConfig implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        initializeAsync();
+    }
+
+    @Async
+    private void initializeAsync() {
         try {
             inicializarColecciones();
             inicializarIndices();

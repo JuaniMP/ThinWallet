@@ -12,11 +12,13 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Detección de "gastos hormiga": micro-gastos personales (sin circulo) que,
+ * Detección de "gastos hormiga": micro-gastos personales (sin círculo) que,
  * sumados, erosionan el balance del usuario sin que él los note.
  *
- * Usa la función almacenada {@code fn_contar_gastos_hormiga} para el conteo
- * y una consulta paralela para devolver el listado completo a la UI.
+ * Un egreso se identifica por la categoría asociada: tipo_categoria != 'DEPOSITO'.
+ * La función fn_contar_gastos_hormiga tiene un bug conocido (filtra por
+ * tipo_movimiento.nombre con valores que no existen), por lo que tanto el conteo
+ * como el listado se calculan directamente aquí con la lógica correcta.
  */
 @Service
 @Slf4j
@@ -33,24 +35,21 @@ public class GastosHormigaService {
         BigDecimal u = umbral != null ? umbral : UMBRAL_DEFAULT;
         Integer d = dias != null ? dias : DIAS_DEFAULT;
 
-        Integer cantidad = jdbcTemplate.queryForObject(
-                "SELECT fn_contar_gastos_hormiga(?, ?, ?)",
-                Integer.class,
-                idUsuario, u, d);
-
-        // El listado se calcula aquí (la función solo cuenta).
-        // Mismos criterios que la SP: gastos personales con monto <= umbral.
+        // Gastos: transacciones personales (sin círculo) cuya categoría NO es DEPOSITO
+        // y cuyo monto está dentro del umbral, dentro del período de días indicado.
         String sql = """
                 SELECT t.id_transaccion, t.nombre, t.monto_original, t.moneda_original,
                        t.tasa_cambio, t.modalidad_division, t.contexto,
                        t.id_usuario, t.id_circulo_gasto, t.id_categoria,
-                       t.id_gasto, t.id_tipo_movimiento
+                       t.id_gasto, t.id_tipo_movimiento,
+                       c.tipo_categoria AS tipo_categoria
                 FROM   transaccion t
-                INNER JOIN tipo_movimiento tm ON t.id_tipo_movimiento = tm.id_tipo_movimiento
-                WHERE  t.id_usuario       = ?
-                  AND  t.id_circulo_gasto IS NULL
-                  AND  UPPER(tm.nombre)   IN ('RETIRO','GASTO','EGRESO')
-                  AND  t.monto_original   <= ?
+                INNER JOIN categoria c ON t.id_categoria = c.id_categoria
+                WHERE  t.id_usuario        = ?
+                  AND  t.id_circulo_gasto  IS NULL
+                  AND  UPPER(c.tipo_categoria) <> 'DEPOSITO'
+                  AND  t.monto_original    <= ?
+                  AND  t.fecha_ejecucion  >= DATE_SUB(NOW(), INTERVAL ? DAY)
                 ORDER BY t.id_transaccion DESC
                 """;
 
@@ -68,15 +67,19 @@ public class GastosHormigaService {
             t.setIdCategoria(rs.getObject("id_categoria", Long.class));
             t.setIdGasto(rs.getObject("id_gasto", Long.class));
             t.setIdTipoMovimiento(rs.getObject("id_tipo_movimiento", Long.class));
+            t.setTipoCategoria(rs.getString("tipo_categoria"));
             return t;
-        }, idUsuario, u);
+        }, idUsuario, u, d);
 
         BigDecimal total = transacciones.stream()
                 .map(Transaccion::getMontoOriginal)
                 .filter(b -> b != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        log.info("Gastos hormiga detectados para usuario {}: {} transacciones, total {}",
+                idUsuario, transacciones.size(), total);
+
         return new GastosHormigaResponse(idUsuario, u, d,
-                cantidad != null ? cantidad : 0, total, transacciones);
+                transacciones.size(), total, transacciones);
     }
 }

@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
+import { requestFcmToken } from "../firebase";
+import { usuarioService } from "../services/usuarioService";
 import type { LoginRequest, RegisterRequest, User } from "../types";
 
 interface AuthContextType {
@@ -53,12 +55,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     null,
   );
 
+  const registerFcm = (idUsuario: number) => {
+    requestFcmToken().then((fcmToken) => {
+      if (fcmToken) {
+        usuarioService.registrarFcmToken(idUsuario, fcmToken).catch(() => {});
+      }
+    });
+  };
+
   const login = async (credentials: LoginRequest) => {
     const { token: jwt, usuario } = await authService.login(credentials);
     localStorage.setItem("token", jwt);
     localStorage.setItem("user", JSON.stringify(usuario));
     setToken(jwt);
     setUser(usuario);
+    registerFcm(usuario.idUsuario);
   };
 
   const loginWithToken = async (tokenValue: string) => {
@@ -68,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("userToken", tokenValue);
     setToken(jwt);
     setUser(usuario);
+    registerFcm(usuario.idUsuario);
     return usuario;
   };
 

@@ -22,7 +22,7 @@ export function Layout({ children }: LayoutProps) {
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   const isGhost = user?.estado === 0;
-  const ghostBlocked = ["/dashboard", "/transactions/new", "/goals", "/reports"];
+  const ghostBlocked = ["/dashboard", "/goals", "/reports"];
 
   const navItems = [
     { path: "/dashboard", icon: "home", label: "INICIO" },
@@ -79,7 +79,7 @@ export function Layout({ children }: LayoutProps) {
 
   const handleTogglePanel = () => setShowPanel((p) => !p);
 
-  const handleMarcarLeida = async (id: string) => {
+  const handleMarcarLeida = async (id: number) => {
     try {
       await notificacionService.marcarLeida(id);
       setNotificaciones((prev) =>
@@ -100,7 +100,7 @@ export function Layout({ children }: LayoutProps) {
     }
   };
 
-  const handleEliminar = async (id: string, e: React.MouseEvent) => {
+  const handleEliminar = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await notificacionService.eliminar(id);

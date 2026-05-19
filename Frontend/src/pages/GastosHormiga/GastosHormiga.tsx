@@ -17,15 +17,15 @@ export function GastosHormiga() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = async (u = umbral, d = dias) => {
     if (!user?.idUsuario) return;
     setLoading(true);
     setError("");
     try {
       const res = await gastosHormigaService.getByUsuario(
         user.idUsuario,
-        umbral,
-        dias,
+        u,
+        d,
       );
       setData(res);
     } catch {
@@ -49,12 +49,12 @@ export function GastosHormiga() {
       <div className="page-container">
         <div className="page-header">
           <div>
-            <p className="page-label">RF-10 — Detección de micro-gastos</p>
+            <p className="page-label">Análisis de Gastos</p>
             <h2 className="page-title">GASTOS HORMIGA</h2>
           </div>
         </div>
 
-        <div className="neo-shadow" style={{ padding: 16, marginBottom: 24 }}>
+        <div className="neo-shadow" style={{ padding: 20, marginBottom: 24 }}>
           <div
             style={{
               display: "grid",
@@ -68,22 +68,32 @@ export function GastosHormiga() {
               name="umbral"
               value={umbral}
               onChange={(v) => setUmbral(v)}
-              placeholder="Ej: 20,000"
+              onBlur={() => void load(umbral, dias)}
+              placeholder="Ej: 50,000"
             />
-            <label>
-              Días a considerar
-              <input
-                type="number"
-                min={1}
-                max={365}
+            <div className="input-group">
+              <label htmlFor="dias-select">Período de análisis</label>
+              <select
+                id="dias-select"
                 value={dias}
-                onChange={(e) => setDias(Number(e.target.value) || 0)}
-                style={{ width: "100%" }}
-              />
-            </label>
+                onChange={(e) => {
+                  const d = Number(e.target.value);
+                  setDias(d);
+                  void load(umbral, d);
+                }}
+              >
+                <option value={7}>Última semana (7 días)</option>
+                <option value={15}>Últimas 2 semanas (15 días)</option>
+                <option value={30}>Último mes (30 días)</option>
+                <option value={60}>Últimos 2 meses (60 días)</option>
+                <option value={90}>Últimos 3 meses (90 días)</option>
+                <option value={180}>Últimos 6 meses (180 días)</option>
+                <option value={365}>Último año (365 días)</option>
+              </select>
+            </div>
             <button
               className="btn-primary"
-              onClick={() => void load()}
+              onClick={() => void load(umbral, dias)}
               disabled={loading}
             >
               {loading ? "Cargando…" : "Analizar"}
@@ -137,7 +147,8 @@ export function GastosHormiga() {
             <div className="loading">Analizando…</div>
           ) : !data || data.transacciones.length === 0 ? (
             <p className="empty">
-              No se detectaron gastos hormiga bajo este umbral.
+              No hay transacciones por debajo de {fmt(umbral, "COP")} en los últimos {dias} días.
+              Prueba aumentando el umbral o el período de análisis.
             </p>
           ) : (
             <div>

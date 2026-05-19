@@ -395,6 +395,17 @@ export function Profile() {
             </div>
             <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>event_repeat</span>
           </div>
+          <div
+            className="section-row"
+            style={{ cursor: isGhost ? "not-allowed" : "pointer", borderTop: "1px solid var(--outline-variant)" }}
+            onClick={() => !isGhost && window.location.assign("/gastos-hormiga")}
+          >
+            <div>
+              <p className="row-label">Gastos Hormiga</p>
+              <p className="row-desc">Detecta micro-gastos que erosionan tu balance</p>
+            </div>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>pest_control</span>
+          </div>
         </div>
 
         {/* ID de usuario */}
