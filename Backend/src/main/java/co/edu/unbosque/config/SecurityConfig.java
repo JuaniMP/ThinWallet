@@ -31,7 +31,6 @@ public class SecurityConfig {
         "/api/usuarios/verificar-codigo",
         "/api/usuarios/cambiar-contrasena",
         "/api/categorias/**",
-        "/api/migracion/**",
     };
 
     @Bean
