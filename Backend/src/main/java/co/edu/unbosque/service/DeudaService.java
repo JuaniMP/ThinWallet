@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -162,7 +163,7 @@ public class DeudaService {
      * RQ-08 — Paso 1: el deudor registra que pagó.
      * Invoca {@code sp_pagar_deuda}: PENDIENTE → CONFIRMADA_PENDIENTE.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Map<String, Object> pagarDeuda(Long idDeuda, String metodoPago) {
         Map<String, Object> out = jdbcTemplate.call(con -> {
             var cs = con.prepareCall("{call sp_pagar_deuda(?, ?, ?, ?)}");
@@ -208,7 +209,7 @@ public class DeudaService {
      * Invoca {@code sp_confirmar_pago_deuda}: CONFIRMADA_PENDIENTE → PAGADA.
      * Si la deuda está en PENDIENTE, primero la transiciona via sp_pagar_deuda.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Optional<Deuda> confirmarPago(Long id, Long idTransaccion) {
         // Auto-transición: si está PENDIENTE, primero ejecutar sp_pagar_deuda
         deudaRepository.findById(id).ifPresent(d -> {
