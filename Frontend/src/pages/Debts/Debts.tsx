@@ -4,14 +4,13 @@ import { Layout } from "../../components/layout/Layout";
 import { api } from "../../services/api";
 import { transactionService } from "../../services/transactionService";
 import { deudaService } from "../../services/deudaService";
-import { circleService } from "../../services/circuloGastoService";
 import { MoneyInput } from "../../components/common/MoneyInput";
 import {
   useCurrency,
   SUPPORTED_CURRENCIES,
   type CurrencyCode,
 } from "../../context/CurrencyContext";
-import type { CirculoGasto, Deuda, User } from "../../types";
+import type { Deuda, User } from "../../types";
 
 type NewDeudaForm = {
   monto: number;
@@ -40,10 +39,6 @@ export function Debts() {
     moneda: prefCurrency,
   });
   const [submitting, setSubmitting] = useState(false);
-
-  // RQ-07: balance por círculo via fn_calcular_deuda_usuario
-  const [circles, setCircles] = useState<CirculoGasto[]>([]);
-  const [circleBalances, setCircleBalances] = useState<Record<number, number>>({});
 
   const fetchDebts = async () => {
     if (!user?.idUsuario) return;
@@ -83,38 +78,8 @@ export function Debts() {
     }
   };
 
-  /** RQ-07 — Carga círculos del usuario y consulta fn_calcular_deuda_usuario por cada uno. */
-  const fetchCircleBalances = async () => {
-    if (!user?.idUsuario) return;
-    try {
-      const list = await circleService.getCirclesAsMember(user.idUsuario);
-      const cs = Array.isArray(list) ? list : [];
-      setCircles(cs);
-
-      const entries = await Promise.all(
-        cs.map(async (c) => {
-          try {
-            const v = await deudaService.getBalanceByCircle(
-              user.idUsuario,
-              c.idCirculoGasto,
-            );
-            return [c.idCirculoGasto, Number(v) || 0] as const;
-          } catch {
-            return [c.idCirculoGasto, 0] as const;
-          }
-        }),
-      );
-      const map: Record<number, number> = {};
-      entries.forEach(([id, v]) => { map[id] = v; });
-      setCircleBalances(map);
-    } catch {
-      // sin círculos / endpoint caído → ignorar
-    }
-  };
-
   useEffect(() => {
     fetchDebts();
-    fetchCircleBalances();
   }, [user?.idUsuario]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** RQ-08 paso 1 — Deudor: "ya pagué". Crea RETIRO y llama sp_pagar_deuda. */
@@ -135,7 +100,7 @@ export function Debts() {
         // si la transacción falla, igual avanzamos el estado de la deuda
       }
       await deudaService.pagar(debt.idDeuda, debt.metodoPagoSugerido ?? "TRANSFERENCIA");
-      await Promise.all([fetchDebts(), fetchCircleBalances()]);
+      await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al marcar como pagado");
     } finally {
@@ -163,7 +128,7 @@ export function Debts() {
         // si la transacción falla, igual avanzamos el estado de la deuda
       }
       await deudaService.confirmar(debt.idDeuda, idTransaccion);
-      await Promise.all([fetchDebts(), fetchCircleBalances()]);
+      await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al confirmar recepción");
     } finally {
@@ -200,7 +165,7 @@ export function Debts() {
       });
       setForm({ monto: 0, idUsuarioAcreedor: "", metodoPagoSugerido: "EFECTIVO", moneda: prefCurrency });
       setShowForm(false);
-      await Promise.all([fetchDebts(), fetchCircleBalances()]);
+      await fetchDebts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al crear deuda");
     } finally {
@@ -225,8 +190,6 @@ export function Debts() {
   const totalPayable = pendingPayables.reduce((s, d) => s + (d.monto ?? 0), 0);
   const totalReceivable = pendingReceivables.reduce((s, d) => s + (d.monto ?? 0), 0);
   const netBalance = totalReceivable - totalPayable;
-
-  const totalCircleBalance = Object.values(circleBalances).reduce((s, v) => s + v, 0);
 
   return (
     <Layout>
@@ -285,36 +248,6 @@ export function Debts() {
             </>
           )}
         </section>
-
-        {!isLoading && circles.length > 0 && (
-          <section style={{ marginBottom: "48px" }}>
-            <div className="section-heading">
-              <div className="accent-bar primary" />
-              <h3>Deuda por círculo</h3>
-            </div>
-            <p className="debt-section-hint">
-              <span className="material-symbols-outlined" style={{ fontSize: "0.875rem", verticalAlign: "middle" }}>functions</span>
-              {" "}Calculado en BD con <code>fn_calcular_deuda_usuario</code>. Suma PENDIENTE + CONFIRMADA_PENDIENTE.
-            </p>
-            <div className="debt-summary">
-              {circles.map((c) => (
-                <div key={c.idCirculoGasto} className="summary-card neo-shadow" style={{ padding: "16px" }}>
-                  <div className="card-top">
-                    <span className="material-symbols-outlined">groups</span>
-                    <span className="tag">{c.tipoCirculo ?? "Círculo"}</span>
-                  </div>
-                  <h3 style={{ fontSize: "0.95rem" }}>{c.nombre}</h3>
-                  <p className="amount" style={{ fontSize: "1.4rem" }}>
-                    {fmt(circleBalances[c.idCirculoGasto] ?? 0, "COP")}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <p style={{ marginTop: "12px", fontSize: "0.85rem", opacity: 0.8 }}>
-              Total pendiente en círculos: <strong>{fmt(totalCircleBalance, "COP")}</strong>
-            </p>
-          </section>
-        )}
 
         {!isLoading && (
           <div className="debts-content">
