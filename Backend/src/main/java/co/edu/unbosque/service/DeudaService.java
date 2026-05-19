@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -243,15 +244,38 @@ public class DeudaService {
             throw new IllegalStateException(mensaje != null ? mensaje : "Error al confirmar pago");
         }
 
-        return deudaRepository.findById(id).map(saved -> {
-            if (idTransaccion != null) saved.setIdTransaccion(idTransaccion);
+        // El SP ya commiteó la transición a PAGADA. Cualquier fallo posterior
+        // (auditoría, Mongo, notificación, SSE) NO debe romper la respuesta
+        // del endpoint — el estado autoritativo ya está en la BD.
+        Optional<Deuda> deudaOpt;
+        try {
+            deudaOpt = deudaRepository.findById(id);
+        } catch (Exception e) {
+            log.warn("No se pudo recargar deuda {} tras confirmar pago: {}", id, e.getMessage());
+            return Optional.empty();
+        }
 
+        deudaOpt.ifPresent(saved -> {
+            if (idTransaccion != null) saved.setIdTransaccion(idTransaccion);
+            // Side-effects en hilo separado: nunca bloquean ni rompen la respuesta.
+            CompletableFuture.runAsync(() -> ejecutarSideEffectsConfirmar(saved));
+        });
+
+        return deudaOpt;
+    }
+
+    /** Side-effects post-confirmación: auditoría, MongoDB, notificación, SSE. Tolerante a fallos. */
+    private void ejecutarSideEffectsConfirmar(Deuda saved) {
+        try {
             if (auditoriaService != null) {
                 auditoriaService.registrar(saved.getIdUsuarioDeudor(), "deuda", saved.getIdDeuda(),
                         "CONFIRMAR_PAGO", "{\"estado\":\"CONFIRMADA_PENDIENTE\"}",
                         "{\"estado\":\"PAGADA\",\"monto\":" + saved.getMonto() + "}");
             }
-
+        } catch (Exception e) {
+            log.warn("Auditoría falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
+        }
+        try {
             if (actividadCirculoService != null) {
                 Long idCirculo = resolverCirculoDeTransaccion(saved.getIdTransaccion());
                 if (idCirculo != null) {
@@ -262,22 +286,25 @@ public class DeudaService {
                             saved.getIdUsuarioDeudor(), ctx);
                 }
             }
-
-            if (notificacionService != null && saved.getIdUsuarioAcreedor() != null) {
-                try {
-                    notificacionService.crear(
-                            saved.getIdUsuarioAcreedor(),
-                            "Tu deuda fue pagada",
-                            "Se confirmó el pago de $" + saved.getMonto().longValue(),
-                            "DEUDA_PAGADA", null, null);
-                } catch (Exception e) {
-                    log.warn("No se pudo notificar pago al acreedor {}: {}", saved.getIdUsuarioAcreedor(), e.getMessage());
-                }
+        } catch (Exception e) {
+            log.warn("Mongo actividad falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
+        }
+        try {
+            if (notificacionService != null && saved.getIdUsuarioAcreedor() != null && saved.getMonto() != null) {
+                notificacionService.crear(
+                        saved.getIdUsuarioAcreedor(),
+                        "Tu deuda fue pagada",
+                        "Se confirmó el pago de $" + saved.getMonto().longValue(),
+                        "DEUDA_PAGADA", null, null);
             }
-
+        } catch (Exception e) {
+            log.warn("Notificación falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
+        }
+        try {
             publicarSaldos(saved.getIdUsuarioDeudor(), saved.getIdUsuarioAcreedor());
-            return saved;
-        });
+        } catch (Exception e) {
+            log.warn("SSE publicarSaldos falló al confirmar deuda {}: {}", saved.getIdDeuda(), e.getMessage());
+        }
     }
 
     /**
