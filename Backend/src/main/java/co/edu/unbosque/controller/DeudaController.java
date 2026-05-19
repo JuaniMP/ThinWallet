@@ -59,12 +59,16 @@ public class DeudaController {
     }
 
     @PutMapping("/{id}/confirmar")
-    public ResponseEntity<Deuda> confirmarPago(@PathVariable Long id,
-                                               @RequestBody(required = false) Map<String, Long> body) {
+    public ResponseEntity<?> confirmarPago(@PathVariable Long id,
+                                           @RequestBody(required = false) Map<String, Long> body) {
         Long idTransaccion = (body != null) ? body.get("idTransaccion") : null;
-        return deudaService.confirmarPago(id, idTransaccion)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return deudaService.confirmarPago(id, idTransaccion)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}/rechazar")
