@@ -4,6 +4,7 @@ import { Layout } from "../../components/layout/Layout";
 import { circleService } from "../../services/circuloGastoService";
 import { transactionService } from "../../services/transactionService";
 import { categoryService } from "../../services/categoryService";
+import { deudaService } from "../../services/deudaService";
 import { useAuth } from "../../context/AuthContext";
 import { validateAmount, validateDescription } from "../../utils/validators";
 import { MoneyInput } from "../../components/common/MoneyInput";
@@ -43,6 +44,7 @@ export function CircleDetail() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tokenFromStorage, setTokenFromStorage] = useState<string | null>(null);
   const [expulsando, setExpulsando] = useState<number | null>(null);
+  const [miDeudaCirculo, setMiDeudaCirculo] = useState<number | null>(null);
   const isGhost = user?.estado === 0;
 
   // Metas grupales
@@ -363,7 +365,14 @@ export function CircleDetail() {
 
     void load();
     if (id) void loadMetasGrupales(id);
-  }, [id]);
+
+    // RQ-07: balance del usuario en este círculo via fn_calcular_deuda_usuario
+    if (user?.idUsuario && Number.isFinite(circleId) && circleId > 0) {
+      deudaService.getBalanceByCircle(user.idUsuario, circleId)
+        .then((v) => setMiDeudaCirculo(Number(v) || 0))
+        .catch(() => setMiDeudaCirculo(null));
+    }
+  }, [id, user?.idUsuario]);
 
   const totalGastos = useMemo(
     () => history.reduce((s, t) => s + (Number(t.montoOriginal) || 0), 0),
@@ -814,6 +823,14 @@ export function CircleDetail() {
                 <span className="balance-label">Total gastos del grupo</span>
                 <strong className="balance-value">{presupuesto}</strong>
               </div>
+              {miDeudaCirculo !== null && (
+                <div className="balance-box" title="Calculado en BD con fn_calcular_deuda_usuario">
+                  <span className="balance-label">Mi deuda pendiente aquí</span>
+                  <strong className="balance-value" style={{ color: miDeudaCirculo > 0 ? "var(--error)" : "var(--secondary)" }}>
+                    {fmt(miDeudaCirculo)}
+                  </strong>
+                </div>
+              )}
               <button
                 className="btn btn-primary"
                 type="button"
