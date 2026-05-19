@@ -161,13 +161,13 @@ export function Debts() {
   };
 
   const pendingPayables = payables.filter(
-    (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO",
+    (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO" && d.estadoPago !== "PAGADA",
   );
   const pendingReceivables = receivables.filter(
-    (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO",
+    (d) => d.estadoPago !== "CONFIRMADO" && d.estadoPago !== "PAGADO" && d.estadoPago !== "PAGADA",
   );
   const history = [...payables, ...receivables]
-    .filter((d) => d.estadoPago === "CONFIRMADO" || d.estadoPago === "PAGADO")
+    .filter((d) => d.estadoPago === "CONFIRMADO" || d.estadoPago === "PAGADO" || d.estadoPago === "PAGADA")
     .sort((a, b) =>
       (b.fechaConfirmada ?? b.fechaCreacion ?? "").localeCompare(
         a.fechaConfirmada ?? a.fechaCreacion ?? "",
