@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -46,8 +47,9 @@ public class SseEventBus {
 
         try {
             emitter.send(SseEmitter.event().name("conectado").data("ok"));
-            // Push inicial de saldo para que el cliente arranque con dato fresco.
-            publicarSaldo(idUsuario);
+            // Push inicial de saldo en hilo separado para evitar retener la conexión
+            // JDBC en el thread SSE (que vive durante toda la sesión del cliente).
+            CompletableFuture.runAsync(() -> publicarSaldo(idUsuario));
         } catch (IOException e) {
             log.debug("Error en mensaje inicial SSE para usuario {}: {}", idUsuario, e.getMessage());
         }
