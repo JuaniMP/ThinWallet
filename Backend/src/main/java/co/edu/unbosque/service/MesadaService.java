@@ -1,7 +1,8 @@
 package co.edu.unbosque.service;
 
+import co.edu.unbosque.entity.Categoria;
 import co.edu.unbosque.entity.Transaccion;
-import co.edu.unbosque.entity.Usuario;
+import co.edu.unbosque.repository.CategoriaRepository;
 import co.edu.unbosque.repository.TipoMovimientoRepository;
 import co.edu.unbosque.repository.TransaccionRepository;
 import co.edu.unbosque.repository.UsuarioRepository;
@@ -35,6 +36,7 @@ public class MesadaService {
     private final TransaccionRepository transaccionRepository;
     private final TipoMovimientoRepository tipoMovimientoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CategoriaRepository categoriaRepository;
 
     @Autowired(required = false)
     private SseEventBus eventBus;
@@ -94,6 +96,11 @@ public class MesadaService {
         Long idTipoMesadaRecibida = tipoMovimientoRepository.findByNombre("MESADA_RECIBIDA")
                 .map(t -> t.getIdTipoMovimiento()).orElse(1L);
 
+        // id_categoria es NOT NULL en transaccion. Buscamos categorías dedicadas
+        // o caemos en la primera categoría disponible del tipo correcto.
+        Long idCatRetiro = resolverCategoria("Mesada enviada", "RETIRO");
+        Long idCatDeposito = resolverCategoria("Mesada recibida", "DEPOSITO");
+
         String nombreDestino = usuarioRepository.findById(idDestino)
                 .map(u -> (u.getNombres() + " " + u.getApellidos()).trim())
                 .orElse("miembro");
@@ -112,6 +119,7 @@ public class MesadaService {
         retiro.setIdUsuario(idAdmin);
         retiro.setIdCirculoGasto(idCirculo);
         retiro.setIdTipoMovimiento(idTipoMesadaEnviada);
+        retiro.setIdCategoria(idCatRetiro);
         retiro.setContexto("Mesada del círculo " + (nombreCirculo != null ? nombreCirculo : ""));
         transaccionRepository.save(retiro);
 
@@ -124,6 +132,7 @@ public class MesadaService {
         deposito.setIdUsuario(idDestino);
         deposito.setIdCirculoGasto(idCirculo);
         deposito.setIdTipoMovimiento(idTipoMesadaRecibida);
+        deposito.setIdCategoria(idCatDeposito);
         deposito.setContexto("Mesada del círculo " + (nombreCirculo != null ? nombreCirculo : ""));
         transaccionRepository.save(deposito);
 
@@ -157,5 +166,23 @@ public class MesadaService {
         // fecha_ejecucion se llena con DEFAULT en la BD, este helper queda como
         // futuro extension point si hay que sobreescribir.
         t.setFechaEjecucion(LocalDateTime.now());
+    }
+
+    /** Busca una categoría por nombre exacto; si no existe, la primera con el
+     *  tipo deseado; si tampoco, el primer id_categoria disponible. */
+    private Long resolverCategoria(String nombrePreferido, String tipoFallback) {
+        var todas = categoriaRepository.findAll();
+        return todas.stream()
+                .filter(c -> nombrePreferido.equalsIgnoreCase(c.getNombre()))
+                .findFirst()
+                .map(Categoria::getIdCategoria)
+                .orElseGet(() -> todas.stream()
+                        .filter(c -> tipoFallback.equalsIgnoreCase(c.getTipoCategoria()))
+                        .findFirst()
+                        .map(Categoria::getIdCategoria)
+                        .orElseGet(() -> todas.stream()
+                                .findFirst()
+                                .map(Categoria::getIdCategoria)
+                                .orElse(1L)));
     }
 }
