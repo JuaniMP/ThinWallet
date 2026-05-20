@@ -7,6 +7,7 @@ import { MoneyInput } from "../../components/common/MoneyInput";
 import {
   useCurrency,
   SUPPORTED_CURRENCIES,
+  tasaCambioACOP,
   type CurrencyCode,
 } from "../../context/CurrencyContext";
 import type { Deuda, User } from "../../types";
@@ -85,13 +86,14 @@ export function Debts() {
     try {
       let idTransaccion: number | undefined;
       try {
+        const monedaDebt = debt.moneda ?? "COP";
         const tx = await transactionService.create({
           nombre: "Pago de deuda",
           montoOriginal: debt.monto ?? 0,
           tipoMovimiento: "RETIRO",
           idUsuario: user.idUsuario,
-          monedaOriginal: debt.moneda ?? "COP",
-          tasaCambio: 1,
+          monedaOriginal: monedaDebt,
+          tasaCambio: tasaCambioACOP(monedaDebt),
         });
         idTransaccion = tx.idTransaccion;
       } catch {
@@ -113,13 +115,14 @@ export function Debts() {
     try {
       let idTransaccion: number | undefined;
       try {
+        const monedaDebt = debt.moneda ?? "COP";
         const tx = await transactionService.create({
           nombre: "Cobro de deuda",
           montoOriginal: debt.monto ?? 0,
           tipoMovimiento: "DEPOSITO",
           idUsuario: user.idUsuario,
-          monedaOriginal: debt.moneda ?? "COP",
-          tasaCambio: 1,
+          monedaOriginal: monedaDebt,
+          tasaCambio: tasaCambioACOP(monedaDebt),
         });
         idTransaccion = tx.idTransaccion;
       } catch {
