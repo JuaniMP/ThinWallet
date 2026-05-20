@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Gestión de actividad de círculos en MongoDB.
@@ -39,17 +40,23 @@ public class ActividadCirculoService {
     /**
      * Registra un evento de negocio en el bucket del día y actualiza los indicadores.
      * Punto de entrada principal desde los demás servicios SQL.
+     *
+     * <p>Se ejecuta en un hilo separado para que un MongoDB lento o caído
+     * NUNCA bloquee la respuesta del endpoint que lo invocó. Si Mongo demora
+     * 30s en hacer timeout, el usuario no se entera.
      */
     public void registrarEvento(Long idCirculo, String tipoEvento, Long idUsuario,
                                 Map<String, Object> contexto) {
         if (idCirculo == null) return;
-        try {
-            guardarEnBucket(idCirculo, tipoEvento, idUsuario, contexto);
-            actualizarIndicadores(idCirculo, tipoEvento);
-        } catch (Exception e) {
-            log.warn("MongoDB – error registrando evento {} para circulo {}: {}",
-                    tipoEvento, idCirculo, e.getMessage());
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                guardarEnBucket(idCirculo, tipoEvento, idUsuario, contexto);
+                actualizarIndicadores(idCirculo, tipoEvento);
+            } catch (Exception e) {
+                log.warn("MongoDB – error registrando evento {} para circulo {}: {}",
+                        tipoEvento, idCirculo, e.getMessage());
+            }
+        });
     }
 
     /** Indicadores actuales del círculo (dashboard del líder). */
