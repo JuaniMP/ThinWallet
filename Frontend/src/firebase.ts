@@ -36,3 +36,25 @@ export async function requestFcmToken(): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * Suscribe un handler para notificaciones recibidas mientras la app está en
+ * primer plano. Firebase NO muestra notificaciones nativas automáticamente
+ * cuando la página tiene foco — debemos hacerlo nosotros con la Notification API.
+ *
+ * Devuelve un unsubscribe.
+ */
+export function suscribirNotificacionesForeground(): () => void {
+  if (!messaging) return () => {};
+  return onMessage(messaging, (payload) => {
+    const title = payload.notification?.title ?? "ThinWallet";
+    const body = payload.notification?.body ?? "";
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body, icon: "/favicon.svg" });
+      }
+    } catch {
+      /* fallback: ignorar */
+    }
+  });
+}
