@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
-import { requestFcmToken } from "../firebase";
+import { requestFcmToken, suscribirNotificacionesForeground } from "../firebase";
 import { usuarioService } from "../services/usuarioService";
 import type { LoginRequest, RegisterRequest, User } from "../types";
 
@@ -70,6 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.idUsuario) registerFcm(user.idUsuario);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.idUsuario]);
+
+  // Suscribir al handler de notificaciones en foreground: cuando la app está
+  // abierta, Firebase no muestra el push automáticamente, así que disparamos
+  // una notificación nativa del navegador con la Notification API.
+  useEffect(() => {
+    const unsubscribe = suscribirNotificacionesForeground();
+    return () => unsubscribe();
+  }, []);
 
   const login = async (credentials: LoginRequest) => {
     const { token: jwt, usuario } = await authService.login(credentials);
