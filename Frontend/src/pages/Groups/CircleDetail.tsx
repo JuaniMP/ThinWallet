@@ -387,8 +387,19 @@ export function CircleDetail() {
     if (id) void loadMetasGrupales(id);
   }, [id]);
 
+  /**
+   * Convierte cada transacción a COP usando su tasaCambio persistida.
+   * Si la moneda ya es COP (o la tasa es null) se queda igual.
+   */
+  const montoEnCop = (t: { montoOriginal?: number; tasaCambio?: number; monedaOriginal?: string }) => {
+    const monto = Number(t.montoOriginal) || 0;
+    const tasa = Number(t.tasaCambio) || 0;
+    if (!t.monedaOriginal || t.monedaOriginal === "COP" || tasa <= 1) return monto;
+    return monto * tasa;
+  };
+
   const totalGastos = useMemo(
-    () => history.reduce((s, t) => s + (Number(t.montoOriginal) || 0), 0),
+    () => history.reduce((s, t) => s + montoEnCop(t), 0),
     [history],
   );
 
@@ -821,7 +832,14 @@ export function CircleDetail() {
                           <div className="history-title">{item.nombre}</div>
                           <div className="history-desc">{cat?.nombre ?? item.tipoCategoria ?? "Sin categoría"}</div>
                           <div className="history-author">Por: {getNombreUsuario(item.idUsuario)}</div>
-                          <div className="history-amount">{fmt(Number(item.montoOriginal))}</div>
+                          <div className="history-amount">
+                            {fmt(montoEnCop(item))}
+                            {item.monedaOriginal && item.monedaOriginal !== "COP" && (
+                              <span style={{ fontSize: "0.7rem", opacity: 0.6, marginLeft: 4 }}>
+                                ({Number(item.montoOriginal)} {item.monedaOriginal})
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
