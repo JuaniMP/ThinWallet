@@ -27,6 +27,7 @@ public class SqlFunctionMigration implements CommandLineRunner {
     public void run(String... args) {
         actualizarFnBalanceUsuarioPeriodo();
         actualizarFnContarGastosHormiga();
+        actualizarSpAsignarMesada();
     }
 
     private void actualizarFnBalanceUsuarioPeriodo() {
@@ -60,6 +61,63 @@ public class SqlFunctionMigration implements CommandLineRunner {
             log.info("Migración SQL: fn_balance_usuario_periodo actualizada");
         } catch (Exception e) {
             log.warn("Migración SQL fn_balance_usuario_periodo falló: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * sp_asignar_mesada — el script original no incluía monto_actual en el INSERT,
+     * pero la columna fue agregada como NOT NULL en producción y el SP fallaba con
+     * "Error al asignar mesada". Se reescribe con monto_actual = 0.
+     */
+    private void actualizarSpAsignarMesada() {
+        try {
+            jdbcTemplate.execute("DROP PROCEDURE IF EXISTS sp_asignar_mesada");
+            jdbcTemplate.execute(
+                "CREATE PROCEDURE sp_asignar_mesada(" +
+                "    IN  p_id_circulo  INT, " +
+                "    IN  p_id_miembro  INT, " +
+                "    IN  p_monto       DECIMAL(15,2), " +
+                "    IN  p_periodo     VARCHAR(50), " +
+                "    IN  p_id_admin    INT, " +
+                "    OUT p_resultado   INT, " +
+                "    OUT p_mensaje     VARCHAR(500)" +
+                ") main: BEGIN " +
+                "  DECLARE v_es_admin       INT DEFAULT 0; " +
+                "  DECLARE v_existe_miembro INT DEFAULT 0; " +
+                "  DECLARE v_id_categoria   INT DEFAULT NULL; " +
+                "  DECLARE EXIT HANDLER FOR SQLEXCEPTION " +
+                "  BEGIN " +
+                "    ROLLBACK; " +
+                "    SET p_resultado = 0; " +
+                "    SET p_mensaje   = 'Error al asignar mesada'; " +
+                "  END; " +
+                "  SELECT COUNT(*) INTO v_es_admin FROM circulo_gasto " +
+                "    WHERE id_circulo_gasto = p_id_circulo AND id_usuario_creador = p_id_admin; " +
+                "  IF v_es_admin = 0 THEN " +
+                "    SET p_resultado = 0; SET p_mensaje = 'No tienes permisos para asignar mesadas'; LEAVE main; " +
+                "  END IF; " +
+                "  SELECT COUNT(*) INTO v_existe_miembro FROM usuario_circulo " +
+                "    WHERE id_circulo_gasto = p_id_circulo AND id_usuario = p_id_miembro; " +
+                "  IF v_existe_miembro = 0 THEN " +
+                "    SET p_resultado = 0; SET p_mensaje = 'El usuario no es miembro de este círculo'; LEAVE main; " +
+                "  END IF; " +
+                "  SELECT id_categoria INTO v_id_categoria FROM categoria WHERE nombre = 'Mesada' LIMIT 1; " +
+                "  IF v_id_categoria IS NULL THEN " +
+                "    SELECT MIN(id_categoria) INTO v_id_categoria FROM categoria; " +
+                "  END IF; " +
+                "  START TRANSACTION; " +
+                "  INSERT INTO gasto (nombre, valor, periodicidad, fecha_inicio, " +
+                "                     id_usuario_creador, id_circulo_gasto, id_categoria, monto_actual) " +
+                "  VALUES (CONCAT('Mesada para usuario ', p_id_miembro), p_monto, p_periodo, NOW(), " +
+                "          p_id_admin, p_id_circulo, v_id_categoria, 0); " +
+                "  COMMIT; " +
+                "  SET p_resultado = 1; " +
+                "  SET p_mensaje   = 'Mesada asignada exitosamente.'; " +
+                "END"
+            );
+            log.info("Migración SQL: sp_asignar_mesada actualizada (incluye monto_actual)");
+        } catch (Exception e) {
+            log.warn("Migración SQL sp_asignar_mesada falló: {}", e.getMessage());
         }
     }
 
