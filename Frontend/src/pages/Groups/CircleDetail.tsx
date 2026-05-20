@@ -173,28 +173,26 @@ export function CircleDetail() {
     try {
       const monedaMesada = detail.monedaBase ?? "COP";
       const tasaMesada = tasaCambioACOP(monedaMesada);
-      // RETIRO para el admin (sale dinero de su cuenta)
-      await transactionService.create({
-        nombre: `Mesada enviada a ${detail.invitados.find((i) => String(i.idUsuario) === mesadaForm.idUsuarioDestino)?.nombreCompleto ?? "miembro"}`,
-        montoOriginal: mesadaForm.monto,
-        monedaOriginal: monedaMesada,
-        tasaCambio: tasaMesada,
-        tipoMovimiento: "MESADA_ENVIADA",
-        idUsuario: user.idUsuario,
-        idCirculoGasto: detail.idCirculoGasto,
-        contexto: `Mesada para usuario ${mesadaForm.idUsuarioDestino}`,
-      });
-      // DEPOSITO para el destinatario (recibe dinero en su cuenta)
-      await transactionService.create({
-        nombre: `Mesada recibida de ${user.nombres} ${user.apellidos}`.trim(),
-        montoOriginal: mesadaForm.monto,
-        monedaOriginal: monedaMesada,
-        tasaCambio: tasaMesada,
-        tipoMovimiento: "MESADA_RECIBIDA",
-        idUsuario: Number(mesadaForm.idUsuarioDestino),
-        idCirculoGasto: detail.idCirculoGasto,
-        contexto: `Mesada del círculo ${detail.nombre}`,
-      });
+
+      // Endpoint único que invoca sp_asignar_mesada en BD, crea las dos
+      // transacciones para el saldo, y notifica al destinatario.
+      const res = await api.post<{ resultado: number; mensaje: string }>(
+        `/circulos-gasto/${detail.idCirculoGasto}/mesada`,
+        {
+          idAdmin: user.idUsuario,
+          idDestino: Number(mesadaForm.idUsuarioDestino),
+          monto: mesadaForm.monto,
+          monedaBase: monedaMesada,
+          tasaCambio: tasaMesada,
+          nombreCirculo: detail.nombre,
+        },
+      );
+
+      if (res.resultado !== 1) {
+        setMesadaError(res.mensaje || "No se pudo asignar la mesada");
+        return;
+      }
+
       setMesadaForm({ idUsuarioDestino: "", monto: 0 });
       setShowMesadaForm(false);
     } catch (err) {
@@ -746,8 +744,9 @@ export function CircleDetail() {
               )}
             </section>
 
-            {/* MESADAS — solo admin en círculos con permiteMesadas */}
-            {isAdmin && detail.permiteMesadas && detail.invitados.length > 0 && (
+            {/* MESADAS — solo admin en círculos Familiares con permiteMesadas */}
+            {isAdmin && detail.permiteMesadas && detail.invitados.length > 0
+              && (detail.tipoCirculo ?? "").toLowerCase() === "familiar" && (
               <section className="circle-panel neo-shadow">
                 <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <h3>Mesadas</h3>
