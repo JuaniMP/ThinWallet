@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { MoneyInput } from "../common/MoneyInput";
-import { SUPPORTED_CURRENCIES, type CurrencyCode } from "../../context/CurrencyContext";
+import { SUPPORTED_CURRENCIES, RATES_TO_USD, type CurrencyCode } from "../../context/CurrencyContext";
 import { CategorySelect } from "../category/CategorySelect";
 import {
   validateAmount,
@@ -99,6 +99,11 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
       return;
     }
 
+    // RQ-13 — tasa de cambio de la moneda elegida a la moneda base (COP).
+    // El backend pasa esta tasa a fn_convertir_moneda(monto, tasa) para
+    // guardar el equivalente en COP. Si moneda == COP la tasa es 1.
+    const tasaCambio = (RATES_TO_USD[moneda] ?? 1) / (RATES_TO_USD["COP"] ?? 1 / 4000);
+
     try {
       await onSubmit({
         nombre: description.trim(),
@@ -108,8 +113,13 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         idCategoria: Number(categoryId),
         idTipoMovimiento: paymentMethodId,
         monedaOriginal: moneda,
-        tasaCambio: 1,
-        contexto: categoryTipo === "AMBOS" ? type ?? undefined : undefined,
+        tasaCambio,
+        // La descripción que escribe el usuario se guarda también en la columna
+        // "contexto" de la tabla transaccion. Si la categoría es AMBOS, se le
+        // antepone el tipo (RETIRO/DEPOSITO) para preservar esa hint.
+        contexto: categoryTipo === "AMBOS" && type
+          ? `${type} | ${description.trim()}`
+          : description.trim(),
       });
 
       setAmount(0);
