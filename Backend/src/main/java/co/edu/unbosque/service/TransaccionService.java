@@ -207,25 +207,26 @@ public class TransaccionService {
             idGasto = savedGasto.getIdGasto();
         }
 
-        // RQ-13 — Normalización de monto vía fn_convertir_moneda (BD).
-        // Si tasa_cambio es null o <= 0 el SQL devuelve el monto sin modificar.
-        BigDecimal montoConvertido = request.getMontoOriginal();
+        // RQ-13 — Auditoría: invocar fn_convertir_moneda en la BD para registrar
+        // cuánto sería el equivalente en moneda base, pero PERSISTIR los valores
+        // originales (monto + moneda + tasa). El frontend realiza la conversión
+        // visual desde monedaOriginal × tasaCambio, así que duplicar el cálculo
+        // aquí distorsionaba los saldos.
         try {
-            BigDecimal calc = jdbcTemplate.queryForObject(
+            BigDecimal equivalente = jdbcTemplate.queryForObject(
                     "SELECT fn_convertir_moneda(?, ?)",
                     BigDecimal.class,
                     request.getMontoOriginal(),
                     request.getTasaCambio() != null ? request.getTasaCambio() : BigDecimal.ONE);
-            if (calc != null) montoConvertido = calc;
-            log.info("fn_convertir_moneda monto={} tasa={} -> {}",
-                    request.getMontoOriginal(), request.getTasaCambio(), montoConvertido);
+            log.info("fn_convertir_moneda monto={} tasa={} -> {} (auditoría; se persiste el monto original)",
+                    request.getMontoOriginal(), request.getTasaCambio(), equivalente);
         } catch (Exception e) {
-            log.warn("fn_convertir_moneda no disponible, se usa monto sin convertir: {}", e.getMessage());
+            log.warn("fn_convertir_moneda no disponible: {}", e.getMessage());
         }
 
         Transaccion transaccion = new Transaccion();
         transaccion.setNombre(request.getNombre());
-        transaccion.setMontoOriginal(montoConvertido);
+        transaccion.setMontoOriginal(request.getMontoOriginal());
         transaccion.setMonedaOriginal(request.getMonedaOriginal());
         transaccion.setTasaCambio(request.getTasaCambio());
         transaccion.setModalidadDivision(request.getModalidadDivision());
