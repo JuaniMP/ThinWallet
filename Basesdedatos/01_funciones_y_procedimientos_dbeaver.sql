@@ -135,21 +135,23 @@ BEGIN
     DECLARE v_ingresos DECIMAL(15,2) DEFAULT 0;
     DECLARE v_egresos  DECIMAL(15,2) DEFAULT 0;
 
-    -- Ingresos: tipos cuyo nombre sea DEPOSITO o INGRESO
+    -- Ingresos: categorías de tipo DEPOSITO/INGRESO en el rango de fechas
     SELECT COALESCE(SUM(t.monto_original),0)
     INTO   v_ingresos
     FROM   transaccion t
-    INNER JOIN tipo_movimiento tm ON t.id_tipo_movimiento = tm.id_tipo_movimiento
+    INNER JOIN categoria c ON t.id_categoria = c.id_categoria
     WHERE  t.id_usuario = p_id_usuario
-      AND  UPPER(tm.nombre) IN ('DEPOSITO','INGRESO');
+      AND  DATE(t.fecha_ejecucion) BETWEEN p_fecha_inicio AND p_fecha_fin
+      AND  UPPER(c.tipo_categoria) IN ('DEPOSITO','INGRESO');
 
-    -- Egresos: tipos cuyo nombre sea RETIRO o GASTO
+    -- Egresos: categorías de tipo RETIRO/GASTO/EGRESO en el rango de fechas
     SELECT COALESCE(SUM(t.monto_original),0)
     INTO   v_egresos
     FROM   transaccion t
-    INNER JOIN tipo_movimiento tm ON t.id_tipo_movimiento = tm.id_tipo_movimiento
+    INNER JOIN categoria c ON t.id_categoria = c.id_categoria
     WHERE  t.id_usuario = p_id_usuario
-      AND  UPPER(tm.nombre) IN ('RETIRO','GASTO','EGRESO');
+      AND  DATE(t.fecha_ejecucion) BETWEEN p_fecha_inicio AND p_fecha_fin
+      AND  UPPER(c.tipo_categoria) IN ('RETIRO','GASTO','EGRESO');
 
     RETURN ROUND(v_ingresos - v_egresos, 2);
 END;
