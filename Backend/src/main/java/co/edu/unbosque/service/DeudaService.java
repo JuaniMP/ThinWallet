@@ -152,10 +152,12 @@ public class DeudaService {
     }
 
     @Transactional
-    public Optional<Deuda> confirmarPago(Long id) {
+    public Optional<Deuda> confirmarPago(Long id, Long idTransaccion) {
         return deudaRepository.findById(id).map(deuda -> {
             deuda.setEstadoPago("CONFIRMADO");
             deuda.setFechaConfirmada(LocalDateTime.now());
+            deuda.setFechaPago(LocalDateTime.now());
+            if (idTransaccion != null) deuda.setIdTransaccion(idTransaccion);
             Deuda saved = deudaRepository.save(deuda);
 
             if (auditoriaService != null) {

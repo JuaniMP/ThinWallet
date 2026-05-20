@@ -13,9 +13,11 @@ import co.edu.unbosque.request.TransaccionRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +35,7 @@ public class TransaccionService {
     private final CategoriaRepository categoriaRepository;
     private final GastoRepository gastoRepository;
     private final UsuarioCirculoRepository usuarioCirculoRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired(required = false)
     private ActividadCirculoService actividadCirculoService;
@@ -204,9 +207,25 @@ public class TransaccionService {
             idGasto = savedGasto.getIdGasto();
         }
 
+        // RQ-13 — Normalización de monto vía fn_convertir_moneda (BD).
+        // Si tasa_cambio es null o <= 0 el SQL devuelve el monto sin modificar.
+        BigDecimal montoConvertido = request.getMontoOriginal();
+        try {
+            BigDecimal calc = jdbcTemplate.queryForObject(
+                    "SELECT fn_convertir_moneda(?, ?)",
+                    BigDecimal.class,
+                    request.getMontoOriginal(),
+                    request.getTasaCambio() != null ? request.getTasaCambio() : BigDecimal.ONE);
+            if (calc != null) montoConvertido = calc;
+            log.info("fn_convertir_moneda monto={} tasa={} -> {}",
+                    request.getMontoOriginal(), request.getTasaCambio(), montoConvertido);
+        } catch (Exception e) {
+            log.warn("fn_convertir_moneda no disponible, se usa monto sin convertir: {}", e.getMessage());
+        }
+
         Transaccion transaccion = new Transaccion();
         transaccion.setNombre(request.getNombre());
-        transaccion.setMontoOriginal(request.getMontoOriginal());
+        transaccion.setMontoOriginal(montoConvertido);
         transaccion.setMonedaOriginal(request.getMonedaOriginal());
         transaccion.setTasaCambio(request.getTasaCambio());
         transaccion.setModalidadDivision(request.getModalidadDivision());
