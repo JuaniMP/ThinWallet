@@ -288,6 +288,28 @@ public class TransaccionService {
         return saved;
     }
 
+    /**
+     * RQ-08 — División automática de un gasto entre los miembros del círculo.
+     * Invoca {@code sp_calcular_deudas} que itera la tabla usuario_circulo y
+     * crea una fila en deuda por cada miembro distinto del acreedor. Solo se
+     * usa con modalidad IGUALITARIA; PORCENTAJE/MONTO_FIJO siguen creando
+     * las deudas desde el frontend (el SP siempre divide por partes iguales).
+     */
+    @Transactional
+    public void dividirDeudas(Long idTransaccion, String modalidad,
+                              Long idAcreedor, Long idCirculo, BigDecimal monto) {
+        try {
+            jdbcTemplate.update(
+                    "CALL sp_calcular_deudas(?, ?, ?, ?, ?)",
+                    idTransaccion, modalidad, idAcreedor, idCirculo, monto);
+            log.info("sp_calcular_deudas idTransaccion={} modalidad={} acreedor={} circulo={} monto={} resultado=1 msg=deudas generadas",
+                    idTransaccion, modalidad, idAcreedor, idCirculo, monto);
+        } catch (Exception e) {
+            log.warn("sp_calcular_deudas falló: {}", e.getMessage());
+            throw new RuntimeException("No se pudieron generar las deudas: " + e.getMessage(), e);
+        }
+    }
+
     @Transactional
     public Optional<Transaccion> update(Long id, TransaccionRequest request) {
         return transaccionRepository.findById(id).map(transaccion -> {
