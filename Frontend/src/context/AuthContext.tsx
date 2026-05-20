@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
 import { requestFcmToken } from "../firebase";
 import { usuarioService } from "../services/usuarioService";
@@ -62,6 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
   };
+
+  // Si el usuario ya está logueado al cargar la app, también intentar
+  // registrar el token FCM (por si dieron permiso de notificaciones después
+  // del login original).
+  useEffect(() => {
+    if (user?.idUsuario) registerFcm(user.idUsuario);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.idUsuario]);
 
   const login = async (credentials: LoginRequest) => {
     const { token: jwt, usuario } = await authService.login(credentials);
