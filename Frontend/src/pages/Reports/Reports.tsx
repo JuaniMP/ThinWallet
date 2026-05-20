@@ -705,10 +705,15 @@ export function Reports() {
               className="report-section neo-shadow"
               style={{ borderLeft: "4px solid var(--primary)", marginTop: 24 }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <span className="material-symbols-outlined">functions</span>
                 <h4 style={{ margin: 0 }}>Balance por período</h4>
               </div>
+              <p style={{ fontSize: "0.85rem", opacity: 0.85, lineHeight: 1.5, marginBottom: 18 }}>
+                Conoce el resultado neto de tus finanzas en un rango de fechas: la diferencia entre lo que
+                entró (ingresos) y lo que salió (gastos). Útil para revisar cómo te fue este mes, comparar
+                quincenas o medir el impacto de un viaje, una compra grande o un periodo de ahorro.
+              </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
                 <div className="input-group" style={{ flex: 1, minWidth: 160 }}>
                   <label>Desde</label>
