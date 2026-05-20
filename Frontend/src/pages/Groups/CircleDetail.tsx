@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { validateAmount, validateDescription } from "../../utils/validators";
 import { MoneyInput } from "../../components/common/MoneyInput";
 import { api } from "../../services/api";
+import { RATES_TO_USD, type CurrencyCode } from "../../context/CurrencyContext";
 import type { CirculoDetalle, Transaccion, Category } from "../../types";
 
 type DivisionItem = { idUsuario: number; nombre: string; monto: number; porcentaje: number };
@@ -272,6 +273,10 @@ export function CircleDetail() {
     setGastoSaving(true);
     setGastoError("");
     try {
+      // Tasa de cambio de la moneda elegida → COP (base). Si moneda == COP, tasa = 1.
+      const monedaSeleccionada = gastoForm.moneda as CurrencyCode;
+      const tasaCambio = (RATES_TO_USD[monedaSeleccionada] ?? 1) / (RATES_TO_USD["COP"] ?? 1 / 4000);
+
       const saved = await transactionService.create({
         nombre: gastoForm.nombre.trim(),
         montoOriginal: monto,
@@ -280,7 +285,7 @@ export function CircleDetail() {
         idCirculoGasto: Number(id),
         idCategoria: gastoForm.idCategoria ? Number(gastoForm.idCategoria) : undefined,
         idTipoMovimiento: 2,
-        tasaCambio: 1,
+        tasaCambio,
         modalidadDivision: modalidadDivision || undefined,
       });
 
