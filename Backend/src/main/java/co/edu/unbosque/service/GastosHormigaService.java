@@ -15,10 +15,9 @@ import java.util.List;
  * Detección de "gastos hormiga": micro-gastos personales (sin círculo) que,
  * sumados, erosionan el balance del usuario sin que él los note.
  *
- * Un egreso se identifica por la categoría asociada: tipo_categoria != 'DEPOSITO'.
- * La función fn_contar_gastos_hormiga tiene un bug conocido (filtra por
- * tipo_movimiento.nombre con valores que no existen), por lo que tanto el conteo
- * como el listado se calculan directamente aquí con la lógica correcta.
+ * El conteo se obtiene de {@code fn_contar_gastos_hormiga} (función SQL).
+ * El listado detallado se calcula con un SELECT custom porque la función
+ * solo devuelve un COUNT — necesitamos las filas completas para mostrarlas.
  */
 @Service
 @Slf4j
@@ -34,6 +33,18 @@ public class GastosHormigaService {
     public GastosHormigaResponse detectar(Long idUsuario, BigDecimal umbral, Integer dias) {
         BigDecimal u = umbral != null ? umbral : UMBRAL_DEFAULT;
         Integer d = dias != null ? dias : DIAS_DEFAULT;
+
+        // RF-10 — Cuenta de gastos hormiga calculada por la función SQL.
+        Integer countSql = null;
+        try {
+            countSql = jdbcTemplate.queryForObject(
+                    "SELECT fn_contar_gastos_hormiga(?, ?, ?)",
+                    Integer.class, idUsuario, u, d);
+            log.info("fn_contar_gastos_hormiga idUsuario={} umbral={} dias={} resultado={}",
+                    idUsuario, u, d, countSql);
+        } catch (Exception e) {
+            log.warn("fn_contar_gastos_hormiga no disponible: {}", e.getMessage());
+        }
 
         // Gastos: transacciones personales (sin círculo) cuya categoría NO es DEPOSITO
         // y cuyo monto está dentro del umbral, dentro del período de días indicado.
@@ -76,10 +87,14 @@ public class GastosHormigaService {
                 .filter(b -> b != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Si la función SQL devolvió un conteo, usar ESE como número oficial
+        // (debería coincidir con transacciones.size() pero respetamos lo que dice la BD).
+        int cantidad = countSql != null ? countSql : transacciones.size();
+
         log.info("Gastos hormiga detectados para usuario {}: {} transacciones, total {}",
-                idUsuario, transacciones.size(), total);
+                idUsuario, cantidad, total);
 
         return new GastosHormigaResponse(idUsuario, u, d,
-                transacciones.size(), total, transacciones);
+                cantidad, total, transacciones);
     }
 }
