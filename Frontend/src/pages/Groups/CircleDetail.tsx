@@ -823,6 +823,39 @@ export function CircleDetail() {
               </button>
             </section>
 
+            {/* RF-15 — Cierre de ciclo mensual (solo admin del círculo) */}
+            {isAdmin && (
+              <section
+                className="circle-panel neo-shadow"
+                style={{ borderLeft: "4px solid var(--primary)", padding: 20, marginTop: 16 }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span className="material-symbols-outlined">event_available</span>
+                  <h3 style={{ margin: 0 }}>Cierre de ciclo mensual</h3>
+                </div>
+                <p style={{ fontSize: "0.9rem", lineHeight: 1.5, color: "var(--on-surface-variant)", marginBottom: 16 }}>
+                  Como administrador del círculo, al finalizar cada mes puedes "cerrar" el periodo.
+                  El sistema verifica que <strong>ninguna deuda del grupo quedó pendiente</strong> y, si
+                  todo está al día, deja un registro de auditoría con la fecha del cierre. Es el equivalente
+                  a un sello contable: te garantiza que el mes quedó cuadrado y queda evidencia histórica.
+                  Si alguien aún debe, te dirá exactamente cuántas deudas faltan resolver antes de poder cerrar.
+                </p>
+                <Link
+                  to="/cierre-mensual"
+                  className="btn btn-secondary"
+                  style={{
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span className="material-symbols-outlined">event_available</span>
+                  Cerrar ciclo del círculo
+                </Link>
+              </section>
+            )}
+
             {/* INVITEES & TOKENS SECTION */}
             <section className="circle-panel neo-shadow">
               <div className="panel-header">
