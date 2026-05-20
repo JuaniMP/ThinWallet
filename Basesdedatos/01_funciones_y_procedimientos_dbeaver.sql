@@ -108,11 +108,12 @@ BEGIN
     SELECT COUNT(*)
     INTO   v_cantidad
     FROM   transaccion t
-    INNER JOIN tipo_movimiento tm ON t.id_tipo_movimiento = tm.id_tipo_movimiento
+    INNER JOIN categoria c ON t.id_categoria = c.id_categoria
     WHERE  t.id_usuario        = p_id_usuario
       AND  t.id_circulo_gasto  IS NULL
-      AND  UPPER(tm.nombre)    IN ('RETIRO','GASTO','EGRESO')
-      AND  t.monto_original   <= p_umbral_monto;
+      AND  UPPER(c.tipo_categoria) <> 'DEPOSITO'
+      AND  t.monto_original   <= p_umbral_monto
+      AND  t.fecha_ejecucion  >= DATE_SUB(NOW(), INTERVAL p_dias DAY);
     RETURN v_cantidad;
 END;
 
