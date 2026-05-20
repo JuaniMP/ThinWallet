@@ -294,6 +294,7 @@ public class UsuarioController {
             return ResponseEntity.badRequest().build();
         }
         usuarioService.actualizarFcmToken(id, fcmToken);
+        log.info("Token FCM registrado para usuario {} (longitud {})", id, fcmToken.length());
         return ResponseEntity.noContent().build();
     }
 }
