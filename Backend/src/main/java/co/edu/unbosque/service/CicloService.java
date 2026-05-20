@@ -45,7 +45,7 @@ public class CicloService {
 
         Integer resultado = (Integer) out.get("p_resultado");
         String mensaje = (String) out.get("p_mensaje");
-        log.info("Cierre ciclo mensual circulo={} mes={} anio={} resultado={} msg={}",
+        log.info("sp_cerrar_ciclo_mensual idCirculo={} mes={} anio={} resultado={} msg={}",
                 idCirculo, mes, anio, resultado, mensaje);
 
         return new CierreCicloResponse(
