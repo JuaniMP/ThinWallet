@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/transacciones")
@@ -81,5 +82,25 @@ public class TransaccionController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         transaccionService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * RQ-08 — Divide una transacción de círculo entre sus miembros invocando
+     * el SP {@code sp_calcular_deudas}. Body: idAcreedor, idCirculo, monto, modalidad.
+     */
+    @PostMapping("/{id}/dividir-deudas")
+    public ResponseEntity<Map<String, Object>> dividirDeudas(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        try {
+            String modalidad = (String) body.getOrDefault("modalidad", "IGUALITARIA");
+            Long idAcreedor = Long.valueOf(body.get("idAcreedor").toString());
+            Long idCirculo = Long.valueOf(body.get("idCirculo").toString());
+            BigDecimal monto = new BigDecimal(body.get("monto").toString());
+            transaccionService.dividirDeudas(id, modalidad, idAcreedor, idCirculo, monto);
+            return ResponseEntity.ok(Map.of("resultado", 1, "mensaje", "Deudas generadas"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("resultado", 0, "mensaje", e.getMessage()));
+        }
     }
 }

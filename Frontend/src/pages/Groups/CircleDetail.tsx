@@ -284,25 +284,41 @@ export function CircleDetail() {
         modalidadDivision: modalidadDivision || undefined,
       });
 
-      // Create a debt for each member with a non-zero share
+      // Crear deudas para cada miembro.
+      // Modalidad IGUALITARIA -> SP sp_calcular_deudas (atómico, en BD).
+      // Modalidades PORCENTAJE/MONTO_FIJO -> loop manual (el SP solo soporta partes iguales).
       if (modalidadDivision && divisiones.length > 0 && saved.idTransaccion) {
-        for (const div of divisiones) {
-          const montoDeuda =
-            modalidadDivision === "PORCENTAJE"
-              ? Math.round(monto * div.porcentaje / 100)
-              : div.monto;
-          if (montoDeuda > 0) {
-            try {
-              await api.post("/deudas", {
-                monto: montoDeuda,
-                porcentajeDivision: modalidadDivision === "PORCENTAJE" ? div.porcentaje : null,
-                estadoPago: "PENDIENTE",
-                idTransaccion: saved.idTransaccion,
-                idUsuarioDeudor: div.idUsuario,
-                idUsuarioAcreedor: user.idUsuario,
-              });
-            } catch {
-              // continue creating remaining debts even if one fails
+        if (modalidadDivision === "IGUALITARIA") {
+          try {
+            await api.post(`/transacciones/${saved.idTransaccion}/dividir-deudas`, {
+              modalidad: "IGUALITARIA",
+              idAcreedor: user.idUsuario,
+              idCirculo: Number(id),
+              monto,
+            });
+          } catch {
+            // si el SP falla, las deudas no se generan; el frontend muestra
+            // el gasto creado pero sin división — el admin puede reintentar
+          }
+        } else {
+          for (const div of divisiones) {
+            const montoDeuda =
+              modalidadDivision === "PORCENTAJE"
+                ? Math.round(monto * div.porcentaje / 100)
+                : div.monto;
+            if (montoDeuda > 0) {
+              try {
+                await api.post("/deudas", {
+                  monto: montoDeuda,
+                  porcentajeDivision: modalidadDivision === "PORCENTAJE" ? div.porcentaje : null,
+                  estadoPago: "PENDIENTE",
+                  idTransaccion: saved.idTransaccion,
+                  idUsuarioDeudor: div.idUsuario,
+                  idUsuarioAcreedor: user.idUsuario,
+                });
+              } catch {
+                // continue creating remaining debts even if one fails
+              }
             }
           }
         }
