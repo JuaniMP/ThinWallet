@@ -463,63 +463,6 @@ export function Reports() {
           </div>
         </div>
 
-        {/* RQ-13 — Balance por período calculado en BD vía fn_balance_usuario_periodo */}
-        <section
-          className="neo-shadow"
-          style={{
-            padding: "20px 24px",
-            marginBottom: "32px",
-            background: "var(--surface-container-low)",
-            borderLeft: "4px solid var(--primary)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <span className="material-symbols-outlined">functions</span>
-            <h3 style={{ margin: 0 }}>Balance por período</h3>
-          </div>
-          <p style={{ fontSize: "0.85rem", opacity: 0.8, marginBottom: 16 }}>
-            Calculado en MySQL con <code>fn_balance_usuario_periodo</code>. Ingresos − egresos del rango seleccionado.
-          </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-            <div className="input-group" style={{ flex: 1, minWidth: 160 }}>
-              <label>Desde</label>
-              <input
-                type="date"
-                value={periodoInicio}
-                onChange={(e) => setPeriodoInicio(e.target.value)}
-              />
-            </div>
-            <div className="input-group" style={{ flex: 1, minWidth: 160 }}>
-              <label>Hasta</label>
-              <input
-                type="date"
-                value={periodoFin}
-                onChange={(e) => setPeriodoFin(e.target.value)}
-              />
-            </div>
-            <button
-              className="btn-primary"
-              onClick={() => void handleCalcularBalancePeriodo()}
-              disabled={calculandoBalance}
-              style={{ height: 44 }}
-            >
-              <span className="material-symbols-outlined">calculate</span>
-              {calculandoBalance ? "Calculando..." : "Calcular"}
-            </button>
-          </div>
-          {errorBalance && (
-            <p style={{ color: "var(--error)", marginTop: 12, fontSize: "0.85rem" }}>{errorBalance}</p>
-          )}
-          {balancePeriodo !== null && !errorBalance && (
-            <p style={{ marginTop: 16, fontSize: "1.3rem", fontWeight: 600 }}>
-              Balance del período:{" "}
-              <span style={{ color: balancePeriodo >= 0 ? "var(--secondary)" : "var(--error)" }}>
-                {balancePeriodo >= 0 ? "+" : ""}{fmt(balancePeriodo)}
-              </span>
-            </p>
-          )}
-        </section>
-
         {loading ? (
           <div className="loading">Cargando datos...</div>
         ) : (
