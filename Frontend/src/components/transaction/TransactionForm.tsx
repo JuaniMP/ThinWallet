@@ -114,7 +114,12 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         idTipoMovimiento: paymentMethodId,
         monedaOriginal: moneda,
         tasaCambio,
-        contexto: categoryTipo === "AMBOS" ? type ?? undefined : undefined,
+        // La descripción que escribe el usuario se guarda también en la columna
+        // "contexto" de la tabla transaccion. Si la categoría es AMBOS, se le
+        // antepone el tipo (RETIRO/DEPOSITO) para preservar esa hint.
+        contexto: categoryTipo === "AMBOS" && type
+          ? `${type} | ${description.trim()}`
+          : description.trim(),
       });
 
       setAmount(0);
