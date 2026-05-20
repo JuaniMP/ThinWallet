@@ -744,8 +744,8 @@ export function CircleDetail() {
               )}
             </section>
 
-            {/* MESADAS — solo admin en círculos Familiares con permiteMesadas */}
-            {isAdmin && detail.permiteMesadas && detail.invitados.length > 0
+            {/* MESADAS — solo admin en círculos Familiares */}
+            {isAdmin && detail.invitados.length > 0
               && (detail.tipoCirculo ?? "").toLowerCase() === "familiar" && (
               <section className="circle-panel neo-shadow">
                 <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
