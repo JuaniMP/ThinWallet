@@ -6,7 +6,9 @@ import co.edu.unbosque.entity.UsuarioCirculo;
 import co.edu.unbosque.request.CirculoGastoRequest;
 import co.edu.unbosque.request.UnirseCirculoRequest;
 import co.edu.unbosque.service.CirculoGastoService;
+import co.edu.unbosque.service.MesadaService;
 import co.edu.unbosque.service.UsuarioCirculoService;
+import java.math.BigDecimal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ public class CirculoGastoController {
 
     private final CirculoGastoService circuloGastoService;
     private final UsuarioCirculoService usuarioCirculoService;
+    private final MesadaService mesadaService;
 
     @GetMapping
     public ResponseEntity<List<CirculoGasto>> getAll() {
@@ -137,5 +140,36 @@ public class CirculoGastoController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         circuloGastoService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * RF-12 — Asignar mesada a un miembro del círculo (solo admin).
+     * Invoca {@code sp_asignar_mesada} (auditoría) y crea las dos transacciones
+     * (RETIRO del admin + DEPOSITO del destinatario) para reflejar el saldo.
+     * Notifica al destinatario por push si tiene token FCM.
+     *
+     * Body: { idAdmin, idDestino, monto, monedaBase, tasaCambio, nombreCirculo }
+     */
+    @PostMapping("/{id}/mesada")
+    public ResponseEntity<Map<String, Object>> asignarMesada(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        try {
+            Long idAdmin = Long.valueOf(body.get("idAdmin").toString());
+            Long idDestino = Long.valueOf(body.get("idDestino").toString());
+            BigDecimal monto = new BigDecimal(body.get("monto").toString());
+            String monedaBase = body.getOrDefault("monedaBase", "COP").toString();
+            BigDecimal tasa = body.get("tasaCambio") != null
+                    ? new BigDecimal(body.get("tasaCambio").toString())
+                    : BigDecimal.ONE;
+            String nombreCirculo = body.get("nombreCirculo") != null
+                    ? body.get("nombreCirculo").toString() : null;
+
+            Map<String, Object> result = mesadaService.asignar(id, idAdmin, idDestino,
+                    monto, monedaBase, tasa, nombreCirculo);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("resultado", 0, "mensaje", e.getMessage()));
+        }
     }
 }
