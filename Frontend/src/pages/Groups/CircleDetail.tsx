@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { validateAmount, validateDescription } from "../../utils/validators";
 import { MoneyInput } from "../../components/common/MoneyInput";
 import { api } from "../../services/api";
-import { RATES_TO_USD, type CurrencyCode } from "../../context/CurrencyContext";
+import { tasaCambioACOP, type CurrencyCode } from "../../context/CurrencyContext";
 import type { CirculoDetalle, Transaccion, Category } from "../../types";
 
 type DivisionItem = { idUsuario: number; nombre: string; monto: number; porcentaje: number };
@@ -171,12 +171,14 @@ export function CircleDetail() {
     if (!user?.idUsuario || !detail) return;
     setMesadaSaving(true);
     try {
+      const monedaMesada = detail.monedaBase ?? "COP";
+      const tasaMesada = tasaCambioACOP(monedaMesada);
       // RETIRO para el admin (sale dinero de su cuenta)
       await transactionService.create({
         nombre: `Mesada enviada a ${detail.invitados.find((i) => String(i.idUsuario) === mesadaForm.idUsuarioDestino)?.nombreCompleto ?? "miembro"}`,
         montoOriginal: mesadaForm.monto,
-        monedaOriginal: detail.monedaBase ?? "COP",
-        tasaCambio: 1,
+        monedaOriginal: monedaMesada,
+        tasaCambio: tasaMesada,
         tipoMovimiento: "MESADA_ENVIADA",
         idUsuario: user.idUsuario,
         idCirculoGasto: detail.idCirculoGasto,
@@ -186,8 +188,8 @@ export function CircleDetail() {
       await transactionService.create({
         nombre: `Mesada recibida de ${user.nombres} ${user.apellidos}`.trim(),
         montoOriginal: mesadaForm.monto,
-        monedaOriginal: detail.monedaBase ?? "COP",
-        tasaCambio: 1,
+        monedaOriginal: monedaMesada,
+        tasaCambio: tasaMesada,
         tipoMovimiento: "MESADA_RECIBIDA",
         idUsuario: Number(mesadaForm.idUsuarioDestino),
         idCirculoGasto: detail.idCirculoGasto,
@@ -273,9 +275,8 @@ export function CircleDetail() {
     setGastoSaving(true);
     setGastoError("");
     try {
-      // Tasa de cambio de la moneda elegida → COP (base). Si moneda == COP, tasa = 1.
-      const monedaSeleccionada = gastoForm.moneda as CurrencyCode;
-      const tasaCambio = (RATES_TO_USD[monedaSeleccionada] ?? 1) / (RATES_TO_USD["COP"] ?? 1 / 4000);
+      // Tasa de cambio de la moneda elegida → COP (helper centralizado).
+      const tasaCambio = tasaCambioACOP(gastoForm.moneda as CurrencyCode);
 
       const saved = await transactionService.create({
         nombre: gastoForm.nombre.trim(),
