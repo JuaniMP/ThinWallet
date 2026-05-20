@@ -480,7 +480,8 @@ main: BEGIN
 
     START TRANSACTION;
     INSERT INTO gasto (nombre, valor, periodicidad, fecha_inicio,
-                       id_usuario_creador, id_circulo_gasto, id_categoria)
+                       id_usuario_creador, id_circulo_gasto, id_categoria,
+                       monto_actual)
     VALUES (
         CONCAT('Mesada para usuario ', p_id_miembro),
         p_monto,
@@ -488,7 +489,8 @@ main: BEGIN
         NOW(),
         p_id_admin,
         p_id_circulo,
-        v_id_categoria
+        v_id_categoria,
+        0
     );
     COMMIT;
 
