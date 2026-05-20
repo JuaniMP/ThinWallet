@@ -71,36 +71,46 @@ export function CierreMensual() {
 
   return (
     <Layout>
-      <div className="page-container">
-        <div className="page-header">
-          <div>
-            <p className="page-label">RF-15 — Administración de círculos</p>
-            <h2 className="page-title">CIERRE DE CICLO MENSUAL</h2>
-          </div>
-        </div>
+      <div className="debts-page">
+        <section style={{ marginBottom: "32px" }}>
+          <p className="page-label">Administración de círculos</p>
+          <h2 className="page-title">Cierre de ciclo mensual</h2>
+        </section>
 
-        <div className="neo-shadow" style={{ padding: 20 }}>
-          <p style={{ marginBottom: 16, color: "var(--on-surface-variant)" }}>
-            Cierra el periodo del círculo seleccionado. Se valida que no haya
-            deudas pendientes y se registra el cierre en la auditoría.
+        <section
+          className="neo-shadow"
+          style={{
+            padding: "24px",
+            background: "var(--surface-container-low)",
+            borderLeft: "4px solid var(--primary)",
+            marginBottom: 24,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span className="material-symbols-outlined">event_available</span>
+            <h3 style={{ margin: 0 }}>Cerrar el periodo</h3>
+          </div>
+          <p style={{ fontSize: "0.9rem", lineHeight: 1.5, opacity: 0.85, marginBottom: 20 }}>
+            Selecciona el círculo y el periodo (mes/año) que quieres cerrar. El sistema verifica
+            que no haya deudas pendientes y deja constancia del cierre en la auditoría. Si alguien
+            aún debe, te indicará cuántas deudas faltan resolver antes de poder cerrar.
           </p>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "2fr 1fr 1fr auto",
-              gap: 16,
-              alignItems: "end",
+          <form
+            className="transaction-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ejecutar();
             }}
           >
-            <label>
-              Círculo
+            <div className="input-group">
+              <label htmlFor="circulo">Círculo</label>
               <select
+                id="circulo"
                 value={idCirculo}
                 onChange={(e) =>
                   setIdCirculo(e.target.value ? Number(e.target.value) : "")
                 }
-                style={{ width: "100%" }}
               >
                 <option value="" disabled>
                   Seleccionar círculo
@@ -111,13 +121,14 @@ export function CierreMensual() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label>
-              Mes
+            </div>
+
+            <div className="input-group">
+              <label htmlFor="mes">Mes</label>
               <select
+                id="mes"
                 value={mes}
                 onChange={(e) => setMes(Number(e.target.value))}
-                style={{ width: "100%" }}
               >
                 {MESES.map((m, i) => (
                   <option key={m} value={i + 1}>
@@ -125,53 +136,53 @@ export function CierreMensual() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label>
-              Año
+            </div>
+
+            <div className="input-group">
+              <label htmlFor="anio">Año</label>
               <input
+                id="anio"
                 type="number"
                 min={2000}
                 max={2100}
                 value={anio}
                 onChange={(e) => setAnio(Number(e.target.value))}
               />
-            </label>
-            <button
-              className="btn-primary"
-              onClick={() => void ejecutar()}
-              disabled={busy}
-            >
-              {busy ? "Cerrando…" : "Cerrar Ciclo"}
+            </div>
+
+            <button type="submit" className="btn btn-primary neo-shadow" disabled={busy}>
+              <span className="material-symbols-outlined">event_available</span>
+              {busy ? "Cerrando…" : "Cerrar ciclo"}
             </button>
-          </div>
+          </form>
 
           {error && (
-            <p className="error-msg" style={{ marginTop: 16 }}>
+            <div className="error-alert" style={{ marginTop: 20 }}>
               {error}
-            </p>
+            </div>
           )}
 
           {result && (
             <div
-              className="neo-shadow-sm"
+              className="neo-shadow"
               style={{
-                marginTop: 24,
-                padding: 16,
-                background:
-                  result.resultado === 1
-                    ? "var(--success-container, #d4f7d4)"
-                    : "var(--error-container, #ffd6d6)",
+                marginTop: 20,
+                padding: "14px 18px",
+                borderLeft: result.resultado === 1
+                  ? "4px solid var(--secondary)"
+                  : "4px solid var(--error)",
+                background: "var(--surface-container)",
               }}
             >
-              <p style={{ fontWeight: 700, marginBottom: 4 }}>
-                {result.resultado === 1
-                  ? "✓ Cierre exitoso"
-                  : "× Cierre rechazado"}
+              <p style={{ margin: 0, fontWeight: 700, marginBottom: 4 }}>
+                {result.resultado === 1 ? "✓ Cierre exitoso" : "× Cierre rechazado"}
               </p>
-              <p style={{ fontSize: 14 }}>{result.mensaje}</p>
+              <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85 }}>
+                {result.mensaje}
+              </p>
             </div>
           )}
-        </div>
+        </section>
       </div>
     </Layout>
   );
