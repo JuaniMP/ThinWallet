@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { MoneyInput } from "../common/MoneyInput";
-import { SUPPORTED_CURRENCIES, RATES_TO_USD, type CurrencyCode } from "../../context/CurrencyContext";
+import { SUPPORTED_CURRENCIES, tasaCambioACOP, type CurrencyCode } from "../../context/CurrencyContext";
 import { CategorySelect } from "../category/CategorySelect";
 import {
   validateAmount,
@@ -99,10 +99,10 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
       return;
     }
 
-    // RQ-13 — tasa de cambio de la moneda elegida a la moneda base (COP).
-    // El backend pasa esta tasa a fn_convertir_moneda(monto, tasa) para
-    // guardar el equivalente en COP. Si moneda == COP la tasa es 1.
-    const tasaCambio = (RATES_TO_USD[moneda] ?? 1) / (RATES_TO_USD["COP"] ?? 1 / 4000);
+    // RQ-13 — tasa de cambio de la moneda elegida a COP. Helper centralizado:
+    // se reutiliza en mesadas, gastos de círculo y deudas para que la BD
+    // siempre reciba la tasa correcta para fn_convertir_moneda.
+    const tasaCambio = tasaCambioACOP(moneda);
 
     try {
       await onSubmit({
