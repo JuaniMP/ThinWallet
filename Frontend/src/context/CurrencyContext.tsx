@@ -121,6 +121,22 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Devuelve la tasa de cambio desde la moneda indicada hacia COP (moneda base).
+ * Esta tasa se envía al backend, que la pasa a fn_convertir_moneda(monto, tasa)
+ * para registrar el equivalente en COP. Si moneda == COP, devuelve 1.
+ *
+ * Centralizado aquí para que todas las creaciones de transacciones
+ * (gastos, mesadas, pagos de deuda, etc.) usen la MISMA lógica de tasa.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function tasaCambioACOP(moneda?: string | null): number {
+  const m = (moneda ?? "COP") as CurrencyCode;
+  const rateOrigen = RATES_TO_USD[m] ?? 1;
+  const rateCop = RATES_TO_USD["COP"] ?? 1 / 4000;
+  return rateOrigen / rateCop;
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function useCurrency() {
   const ctx = useContext(CurrencyContext);
