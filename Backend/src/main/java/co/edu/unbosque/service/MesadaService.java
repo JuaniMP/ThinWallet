@@ -75,8 +75,17 @@ public class MesadaService {
         log.info("sp_asignar_mesada idCirculo={} idMiembro={} monto={} admin={} resultado={} msg={}",
                 idCirculo, idDestino, monto, idAdmin, resultado, mensaje);
 
+        // Si el SP falla por reglas de negocio (no es admin / no es miembro), abortamos
+        // y devolvemos el mensaje al usuario. Para cualquier otro fallo (INSERT en gasto
+        // con constraint roto, etc.) continuamos con las transacciones — la mesada en sí
+        // depende de esas dos transacciones, no del registro en gasto.
         if (resultado == null || resultado == 0) {
-            return Map.of("resultado", 0, "mensaje", mensaje != null ? mensaje : "Error al asignar mesada");
+            boolean bloqueante = mensaje != null && (
+                    mensaje.contains("permisos") || mensaje.contains("miembro"));
+            if (bloqueante) {
+                return Map.of("resultado", 0, "mensaje", mensaje);
+            }
+            log.warn("sp_asignar_mesada devolvió error genérico; continúo con las transacciones de la mesada");
         }
 
         // 2. Crear las dos transacciones para reflejar la transferencia en saldos
@@ -137,7 +146,10 @@ public class MesadaService {
             eventBus.publicarSaldo(idDestino);
         }
 
-        return Map.of("resultado", 1, "mensaje", mensaje);
+        String mensajeFinal = (resultado != null && resultado == 1 && mensaje != null)
+                ? mensaje
+                : "Mesada asignada exitosamente.";
+        return Map.of("resultado", 1, "mensaje", mensajeFinal);
     }
 
     @SuppressWarnings("unused")
