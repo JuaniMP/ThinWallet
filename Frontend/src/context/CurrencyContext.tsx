@@ -17,7 +17,7 @@ export const SUPPORTED_CURRENCIES = [
 ] as const;
 export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number];
 
-const RATES_TO_USD: Record<CurrencyCode, number> = {
+export const RATES_TO_USD: Record<CurrencyCode, number> = {
   COP: 1 / 4000,
   USD: 1,
   EUR: 1.08,
