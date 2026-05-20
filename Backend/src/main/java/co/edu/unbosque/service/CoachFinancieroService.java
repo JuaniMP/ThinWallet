@@ -48,6 +48,17 @@ public class CoachFinancieroService {
             ingresoMensual = inferirIngresoMensual(idUsuario);
         }
 
+        // RQ-11 — sidecar: invocar fn_recomendar_ahorro para que la recomendación
+        // también sea auditable desde la capa SQL. El resultado se loguea aunque
+        // el cálculo principal de la response lo haga Java.
+        try {
+            String json = jdbcTemplate.queryForObject(
+                    "SELECT fn_recomendar_ahorro(?, ?)", String.class, idUsuario, ingresoMensual);
+            log.info("fn_recomendar_ahorro idUsuario={} ingreso={} -> {}", idUsuario, ingresoMensual, json);
+        } catch (Exception e) {
+            log.warn("fn_recomendar_ahorro no disponible (sidecar): {}", e.getMessage());
+        }
+
         Map<String, BigDecimal> gastoPorCategoria = sumarGastosPorCategoria(idUsuario);
         BigDecimal gastoNecesidades = BigDecimal.ZERO;
         BigDecimal gastoDeseos      = BigDecimal.ZERO;
