@@ -9,11 +9,9 @@ import {
 } from "../../services/coachService";
 import { api } from "../../services/api";
 import { MoneyInput } from "../../components/common/MoneyInput";
-import {
-  useCurrency,
-  SUPPORTED_CURRENCIES,
-  type CurrencyCode,
-} from "../../context/CurrencyContext";
+import { useCurrency } from "../../context/CurrencyContext";
+import { type CurrencyCode } from "../../utils/currency";
+import { CurrencySelect } from "../../components/common/CurrencySelect";
 import type { Gasto, GastoRequest, Category } from "../../types";
 
 interface BackendTxLite {
@@ -365,20 +363,7 @@ export function Goals() {
                 placeholder="Ej: 2,500,000"
               />
             </div>
-            <div className="input-group">
-              <label htmlFor="coachMoneda">Moneda</label>
-              <select
-                id="coachMoneda"
-                value={coachMoneda}
-                onChange={(e) => setCoachMoneda(e.target.value as CurrencyCode)}
-              >
-                {SUPPORTED_CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CurrencySelect id="coachMoneda" value={coachMoneda} onChange={setCoachMoneda} />
             <div className="coach-actions-row">
               <button
                 type="button"

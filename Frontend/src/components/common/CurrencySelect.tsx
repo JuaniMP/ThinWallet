@@ -1,5 +1,5 @@
-export const SUPPORTED_CURRENCIES = ["COP", "USD", "EUR", "MXN", "ARS"] as const;
-export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number];
+import type { CSSProperties } from "react";
+import { SUPPORTED_CURRENCIES, type CurrencyCode } from "../../utils/currency";
 
 interface CurrencySelectProps {
   value: string;
@@ -7,6 +7,7 @@ interface CurrencySelectProps {
   label?: string;
   id?: string;
   required?: boolean;
+  style?: CSSProperties;
 }
 
 export function CurrencySelect({
@@ -14,10 +15,11 @@ export function CurrencySelect({
   onChange,
   label = "Moneda",
   id = "moneda",
-  required = true,
+  required = false,
+  style,
 }: CurrencySelectProps) {
   return (
-    <div className="input-group">
+    <div className="input-group" style={style}>
       <label htmlFor={id}>{label}</label>
       <select
         id={id}

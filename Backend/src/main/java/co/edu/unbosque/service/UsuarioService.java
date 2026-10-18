@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -45,6 +45,7 @@ public class UsuarioService {
 
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
     private final Map<String, String> registrationTokens = new ConcurrentHashMap<>();
+    private final SecureRandom secureRandom = new SecureRandom();
 
     @Transactional(readOnly = true)
     public List<Usuario> findAll() {
@@ -89,17 +90,15 @@ public class UsuarioService {
         if (usuario.getEstado() == 1) {
             throw new RuntimeException("El usuario ya está verificado");
         }
-        String codigo = String.format("%06d", new Random().nextInt(999999));
+        String codigo = generarCodigo();
         registrationTokens.put(correo, codigo);
         emailService.enviarCodigoVerificacion(correo, codigo);
-        log.info("Codigo de verificacion reenviado para {}: {}", correo, codigo);
+        log.info("Codigo de verificacion reenviado para {}", correo);
     }
 
     @Transactional(readOnly = true)
     public Optional<Usuario> loginWithToken(String tokenReclamo) {
-        return usuarioRepository.findAll().stream()
-                .filter(u -> tokenReclamo.equals(u.getTokenReclamo()))
-                .findFirst();
+        return usuarioRepository.findByTokenReclamo(tokenReclamo);
     }
 
     public void solicitarRecuperacionPassword(String correo) {
@@ -107,10 +106,10 @@ public class UsuarioService {
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("No existe un usuario con ese correo electrónico");
         }
-        String codigo = String.format("%06d", new Random().nextInt(999999));
+        String codigo = generarCodigo();
         resetTokens.put(correo, codigo);
         emailService.enviarCodigoRecuperacion(correo, codigo);
-        log.info("Codigo de recuperacion generado para {}: {}", correo, codigo);
+        log.info("Codigo de recuperacion generado para {}", correo);
     }
 
     public boolean validarCodigoRecuperacion(String correo, String codigo) {
@@ -170,7 +169,7 @@ public class UsuarioService {
         Usuario savedUser = usuarioRepository.save(usuario);
 
         // Generar y enviar código de verificación
-        String codigo = String.format("%06d", new Random().nextInt(999999));
+        String codigo = generarCodigo();
         registrationTokens.put(request.getCorreo(), codigo);
         emailService.enviarCodigoVerificacion(request.getCorreo(), codigo);
 
@@ -179,7 +178,7 @@ public class UsuarioService {
                     "REGISTRO", null, "{\"correo\":\"" + savedUser.getCorreo() + "\"}");
         }
 
-        log.info("Usuario registrado (pendiente verif): {}. Codigo: {}", request.getCorreo(), codigo);
+        log.info("Usuario registrado (pendiente verif): {}", request.getCorreo());
 
         return savedUser;
     }
@@ -341,5 +340,10 @@ public class UsuarioService {
     @Transactional
     public void delete(Long id) {
         usuarioRepository.deleteById(id);
+    }
+
+    /** Código numérico de 6 dígitos para verificación y recuperación de cuenta. */
+    private String generarCodigo() {
+        return String.format("%06d", secureRandom.nextInt(1_000_000));
     }
 }
