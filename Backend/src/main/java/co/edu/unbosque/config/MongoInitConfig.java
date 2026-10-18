@@ -8,12 +8,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.data.mongodb.core.index.Index;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
- * Inicializa colecciones e índices en gestion_gastos_audit al arrancar (async).
- * Idempotente: solo crea si no existen. No bloquea el startup.
+ * Inicializa colecciones e índices de auditoría en MongoDB al arrancar.
+ * Idempotente: solo crea si no existen. Si MongoDB no responde, solo registra
+ * una advertencia y el backend sigue arrancando.
  */
 @Component
 @Slf4j
@@ -24,15 +24,14 @@ public class MongoInitConfig implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        initializeAsync();
+        inicializar();
     }
 
-    @Async
-    private void initializeAsync() {
+    private void inicializar() {
         try {
             inicializarColecciones();
             inicializarIndices();
-            log.info("MongoDB [gestion_gastos_audit] – colecciones e índices listos");
+            log.info("MongoDB [{}] – colecciones e índices listos", mongoTemplate.getDb().getName());
         } catch (Exception e) {
             log.warn("MongoDB – no disponible al iniciar: {}", e.getMessage());
         }
@@ -86,6 +85,6 @@ public class MongoInitConfig implements ApplicationRunner {
                 new Index("ultima_actualizacion", Sort.Direction.DESC)
                         .named("idx_ultima_actualizacion"));
 
-        log.info("MongoDB – índices verificados/creados en gestion_gastos_audit");
+        log.info("MongoDB – índices verificados/creados");
     }
 }

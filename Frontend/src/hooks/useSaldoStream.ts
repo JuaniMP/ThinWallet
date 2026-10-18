@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react";
-
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+import { API_URL } from "../services/api";
 
 interface SaldoEvent {
   saldoTotal?: number;
@@ -20,7 +18,9 @@ export function useSaldoStream(
   onSaldoActualizado: (saldo: number) => void,
 ) {
   const cbRef = useRef(onSaldoActualizado);
-  cbRef.current = onSaldoActualizado;
+  useEffect(() => {
+    cbRef.current = onSaldoActualizado;
+  }, [onSaldoActualizado]);
 
   useEffect(() => {
     if (!idUsuario) return;

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { MoneyInput } from "../common/MoneyInput";
-import { SUPPORTED_CURRENCIES, tasaCambioACOP, type CurrencyCode } from "../../context/CurrencyContext";
+import { tasaCambioACOP, type CurrencyCode } from "../../utils/currency";
+import { CurrencySelect } from "../common/CurrencySelect";
 import { CategorySelect } from "../category/CategorySelect";
 import {
   validateAmount,
@@ -225,18 +226,7 @@ export function TransactionForm({ onSubmit, isLoading }: TransactionFormProps) {
         onChange={setAmount}
         required
       />
-      <div className="input-group">
-        <label htmlFor="moneda">Moneda</label>
-        <select
-          id="moneda"
-          value={moneda}
-          onChange={(e) => setMoneda(e.target.value as CurrencyCode)}
-        >
-          {SUPPORTED_CURRENCIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-      </div>
+      <CurrencySelect value={moneda} onChange={setMoneda} />
 
       <Input
         label="Descripción"

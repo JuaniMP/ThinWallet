@@ -68,17 +68,30 @@ export function CategorySelect({ type, value, onChange, onTypeHint }: CategorySe
     getOwnedCustomIds(userId),
   );
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await api.get<BackendCategoria[]>("/categorias");
-      setCategories(Array.isArray(response) ? response : []);
-    } catch (err) {
-      console.error("Failed to fetch categories:", err);
-    }
-  }, []);
+  const fetchCategories = useCallback(
+    () =>
+      api
+        .get<BackendCategoria[]>("/categorias")
+        .then((response) => (Array.isArray(response) ? response : []))
+        .catch((err) => {
+          console.error("Failed to fetch categories:", err);
+          return null;
+        }),
+    [],
+  );
+
+  const refreshCategories = useCallback(() => {
+    fetchCategories().then((list) => list && setCategories(list));
+  }, [fetchCategories]);
 
   useEffect(() => {
-    fetchCategories();
+    let active = true;
+    fetchCategories().then((list) => {
+      if (active && list) setCategories(list);
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchCategories]);
 
   const visibleCategories = useMemo(() => {
@@ -100,7 +113,7 @@ export function CategorySelect({ type, value, onChange, onTypeHint }: CategorySe
   const handleCreated = (created: Category) => {
     addOwnedCustomId(userId, created.idCategoria);
     setOwnedCustomIds(getOwnedCustomIds(userId));
-    fetchCategories();
+    refreshCategories();
     onChange(created.idCategoria);
   };
 
@@ -146,7 +159,6 @@ export function CategorySelect({ type, value, onChange, onTypeHint }: CategorySe
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreated={handleCreated}
-        defaultTipo={type ?? "RETIRO"}
       />
     </div>
   );

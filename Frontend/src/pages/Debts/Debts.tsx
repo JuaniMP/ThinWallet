@@ -4,12 +4,9 @@ import { Layout } from "../../components/layout/Layout";
 import { api } from "../../services/api";
 import { transactionService } from "../../services/transactionService";
 import { MoneyInput } from "../../components/common/MoneyInput";
-import {
-  useCurrency,
-  SUPPORTED_CURRENCIES,
-  tasaCambioACOP,
-  type CurrencyCode,
-} from "../../context/CurrencyContext";
+import { useCurrency } from "../../context/CurrencyContext";
+import { tasaCambioACOP, type CurrencyCode } from "../../utils/currency";
+import { CurrencySelect } from "../../components/common/CurrencySelect";
 import type { Deuda, User } from "../../types";
 
 type NewDeudaForm = {
@@ -429,17 +426,11 @@ export function Debts() {
                     placeholder="0"
                     required
                   />
-                  <div className="input-group">
-                    <label>Moneda</label>
-                    <select
-                      value={form.moneda}
-                      onChange={(e) => setForm((f) => ({ ...f, moneda: e.target.value as CurrencyCode }))}
-                    >
-                      {SUPPORTED_CURRENCIES.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <CurrencySelect
+                    id="monedaDeuda"
+                    value={form.moneda}
+                    onChange={(moneda) => setForm((f) => ({ ...f, moneda }))}
+                  />
                   <div className="input-group">
                     <label>ID Usuario Acreedor</label>
                     <div className="input-wrapper">

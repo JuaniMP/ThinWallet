@@ -37,6 +37,7 @@ public class Usuario {
     @JoinColumn(name = "id_tipo_usuario", referencedColumnName = "id_tipo_usuario")
     private TipoUsuario tipoUsuario;
 
+    @JsonIgnore // credencial de acceso del invitado: solo se entrega en LoginResponse
     @Column(name = "token_reclamo")
     private String tokenReclamo;
 

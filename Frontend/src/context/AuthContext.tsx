@@ -68,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // del login original).
   useEffect(() => {
     if (user?.idUsuario) registerFcm(user.idUsuario);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.idUsuario]);
 
   // Suscribir al handler de notificaciones en foreground: cuando la app está
@@ -89,7 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginWithToken = async (tokenValue: string) => {
-    const { token: jwt, usuario } = await authService.loginWithToken(tokenValue);
+    const res = await authService.loginWithToken(tokenValue);
+    const jwt = res.token;
+    const usuario: User = { ...res.usuario, tokenReclamo: res.tokenReclamo ?? undefined };
     localStorage.setItem("token", jwt);
     localStorage.setItem("user", JSON.stringify(usuario));
     localStorage.setItem("userToken", tokenValue);
