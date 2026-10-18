@@ -22,9 +22,8 @@ import java.util.Base64;
  * cifrar/descifrar antes de persistir o después de leer.
  *
  * <p>La clave maestra se deriva con SHA-256 a partir de la propiedad
- * {@code thinwallet.cipher.master-key} (configurable en
- * {@code application.properties}). En entornos productivos debe sobreescribirse
- * con una variable de entorno.
+ * {@code thinwallet.cipher.master-key}, que se lee de la variable de entorno
+ * THINWALLET_CIPHER_MASTER_KEY (obligatoria; el perfil dev trae una de prueba).
  *
  * <p>Formato del payload cifrado: Base64( IV(12 bytes) || ciphertext+tag ).
  * Esto permite rotar la clave en el futuro sin parsear estructuras complejas.
@@ -38,7 +37,7 @@ public class AesCipherService {
     private static final int IV_LENGTH = 12;
     private static final int TAG_LENGTH_BITS = 128;
 
-    @Value("${thinwallet.cipher.master-key:thinwallet-default-change-me-in-production}")
+    @Value("${thinwallet.cipher.master-key}")
     private String masterKey;
 
     private SecretKey secretKey;
