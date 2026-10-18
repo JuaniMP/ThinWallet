@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { validateAmount, validateDescription } from "../../utils/validators";
 import { MoneyInput } from "../../components/common/MoneyInput";
 import { api } from "../../services/api";
-import { tasaCambioACOP, type CurrencyCode } from "../../context/CurrencyContext";
+import { tasaCambioACOP, type CurrencyCode } from "../../utils/currency";
 import type { CirculoDetalle, Transaccion, Category } from "../../types";
 
 type DivisionItem = { idUsuario: number; nombre: string; monto: number; porcentaje: number };

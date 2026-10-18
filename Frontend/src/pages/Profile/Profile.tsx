@@ -4,11 +4,8 @@ import { Layout } from "../../components/layout/Layout";
 import { authService } from "../../services/authService";
 import { transactionService } from "../../services/transactionService";
 import { api } from "../../services/api";
-import {
-  useCurrency,
-  SUPPORTED_CURRENCIES,
-  type CurrencyCode,
-} from "../../context/CurrencyContext";
+import { useCurrency } from "../../context/CurrencyContext";
+import { CurrencySelect } from "../../components/common/CurrencySelect";
 import { validatePassword, validateName, validateUsername, validateEmail } from "../../utils/validators";
 import type { User } from "../../types";
 
@@ -365,17 +362,13 @@ export function Profile() {
               Todos los valores se convertirán y mostrarán en esta moneda
             </p>
           </div>
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <label>Visualizar todo en</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-            >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+          <CurrencySelect
+            id="monedaPreferida"
+            label="Visualizar todo en"
+            value={currency}
+            onChange={setCurrency}
+            style={{ marginBottom: 0 }}
+          />
         </div>
 
         {/* Gastos programados y metas — accesos rápidos */}
