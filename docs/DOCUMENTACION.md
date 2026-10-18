@@ -113,7 +113,7 @@ El backend implementa el patrón **Repository** con Spring Data JPA para MySQL y
 | Motor | Rol | Colección / Esquema |
 |-------|-----|---------------------|
 | MySQL 8.x | Datos transaccionales (principal) | `thinwallet_db` |
-| MongoDB | Datos documentales (auditoría, notificaciones) | `gestion_gastos_audit` |
+| MongoDB | Datos documentales (auditoría, notificaciones) | `thinwallet_db` |
 
 ---
 
@@ -143,7 +143,7 @@ spring.datasource.username=<usuario>
 spring.datasource.password=<contrasena>
 
 # MongoDB (opcional)
-spring.data.mongodb.uri=mongodb://<host>:27017/gestion_gastos_audit
+spring.data.mongodb.uri=mongodb://<host>:27017/thinwallet_db
 
 # Correo SMTP
 spring.mail.username=<correo>
@@ -151,7 +151,7 @@ spring.mail.password=<app-password>
 ```
 
 **3. Inicializar la base de datos:**  
-Ejecutar los scripts SQL en el orden que indica la carpeta `Basesdedatos/`. El sistema usa `spring.jpa.hibernate.ddl-auto=none`, por lo que el esquema debe existir previamente.
+Ejecutar `./database/setup.sh` desde la raíz del repositorio: crea la base MySQL (tablas, funciones, triggers, reportes e índices) e inicializa MongoDB. El sistema usa `spring.jpa.hibernate.ddl-auto=none`, por lo que el esquema debe existir previamente. Ver el [README](../README.md#-cómo-ejecutarlo-en-local) para el paso a paso completo.
 
 **4. Ejecutar:**
 ```bash

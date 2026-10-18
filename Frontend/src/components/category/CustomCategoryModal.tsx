@@ -12,14 +12,12 @@ interface CustomCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: (category: Category) => void;
-  defaultTipo?: "DEPOSITO" | "RETIRO";
 }
 
 export function CustomCategoryModal({
   isOpen,
   onClose,
   onCreated,
-  defaultTipo: _defaultTipo = "RETIRO",
 }: CustomCategoryModalProps) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");

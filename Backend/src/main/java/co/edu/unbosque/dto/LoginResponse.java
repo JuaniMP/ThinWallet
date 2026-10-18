@@ -9,4 +9,6 @@ import lombok.Getter;
 public class LoginResponse {
     private String token;
     private Usuario usuario;
+    /** Token personal del usuario invitado; null para cuentas registradas. */
+    private String tokenReclamo;
 }

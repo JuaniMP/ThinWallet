@@ -1,5 +1,6 @@
 package co.edu.unbosque.controller;
 
+import co.edu.unbosque.config.UsuarioAutenticado;
 import co.edu.unbosque.dto.LoginResponse;
 import co.edu.unbosque.dto.UsuarioBusquedaResponse;
 import co.edu.unbosque.entity.Usuario;
@@ -47,6 +48,7 @@ public class UsuarioController {
     private final UsuarioCirculoService usuarioCirculoService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UsuarioAutenticado usuarioAutenticado;
 
     @GetMapping
     public ResponseEntity<List<Usuario>> getAll() {
@@ -79,6 +81,7 @@ public class UsuarioController {
 
     @GetMapping("/{id}/saldo")
     public ResponseEntity<SaldoResponse> getSaldo(@PathVariable Long id) {
+        usuarioAutenticado.exigirQueSea(id);
         return saldoService.calcularSaldo(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -92,6 +95,7 @@ public class UsuarioController {
             @PathVariable Long id,
             @RequestParam(required = false) LocalDate fechaInicio,
             @RequestParam(required = false) LocalDate fechaFin) {
+        usuarioAutenticado.exigirQueSea(id);
         LocalDate inicio = fechaInicio != null ? fechaInicio : LocalDate.now().withDayOfMonth(1);
         LocalDate fin    = fechaFin    != null ? fechaFin    : LocalDate.now();
         return ResponseEntity.ok(saldoService.balancePorPeriodo(id, inicio, fin));
@@ -116,7 +120,7 @@ public class UsuarioController {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Debe verificar su correo para iniciar sesion");
                     }
                     String token = jwtService.generateToken(usuario.getIdUsuario(), usuario.getCorreo());
-                    return ResponseEntity.ok(new LoginResponse(token, usuario));
+                    return ResponseEntity.ok(new LoginResponse(token, usuario, null));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales invalidas"));
     }
@@ -124,7 +128,6 @@ public class UsuarioController {
     @PostMapping("/login-token")
     public ResponseEntity<?> loginWithToken(@RequestBody Map<String, String> request) {
         String tokenInvitacion = request.get("tokenInvitacion");
-        log.info("Intento de login con token: {}", tokenInvitacion);
         if (tokenInvitacion == null || tokenInvitacion.isEmpty()) {
             return ResponseEntity.badRequest().body("Token requerido");
         }
@@ -135,7 +138,7 @@ public class UsuarioController {
             Usuario u = usuarioOpt.get();
             log.info("Token personal valido para usuario: {}", u.getCorreo());
             String token = jwtService.generateToken(u.getIdUsuario(), u.getCorreo());
-            return ResponseEntity.ok(new LoginResponse(token, u));
+            return ResponseEntity.ok(new LoginResponse(token, u, u.getTokenReclamo()));
         }
 
         // Intento 2: ¿Es el token de un Círculo de Gasto?
@@ -166,10 +169,10 @@ public class UsuarioController {
 
             log.info("Nuevo invitado {} creado al vuelo por token de círculo", nuevoInvitado.getCorreo());
             String token = jwtService.generateToken(nuevoInvitado.getIdUsuario(), nuevoInvitado.getCorreo());
-            return ResponseEntity.ok(new LoginResponse(token, nuevoInvitado));
+            return ResponseEntity.ok(new LoginResponse(token, nuevoInvitado, nuevoInvitado.getTokenReclamo()));
         }
 
-        log.warn("Token invalido: {}", tokenInvitacion);
+        log.warn("Intento de login con token inválido");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado");
     }
 
@@ -225,6 +228,7 @@ public class UsuarioController {
 
     @PatchMapping("/{id}/perfil")
     public ResponseEntity<?> updatePerfil(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        usuarioAutenticado.exigirQueSea(id);
         return usuarioService.updatePerfil(
                 id,
                 body.get("nombres"),
@@ -239,6 +243,7 @@ public class UsuarioController {
     public ResponseEntity<?> cambiarContrasenaAutenticado(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
+        usuarioAutenticado.exigirQueSea(id);
         try {
             usuarioService.cambiarContrasenaAutenticado(id, body.get("contrasenaActual"), body.get("nuevaContrasena"));
             return ResponseEntity.ok("Contraseña actualizada exitosamente");
@@ -275,6 +280,7 @@ public class UsuarioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Usuario> update(@PathVariable Long id, @Valid @RequestBody UsuarioRequest request) {
+        usuarioAutenticado.exigirQueSea(id);
         return usuarioService.update(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -282,6 +288,7 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        usuarioAutenticado.exigirQueSea(id);
         usuarioService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -289,6 +296,7 @@ public class UsuarioController {
     @PutMapping("/{id}/fcm-token")
     public ResponseEntity<Void> registrarFcmToken(@PathVariable Long id,
                                                    @RequestBody Map<String, String> body) {
+        usuarioAutenticado.exigirQueSea(id);
         String fcmToken = body.get("fcmToken");
         if (fcmToken == null || fcmToken.isBlank()) {
             return ResponseEntity.badRequest().build();

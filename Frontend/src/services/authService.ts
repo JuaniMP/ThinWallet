@@ -4,6 +4,8 @@ import type { LoginRequest, RegisterRequest, User } from "../types";
 interface LoginResponse {
   token: string;
   usuario: User;
+  /** Solo viene en /login-token: token personal del usuario invitado. */
+  tokenReclamo?: string | null;
 }
 
 export const authService = {
